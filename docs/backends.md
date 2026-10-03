@@ -55,6 +55,11 @@ is disabled; the cycle view can still browse past or upcoming cycles.
 
 The service reads `TASKS.md` and numbered description references under `docs/tasks/`. It uses Filemill's five work sections and preserves the separate acceptance checkbox in `Completed / Accepted`. `Issue.sourceSection` retains the original section, including the distinction between unverified proposals and ordered backlog. `Issue.accepted` reflects explicit user acceptance. Completing work never checks that box.
 
+Existing wrapped summaries load in full. Titles have a shared 50,000-character
+limit in the parser, adapters, editor, and JSON backups. Edits to other fields
+preserve the original summary wrapping. JSON mutation requests are limited to
+1 MB, allowing long multibyte titles and descriptions in the same request.
+
 `GET /api/workspace` returns `{ workspace, revision }`. Mutations use `POST /api/issues`, `PATCH /api/issues/:id`, and `DELETE /api/issues/:id`, with the last loaded revision in `If-Match`. The revision covers the tracker and linked descriptions. Stale revisions are rejected and require reloading before retrying.
 
 `POST /api/backlog/order` accepts `{ issueIds: string[] }` with the same `If-Match` requirement and returns `{ workspace, revision }`. Supply every Ordered backlog issue exactly once. Dependencies within that section must precede their dependents. Reordering moves existing task blocks without changing their contents or timestamps, description files, or the surrounding tracker text.

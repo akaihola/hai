@@ -32,13 +32,13 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [*] I get a `Task title must contain 1–300 characters.` error when I try to open the
+## Completed / Accepted
+
+- [ ] [*] I get a `Task title must contain 1–300 characters.` error when I try to open the
   `~/prg/drum-transcribe` project on akaihola@atom.
 
-- [~] [10] Add project and cycle administration for backends that support it.
+- [ ] [10] Add project and cycle administration for backends that support it.
     - Depends on: [2]
-
-## Completed / Accepted
 
 - [ ] [14] User can't view different projects
     <!-- hai:{"id":"simple-81bf59c0-8436-49f6-bc43-e7c03bf5b966","priority":"none","labels":[],"createdAt":"2026-10-03T16:59:29.495Z","updatedAt":"2026-10-03T16:59:29.495Z"} -->

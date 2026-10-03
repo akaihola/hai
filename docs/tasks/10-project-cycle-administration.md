@@ -40,8 +40,8 @@ Explicit timestamp offsets remain unchanged through unrelated edits. Async
 completion checks use provider activation tokens so older saves cannot close a
 new draft after switching away from a provider and back.
 
-Validation: all 54 unit tests and the production build passed. All 18 focused
-browser scenarios passed after correcting test selectors, covering CRUD, relation
-cleanup, read-only and selective permissions, invalid dates, provider changes, and
-mobile editing. Desktop project and mobile cycle screenshots were inspected with
-no clipping. Full application checks run again after integration.
+Validation: the integrated `npm run check` passed 58 unit/API tests, 44 browser
+workflows, TypeScript checks, and the production build. Coverage includes CRUD,
+relation cleanup, read-only and selective permissions, invalid dates, provider
+changes, and mobile editing. Desktop project and mobile cycle screenshots were
+inspected with no clipping. Completed work remains unchecked for user acceptance.
