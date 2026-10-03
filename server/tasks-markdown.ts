@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
-import type { Issue, IssuePatch, Workspace } from '../src/domain.ts'
+import { ISSUE_TITLE_MAX_LENGTH, type Issue, type IssuePatch, type Workspace } from '../src/domain.ts'
 
 export const SECTIONS = ['Unverified proposals', 'Ordered backlog', 'Scheduled', 'In Progress', 'Completed / Accepted'] as const
 export type Section = typeof SECTIONS[number]
@@ -56,7 +56,7 @@ export function parseTasks(source: string): ParsedTasks {
         summaryEnd += line[0].length
       }
       const title = summary.join(' ')
-      if (!title || title.length > 300) throw new TasksError('Task title must contain 1–300 characters.', 422)
+      if (!title || title.length > ISSUE_TITLE_MAX_LENGTH) throw new TasksError(`Task title must contain 1–${ISSUE_TITLE_MAX_LENGTH.toLocaleString('en-US')} characters.`, 422)
       const metadataMatches = [...raw.matchAll(metaPattern)]
       if (metadataMatches.length > 1) throw new TasksError('Duplicate Hai task metadata.', 422)
       let metadata: Metadata = {}
@@ -108,7 +108,7 @@ function validatePatch(input: unknown): asserts input is IssuePatch & { sourceSe
   const patch = input as Record<string, unknown>
   const allowed = ['title', 'description', 'status', 'sourceSection', 'accepted', 'priority', 'labels', 'assigneeId', 'projectId', 'cycleId']
   if (Object.keys(patch).some(key => !allowed.includes(key))) throw new TasksError('Unknown or read-only issue field.')
-  if (patch.title !== undefined && (typeof patch.title !== 'string' || !patch.title.trim() || patch.title.length > 300 || /[\r\n\x00-\x1f]/.test(patch.title))) throw new TasksError('Title must contain 1–300 characters on one line.')
+  if (patch.title !== undefined && (typeof patch.title !== 'string' || !patch.title.trim() || patch.title.length > ISSUE_TITLE_MAX_LENGTH || /[\r\n\x00-\x1f]/.test(patch.title))) throw new TasksError(`Title must contain 1–${ISSUE_TITLE_MAX_LENGTH.toLocaleString('en-US')} characters on one line.`)
   if (patch.description !== undefined && (typeof patch.description !== 'string' || patch.description.length > 50000 || patch.description.includes('\0'))) throw new TasksError('Description exceeds 50,000 characters or is invalid.')
   if (patch.sourceSection !== undefined && !SECTIONS.includes(patch.sourceSection as Section)) throw new TasksError('Unsupported source section.')
   if (patch.status !== undefined && !['backlog', 'todo', 'in_progress', 'done'].includes(String(patch.status))) throw new TasksError('Unsupported TASKS.md status.')

@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { createTasksServer } from '../../server/http'
+import { longWrappedTitle } from '../fixtures/tasks-markdown'
 
 const tracker = (name: string) => `# ${name}
 
@@ -110,4 +111,29 @@ test('an unavailable remembered project can be replaced without falling back to 
   await picker.getByRole('textbox', { name: 'Project path', exact: true }).fill(projects.first)
   await picker.getByRole('button', { name: 'Open project', exact: true }).click()
   await expect(page.getByText('First issue', { exact: true })).toBeVisible()
+})
+
+test('opens and edits a project with a long wrapped task summary without truncation', async ({ page, projects }) => {
+  const source = tracker('Second').replace('Second issue', longWrappedTitle)
+  await writeFile(join(projects.second, 'TASKS.md'), source)
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Open project', exact: true }).click()
+  const picker = page.getByRole('dialog', { name: 'Open project', exact: true })
+  await picker.getByRole('textbox', { name: 'Project path', exact: true }).fill(projects.second)
+  await picker.getByRole('button', { name: 'Open project', exact: true }).click()
+  const title = longWrappedTitle.replaceAll('\n  ', ' ')
+  await page.getByText(title, { exact: true }).click()
+  const editor = page.getByRole('dialog')
+  await expect(editor.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue(title)
+  await editor.getByRole('combobox', { name: 'Priority', exact: true }).selectOption('high')
+  await editor.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(editor).toHaveCount(0)
+  expect(await readFile(join(projects.second, 'TASKS.md'), 'utf8')).toContain(longWrappedTitle)
+  await page.getByText(title, { exact: true }).click()
+  await editor.getByRole('textbox', { name: 'Title', exact: true }).fill(`${title} Extra detail.`)
+  await editor.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(editor).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByText(`${title} Extra detail.`, { exact: true })).toBeVisible()
+  expect(await readFile(join(projects.first, 'TASKS.md'), 'utf8')).toBe(tracker('First'))
 })

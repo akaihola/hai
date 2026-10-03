@@ -6,7 +6,9 @@ import { join, relative } from 'node:path'
 import { createTasksServer } from '../server/http.ts'
 import { TasksStore } from '../server/tasks-store.ts'
 import { createTasksBackend } from '../src/adapters/tasks.ts'
-import { backlogFixture } from './fixtures/tasks-markdown.ts'
+import { backlogFixture, longWrappedTitle } from './fixtures/tasks-markdown.ts'
+import { parseBackup } from '../src/data/validation.ts'
+import { ISSUE_TITLE_MAX_LENGTH } from '../src/domain.ts'
 
 async function setup(roots: 'default' | 'restricted' | 'missing' = 'default') {
   const root = await mkdtemp(join(tmpdir(), 'hai-projects-'))
@@ -62,6 +64,47 @@ test('opening a project isolates all adapter operations and preserves the previo
     assert.equal(reopened.source?.path, original.source?.path)
     const homePath = `~/${relative(homedir(), app.second)}`
     assert.equal((await original.openWorkspace!(homePath)).source?.path, selected.source?.path)
+  } finally { await app.close() }
+})
+
+test('opening a tracker with a long summary preserves its text across reads, edits and backups', async () => {
+  const app = await setup()
+  try {
+    const source = backlogFixture.replace('Keep a wrapped\n  summary intact.', longWrappedTitle)
+    const path = join(app.second, 'TASKS.md')
+    await writeFile(path, source)
+    const backend = await createTasksBackend(app.url).openWorkspace!(app.second)
+    const title = longWrappedTitle.replaceAll('\n  ', ' ')
+    assert.equal((await backend.load()).issues.find(issue => issue.id === 'task-7')!.title, title)
+    assert.equal(await readFile(path, 'utf8'), source)
+    await backend.updateIssue('task-7', { priority: 'high' })
+    assert.ok((await readFile(path, 'utf8')).includes(longWrappedTitle))
+    const backup = parseBackup(await backend.exportData('json'))
+    assert.equal(backup.workspace.issues.find(issue => issue.id === 'task-7')!.title, title)
+    assert.equal(await backend.exportData('tasks'), await readFile(path, 'utf8'))
+    assert.equal((await backend.updateIssue('task-7', { title: `${title} Extra detail.` })).title, `${title} Extra detail.`)
+    assert.equal(await readFile(join(app.first, 'TASKS.md'), 'utf8'), backlogFixture)
+  } finally { await app.close() }
+})
+
+test('long multibyte titles and descriptions fit a bounded mutation request', async () => {
+  const app = await setup()
+  try {
+    const backend = createTasksBackend(app.url)
+    await backend.load()
+    const title = '界'.repeat(ISSUE_TITLE_MAX_LENGTH), description = '界'.repeat(50000)
+    const updated = await backend.updateIssue('task-7', { title, description })
+    assert.equal(updated.title, title)
+    assert.equal(updated.description, description)
+    assert.equal((await backend.load()).issues.find(issue => issue.id === 'task-7')!.title, title)
+    const before = await backend.exportData('tasks')
+    const snapshot = await (await fetch(`${app.url}/workspace`)).json()
+    const response = await fetch(`${app.url}/issues/task-7`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json', 'if-match': snapshot.revision },
+      body: JSON.stringify({ title: 'x'.repeat(1024 * 1024) }),
+    })
+    assert.equal(response.status, 413)
+    assert.equal(await backend.exportData('tasks'), before)
   } finally { await app.close() }
 })
 

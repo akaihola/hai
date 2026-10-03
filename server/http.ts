@@ -19,7 +19,7 @@ async function body(request: IncomingMessage) {
   let length = 0
   for await (const chunk of request) {
     length += chunk.length
-    if (length > 256 * 1024) throw new TasksError('Request body exceeds 256 KB.', 413)
+    if (length > 1024 * 1024) throw new TasksError('Request body exceeds 1 MB.', 413)
     chunks.push(chunk)
   }
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown } catch { throw new TasksError('Request body must be valid JSON.') }

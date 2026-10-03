@@ -1,4 +1,4 @@
-import { PRIORITIES, STATUSES, type Workspace } from '../domain'
+import { ISSUE_TITLE_MAX_LENGTH, PRIORITIES, STATUSES, type Workspace } from '../domain'
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -51,7 +51,7 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
   for (const issue of workspace.issues) {
     if (!text(issue.identifier, 200) || identifiers.has(issue.identifier)) fail(`issue ${issue.id} has an invalid or duplicate identifier.`)
     identifiers.add(issue.identifier)
-    if (!text(issue.title, 300) || !text(issue.description, 50000, true)) fail(`issue ${issue.identifier} needs a title of 1–300 characters and a description under 50,000 characters.`)
+    if (!text(issue.title, ISSUE_TITLE_MAX_LENGTH) || !text(issue.description, 50000, true)) fail(`issue ${issue.identifier} needs a title of 1–${ISSUE_TITLE_MAX_LENGTH.toLocaleString('en-US')} characters and a description of at most 50,000 characters.`)
     if (!STATUSES.some(status => status.id === issue.status)) fail(`issue ${issue.identifier} has an unknown status.`)
     if (!PRIORITIES.some(priority => priority.id === issue.priority)) fail(`issue ${issue.identifier} has an unknown priority.`)
     if (!Array.isArray(issue.labels) || issue.labels.length > 50 || issue.labels.some(label => !text(label, 100))) fail(`issue ${issue.identifier} has invalid labels.`)

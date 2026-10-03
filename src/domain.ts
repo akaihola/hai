@@ -57,6 +57,7 @@ export interface Member { id: string; name: string; initials: string; color: str
 export interface Workspace { issues: Issue[]; projects: Project[]; cycles: Cycle[]; members: Member[]; currentMemberId: string | null }
 export type IssueInput = Pick<Issue, 'title'> & Partial<Omit<Issue, 'id' | 'identifier' | 'createdAt' | 'updatedAt' | 'title'>>
 export type IssuePatch = Partial<IssueInput>
+export const ISSUE_TITLE_MAX_LENGTH = 50000
 export type ExportFormat = 'json' | 'tasks'
 export interface WorkspaceSource { name: string; path: string }
 export interface BackendCapabilities {

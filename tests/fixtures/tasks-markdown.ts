@@ -13,3 +13,5 @@ Keep this unrelated paragraph between the last two slots.
   - Keep these inline notes.
 
 ## Scheduled`)
+
+export const longWrappedTitle = Array.from({ length: 8 }, (_, index) => `Keep requirement ${index + 1} and its complete explanation in this existing task summary.`).join('\n  ')

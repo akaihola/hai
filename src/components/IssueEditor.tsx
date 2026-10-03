@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { LoaderCircle, Trash2, X } from 'lucide-react'
-import { STATUSES, PRIORITIES, TASK_SECTIONS, type TaskSection, type Issue, type IssueInput, type Workspace, type WorkspaceBackend } from '../domain'
+import { ISSUE_TITLE_MAX_LENGTH, STATUSES, PRIORITIES, TASK_SECTIONS, type TaskSection, type Issue, type IssueInput, type Workspace, type WorkspaceBackend } from '../domain'
 import { Dialog } from './Dialog'
 
 export function IssueEditor({ issue, initial, workspace, backend, onClose, onSaved }: { issue?: Issue; initial?: Partial<IssueInput>; workspace: Workspace; backend: WorkspaceBackend; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
@@ -56,7 +56,7 @@ export function IssueEditor({ issue, initial, workspace, backend, onClose, onSav
     {deleting ? <><div className="modal-body"><p>Delete <strong>{issue?.identifier}: {issue?.title}</strong>?</p><p className="muted">This issue will be permanently removed from this workspace.</p>{error && <p className="form-error" role="alert">{error}</p>}</div><div className="modal-footer"><button className="button" disabled={busy} onClick={() => { setDeleting(false); setError('') }}>Cancel</button><button className="button danger" disabled={busy} onClick={remove}>{busy && <LoaderCircle size={14} className="spin" />}Confirm delete</button></div></> : <form onSubmit={save}>
       <div className="modal-body">
         {tasks && <div className="source-details"><span>{issue?.sourceReference ?? '[*]'} · {issue?.sourcePath ?? 'TASKS.md'}</span>{issue?.dependencies?.length ? <span>Depends on: {issue.dependencies.join(', ')}</span> : null}</div>}
-        <label className="field title-field">Title<input autoFocus required maxLength={300} placeholder="Issue title" value={draft.title} disabled={!canSave || busy} onChange={event => change('title', event.target.value)} /></label>
+        <label className="field title-field">Title<input autoFocus required maxLength={ISSUE_TITLE_MAX_LENGTH} placeholder="Issue title" value={draft.title} disabled={!canSave || busy} onChange={event => change('title', event.target.value)} /></label>
         <label className="field">Description<textarea rows={5} maxLength={50000} placeholder="Add a description…" value={draft.description ?? ''} disabled={!canSave || busy || fields?.description === false} onChange={event => change('description', event.target.value)} /></label>
         <div className="field-row">
           {tasks ? <label className="field">Section<select value={draft.sourceSection} disabled={!canSave || busy || issue?.accepted} onChange={event => { const sourceSection = event.target.value as TaskSection; setDraft(previous => ({ ...previous, sourceSection, status: TASK_SECTIONS.find(section => section.id === sourceSection)!.status })) }}>{TASK_SECTIONS.map(section => <option key={section.id}>{section.id}</option>)}</select></label> : <label className="field">Status<select value={draft.status} disabled={!canSave || busy} onChange={event => change('status', event.target.value as IssueInput['status'])}>{STATUSES.map(status => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label>}

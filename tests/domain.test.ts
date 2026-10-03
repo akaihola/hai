@@ -3,7 +3,7 @@ import test from 'node:test'
 import { createLocalBackend, STORAGE_KEY, type StorageLike } from '../src/adapters/local'
 import { createSeedWorkspace } from '../src/data/seed'
 import { assertWorkspace } from '../src/data/validation'
-import type { IssueInput, IssuePatch } from '../src/domain'
+import { ISSUE_TITLE_MAX_LENGTH, type IssueInput, type IssuePatch } from '../src/domain'
 
 class MemoryStorage implements StorageLike {
   data = new Map<string, string>()
@@ -55,7 +55,7 @@ test('validation rejects invalid mutation without altering persisted workspace',
   const workspace = await backend.load()
   const before = storage.getItem(STORAGE_KEY)
   for (const input of [
-    { title: ' ' }, { title: 'x'.repeat(301) }, { title: 'Valid title', assigneeId: 'missing' },
+    { title: ' ' }, { title: 'x'.repeat(ISSUE_TITLE_MAX_LENGTH + 1) }, { title: 'Valid title', assigneeId: 'missing' },
     { title: 'Valid title', status: 'unknown' }, { title: 'Valid title', labels: [3] },
   ]) await assert.rejects(backend.createIssue(input as IssueInput), /Invalid workspace/)
   await assert.rejects(backend.updateIssue(workspace.issues[0].id, { id: 'changed' } as unknown as IssuePatch), /cannot be edited/)

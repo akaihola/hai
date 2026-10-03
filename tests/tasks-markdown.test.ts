@@ -1,8 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { parseTasks, mutateTasks } from '../server/tasks-markdown.ts'
+import { ISSUE_TITLE_MAX_LENGTH } from '../src/domain.ts'
 
-import { backlogFixture, fixture } from './fixtures/tasks-markdown.ts'
+import { backlogFixture, fixture, longWrappedTitle } from './fixtures/tasks-markdown.ts'
 
 test('sections, active markers, acceptance and dependencies remain distinct', () => {
   const parsed = parseTasks(fixture)
@@ -44,6 +45,29 @@ test('wrapped summaries display in full and title edits replace the whole summar
   assert.ok(output.includes('- [7] Replacement summary\n  - Depends on: [4]'))
   assert.ok(!output.includes('summary intact.'))
   assert.throws(() => mutateTasks(fixture, 'delete', 'task-4'), /depend/i)
+})
+
+test('long summaries load in full and keep wrapping through metadata and section changes', () => {
+  for (const newline of ['\n', '\r\n']) {
+    const source = fixture.replace('Keep a wrapped\n  summary intact.', longWrappedTitle).replaceAll('\n', newline)
+    const title = longWrappedTitle.replaceAll('\n  ', ' ')
+    assert.ok(title.length > 300)
+    assert.equal(parseTasks(source).tasks[1].issue.title, title)
+    const output = mutateTasks(source, 'update', 'task-7', { sourceSection: 'In Progress', priority: 'high' }).source
+    assert.ok(output.includes(longWrappedTitle.replaceAll('\n', newline)))
+    assert.equal(parseTasks(output).tasks.find(task => task.issue.id === 'task-7')!.issue.title, title)
+    assert.ok(output.includes(`  - Depends on: [4]`))
+    assert.equal(output.slice(output.indexOf('[7]:')), source.slice(source.indexOf('[7]:')))
+  }
+})
+
+test('title size stays bounded consistently for source reads and writes', () => {
+  const title = 'x'.repeat(ISSUE_TITLE_MAX_LENGTH)
+  const source = fixture.replace('Keep a wrapped\n  summary intact.', title)
+  assert.equal(parseTasks(source).tasks[1].issue.title, title)
+  assert.equal(parseTasks(mutateTasks(fixture, 'update', 'task-7', { title }).source).tasks[1].issue.title, title)
+  assert.throws(() => parseTasks(source.replace(title, `${title}x`)), /Task title/)
+  assert.throws(() => mutateTasks(fixture, 'update', 'task-7', { title: `${title}x` }), /Title/)
 })
 
 test('moving a dependent task into backlog keeps its prerequisite first', () => {
