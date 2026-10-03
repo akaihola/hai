@@ -539,3 +539,11 @@ kbd{min-width:18px;height:18px;color:var(--dim);font:inherit;white-space:nowrap;
 .recent-projects button>span{flex:1;min-width:0}
 .recent-projects strong{font-size:12px;font-weight:500}
 .recent-projects small{display:block;overflow-wrap:anywhere;color:var(--dim);font-size:10px;line-height:1.6;margin-top:4px}
+
+.entity-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.entity-actions>.muted{margin-right:auto}
+.section-heading .entity-actions{margin-bottom:0}
+.entity-dialog{width:min(520px,calc(100vw - 32px))}
+.entity-dialog input[type=color]{padding:4px;width:100%;min-height:36px;cursor:pointer}
+.nav-item:disabled{opacity:.5;cursor:default}
+@media(max-width:600px){.projects-page>.section-heading{align-items:flex-start;gap:14px;flex-direction:column}.section-heading .entity-actions{justify-content:flex-start}}

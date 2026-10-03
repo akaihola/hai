@@ -51,6 +51,7 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
     capabilities: {
       id: 'tasks', name: 'TASKS.md', description: 'Connected to TASKS.md and its description files on the server.',
       canCreate: true, canUpdate: true, canDelete: true, canImport: false, canExport: true, canReorderBacklog: true, canOpenWorkspace: true, persistence: 'filesystem', workflow: 'tasks',
+      canCreateProject: false, canUpdateProject: false, canDeleteProject: false, canCreateCycle: false, canUpdateCycle: false, canDeleteCycle: false,
       fields: { assignee: false, project: false, cycle: false, description: true },
     },
     get source() { return source },

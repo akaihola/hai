@@ -39,8 +39,8 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
       || (project.targetDate !== undefined && !date(project.targetDate))) fail(`project ${project.id} is invalid.`)
   }
   for (const cycle of workspace.cycles) {
-    if (!text(cycle.name) || !date(cycle.startsAt) || !date(cycle.endsAt)
-      || Date.parse(cycle.startsAt) > Date.parse(cycle.endsAt)) fail(`cycle ${cycle.id} is invalid.`)
+    if (!text(cycle.name) || !date(cycle.startsAt) || !date(cycle.endsAt)) fail(`cycle ${cycle.id} needs a name and valid start and end dates.`)
+    if (Date.parse(cycle.startsAt) > Date.parse(cycle.endsAt.length === 10 ? `${cycle.endsAt}T23:59:59.999Z` : cycle.endsAt)) fail('cycle end must be on or after its start.')
   }
   const identifiers = new Set<string>()
   const references = {

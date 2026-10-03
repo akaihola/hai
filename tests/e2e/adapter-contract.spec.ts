@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 const noCalls = { create: 0, update: 0, delete: 0, import: 0, export: 0 }
+const noEntityCalls = { createProject: 0, updateProject: 0, deleteProject: 0, createCycle: 0, updateCycle: 0, deleteCycle: 0 }
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/tests/fixtures/backend.html')
@@ -32,8 +33,117 @@ test('readonly backend can be browsed while unsupported operations stay disabled
   await expect(page.getByRole('button', { name: 'Export JSON', exact: true })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Import JSON backup', exact: true })).toBeDisabled()
   await expect(page.getByLabel('Import JSON backup file', { exact: true })).toBeDisabled()
+  await page.getByRole('button', { name: 'Projects', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'New project', exact: true })).toHaveCount(0)
+  await page.locator('.project-card').filter({ hasText: 'Core experience' }).click()
+  await expect(page.getByRole('button', { name: 'Edit project', exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Cycles', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'New cycle', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Edit cycle', exact: true })).toHaveCount(0)
+  expect(await page.evaluate(() => window.haiFixture.entityCalls('readonly'))).toEqual(noEntityCalls)
   expect(await page.evaluate(() => window.haiFixture.calls('readonly'))).toEqual(noCalls)
 })
+
+test('project editing and cycle deletion honor independent provider capabilities', async ({ page }) => {
+  await page.evaluate(() => window.haiFixture.select('selective'))
+  await expect(page.getByText('selective workspace issue', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Projects', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'New project', exact: true })).toHaveCount(0)
+  await page.locator('.project-card').filter({ hasText: 'Core experience' }).click()
+  await page.getByRole('button', { name: 'Edit project', exact: true }).click()
+  const project = page.getByRole('dialog', { name: 'Edit project', exact: true })
+  await expect(project.getByRole('button', { name: 'Delete project', exact: true })).toHaveCount(0)
+  await project.getByLabel('Name', { exact: true }).fill('Allowed project edit')
+  await project.getByRole('button', { name: 'Save changes', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Allowed project edit', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Cycles', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'New cycle', exact: true })).toHaveCount(0)
+  await page.locator('.cycle-card').filter({ hasText: 'Cycle 12' }).click()
+  await page.getByRole('button', { name: 'Edit cycle', exact: true }).click()
+  const cycle = page.getByRole('dialog', { name: 'Edit cycle', exact: true })
+  await expect(cycle.getByLabel('Name', { exact: true })).toBeDisabled()
+  await expect(cycle.getByLabel('Start date', { exact: true })).toBeDisabled()
+  await expect(cycle.getByLabel('End date', { exact: true })).toBeDisabled()
+  await expect(cycle.getByRole('button', { name: 'Save changes', exact: true })).toBeDisabled()
+  await cycle.getByRole('button', { name: 'Delete cycle', exact: true }).click()
+  await page.getByRole('dialog', { name: 'Delete cycle', exact: true }).getByRole('button', { name: 'Confirm delete', exact: true }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.locator('.cycle-card').filter({ hasText: 'Cycle 12' })).toHaveCount(0)
+  expect(await page.evaluate(() => window.haiFixture.entityCalls('selective'))).toEqual({ ...noEntityCalls, updateProject: 1, deleteCycle: 1 })
+  expect(await page.evaluate(() => window.haiFixture.calls('selective'))).toEqual(noCalls)
+})
+
+for (const entity of ['project', 'cycle'] as const) {
+  test(`switching backend closes an unsaved ${entity} draft without calling either provider`, async ({ page }) => {
+    await page.getByRole('button', { name: entity === 'project' ? 'Projects' : 'Cycles', exact: true }).click()
+    await page.getByRole('button', { name: `New ${entity}`, exact: true }).click()
+    await page.getByRole('dialog').getByLabel('Name', { exact: true }).fill('Unsaved alpha entity')
+    await page.evaluate(() => window.haiFixture.select('beta'))
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await page.getByRole('button', { name: 'All issues', exact: true }).click()
+    await expect(page.getByText('beta workspace issue', { exact: true })).toBeVisible()
+    expect(await page.evaluate(() => window.haiFixture.entityCalls('alpha'))).toEqual(noEntityCalls)
+    expect(await page.evaluate(() => window.haiFixture.entityCalls('beta'))).toEqual(noEntityCalls)
+  })
+
+  test(`a delayed ${entity} save cannot replace the workspace after switching providers`, async ({ page }) => {
+    await page.getByRole('button', { name: entity === 'project' ? 'Projects' : 'Cycles', exact: true }).click()
+    await page.locator(entity === 'project' ? '.project-card' : '.cycle-card').filter({ hasText: entity === 'project' ? 'Core experience' : 'Cycle 12' }).click()
+    await page.getByRole('button', { name: `Edit ${entity}`, exact: true }).click()
+    await page.evaluate(() => window.haiFixture.deferUpdate('alpha'))
+    const dialog = page.getByRole('dialog', { name: `Edit ${entity}`, exact: true })
+    await dialog.getByLabel('Name', { exact: true }).fill('Alpha entity saved later')
+    await dialog.getByRole('button', { name: 'Save changes', exact: true }).click()
+    await expect.poll(() => page.evaluate(kind => window.haiFixture.entityCalls('alpha')[kind === 'project' ? 'updateProject' : 'updateCycle'], entity)).toBe(1)
+    await page.evaluate(() => window.haiFixture.select('beta'))
+    await expect(dialog).toHaveCount(0)
+    await page.getByRole('button', { name: 'All issues', exact: true }).click()
+    await expect(page.getByText('beta workspace issue', { exact: true })).toBeVisible()
+    const beta = await page.evaluate(() => window.haiFixture.snapshot('beta'))
+    await page.evaluate(() => window.haiFixture.releaseUpdate('alpha'))
+    await expect.poll(() => page.evaluate(async kind => {
+      const workspace = await window.haiFixture.snapshot('alpha')
+      return kind === 'project' ? workspace.projects.find(item => item.id === 'core')?.name : workspace.cycles.find(item => item.id === 'cycle-12')?.name
+    }, entity)).toBe('Alpha entity saved later')
+    await expect(page.getByText('beta workspace issue', { exact: true })).toBeVisible()
+    await expect(page.getByText('Alpha entity saved later', { exact: true })).toHaveCount(0)
+    expect(await page.evaluate(() => window.haiFixture.snapshot('beta'))).toEqual(beta)
+    expect(await page.evaluate(() => window.haiFixture.entityCalls('beta'))).toEqual(noEntityCalls)
+    await page.getByRole('button', { name: entity === 'project' ? 'Projects' : 'Cycles', exact: true }).click()
+    await expect(page.locator(entity === 'project' ? '.project-card' : '.cycle-card').filter({ hasText: entity === 'project' ? 'Core experience' : 'Cycle 12' })).toBeVisible()
+  })
+
+  test(`an old ${entity} save cannot close a fresh draft after returning to its provider`, async ({ page }) => {
+    const navigation = entity === 'project' ? 'Projects' : 'Cycles'
+    await page.getByRole('button', { name: navigation, exact: true }).click()
+    await page.locator(entity === 'project' ? '.project-card' : '.cycle-card').filter({ hasText: entity === 'project' ? 'Core experience' : 'Cycle 12' }).click()
+    await page.getByRole('button', { name: `Edit ${entity}`, exact: true }).click()
+    await page.evaluate(() => window.haiFixture.deferUpdate('alpha'))
+    await page.getByRole('dialog').getByLabel('Name', { exact: true }).fill('Old alpha save')
+    await page.getByRole('dialog').getByRole('button', { name: 'Save changes', exact: true }).click()
+    await expect.poll(() => page.evaluate(kind => window.haiFixture.entityCalls('alpha')[kind === 'project' ? 'updateProject' : 'updateCycle'], entity)).toBe(1)
+    await page.evaluate(() => window.haiFixture.select('beta'))
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await page.getByRole('button', { name: 'All issues', exact: true }).click()
+    await expect(page.getByText('beta workspace issue', { exact: true })).toBeVisible()
+    await page.evaluate(() => window.haiFixture.select('alpha'))
+    await expect(page.getByText('alpha workspace issue', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: navigation, exact: true }).click()
+    await page.getByRole('button', { name: `New ${entity}`, exact: true }).click()
+    const fresh = page.getByRole('dialog', { name: `New ${entity}`, exact: true })
+    await fresh.getByLabel('Name', { exact: true }).fill('Fresh alpha draft')
+    await page.evaluate(async () => {
+      window.haiFixture.releaseUpdate('alpha')
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+    })
+    await expect.poll(() => page.evaluate(async kind => {
+      const workspace = await window.haiFixture.snapshot('alpha')
+      return kind === 'project' ? workspace.projects.find(item => item.id === 'core')?.name : workspace.cycles.find(item => item.id === 'cycle-12')?.name
+    }, entity)).toBe('Old alpha save')
+    await expect(fresh.getByLabel('Name', { exact: true })).toHaveValue('Fresh alpha draft')
+    expect(await page.evaluate(() => window.haiFixture.entityCalls('beta'))).toEqual(noEntityCalls)
+  })
+}
 
 test('list dragging updates status through the selected backend without requiring backlog ordering', async ({ page }) => {
   const issue = page.locator('.draggable-issue').filter({ hasText: 'alpha workspace issue' })

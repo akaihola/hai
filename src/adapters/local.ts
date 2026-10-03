@@ -1,4 +1,4 @@
-import type { Issue, IssueInput, IssuePatch, WorkspaceBackend } from '../domain'
+import type { Issue, IssueInput, IssuePatch, Project, Cycle, WorkspaceBackend } from '../domain'
 import { createSeedWorkspace } from '../data/seed'
 import { exportTasks } from '../data/export'
 import { nextIssueNumber, parseBackup, serializeBackup, type WorkspaceBackup } from '../data/validation'
@@ -39,10 +39,25 @@ export function createLocalBackend(storage?: StorageLike): WorkspaceBackend {
     save(backup)
     return backup
   }
+  function validateEntityInput(input: unknown, fields: string[]): void {
+    if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).some(key => !fields.includes(key))) throw new Error('Entity details contain unsupported fields. IDs cannot be edited.')
+  }
+  function removeEntity(kind: 'projects' | 'cycles', id: string): void {
+    const backup = read()
+    const items = backup.workspace[kind]
+    const index = items.findIndex(item => item.id === id)
+    if (index === -1) throw new Error('This item no longer exists. Refresh the workspace and try again.')
+    items.splice(index, 1)
+    const relation = kind === 'projects' ? 'projectId' : 'cycleId'
+    const updatedAt = new Date().toISOString()
+    for (const issue of backup.workspace.issues) if (issue[relation] === id) { issue[relation] = null; issue.updatedAt = updatedAt }
+    save(backup)
+  }
   return {
     capabilities: {
       id: 'local', name: 'Local workspace', description: 'Saved in this browser. Back up your workspace to keep a portable copy.',
       canCreate: true, canUpdate: true, canDelete: true, canImport: true, canExport: true, persistence: 'browser',
+      canCreateProject: true, canUpdateProject: true, canDeleteProject: true, canCreateCycle: true, canUpdateCycle: true, canDeleteCycle: true,
     },
     async load() { return read().workspace },
     async createIssue(input: IssueInput) {
@@ -79,6 +94,44 @@ export function createLocalBackend(storage?: StorageLike): WorkspaceBackend {
       backup.workspace.issues.splice(index, 1)
       save(backup)
     },
+    async createProject(input) {
+      validateEntityInput(input, ['name', 'description', 'color', 'status', 'targetDate'])
+      const backup = read()
+      const project: Project = { description: '', color: '#8b82e9', status: 'planned', ...input, name: typeof input.name === 'string' ? input.name.trim() : input.name, id: `project-${crypto.getRandomValues(new Uint32Array(4)).join('-')}` }
+      backup.workspace.projects.push(project)
+      save(backup)
+      return structuredClone(project)
+    },
+    async updateProject(id, patch) {
+      validateEntityInput(patch, ['name', 'description', 'color', 'status', 'targetDate'])
+      const backup = read()
+      const project = backup.workspace.projects.find(item => item.id === id)
+      if (!project) throw new Error('This project no longer exists. Refresh the workspace and try again.')
+      Object.assign(project, patch)
+      if (typeof project.name === 'string') project.name = project.name.trim()
+      save(backup)
+      return structuredClone(project)
+    },
+    async deleteProject(id) { removeEntity('projects', id) },
+    async createCycle(input) {
+      validateEntityInput(input, ['name', 'startsAt', 'endsAt'])
+      const backup = read()
+      const cycle: Cycle = { ...input, name: typeof input.name === 'string' ? input.name.trim() : input.name, id: `cycle-${crypto.getRandomValues(new Uint32Array(4)).join('-')}` }
+      backup.workspace.cycles.push(cycle)
+      save(backup)
+      return structuredClone(cycle)
+    },
+    async updateCycle(id, patch) {
+      validateEntityInput(patch, ['name', 'startsAt', 'endsAt'])
+      const backup = read()
+      const cycle = backup.workspace.cycles.find(item => item.id === id)
+      if (!cycle) throw new Error('This cycle no longer exists. Refresh the workspace and try again.')
+      Object.assign(cycle, patch)
+      if (typeof cycle.name === 'string') cycle.name = cycle.name.trim()
+      save(backup)
+      return structuredClone(cycle)
+    },
+    async deleteCycle(id) { removeEntity('cycles', id) },
     async exportData(format) {
       const backup = read()
       if (format === 'tasks') return exportTasks(backup.workspace)

@@ -53,6 +53,10 @@ export interface Project {
   targetDate?: string
 }
 export interface Cycle { id: string; name: string; startsAt: string; endsAt: string }
+export type ProjectInput = Pick<Project, 'name'> & Partial<Omit<Project, 'id' | 'name'>>
+export type ProjectPatch = Partial<ProjectInput>
+export type CycleInput = Omit<Cycle, 'id'>
+export type CyclePatch = Partial<CycleInput>
 export interface Member { id: string; name: string; initials: string; color: string }
 export interface Workspace { issues: Issue[]; projects: Project[]; cycles: Cycle[]; members: Member[]; currentMemberId: string | null }
 export type IssueInput = Pick<Issue, 'title'> & Partial<Omit<Issue, 'id' | 'identifier' | 'createdAt' | 'updatedAt' | 'title'>>
@@ -69,6 +73,12 @@ export interface BackendCapabilities {
   canDelete: boolean
   canImport: boolean
   canExport: boolean
+  canCreateProject?: boolean
+  canUpdateProject?: boolean
+  canDeleteProject?: boolean
+  canCreateCycle?: boolean
+  canUpdateCycle?: boolean
+  canDeleteCycle?: boolean
   canReorderBacklog?: boolean
   canOpenWorkspace?: boolean
   persistence: 'browser' | 'filesystem' | 'remote'
@@ -83,6 +93,12 @@ export interface WorkspaceBackend {
   createIssue(input: IssueInput): Promise<Issue>
   updateIssue(id: string, patch: IssuePatch): Promise<Issue>
   deleteIssue(id: string): Promise<void>
+  createProject?(input: ProjectInput): Promise<Project>
+  updateProject?(id: string, patch: ProjectPatch): Promise<Project>
+  deleteProject?(id: string): Promise<void>
+  createCycle?(input: CycleInput): Promise<Cycle>
+  updateCycle?(id: string, patch: CyclePatch): Promise<Cycle>
+  deleteCycle?(id: string): Promise<void>
   reorderBacklog?(issueIds: string[]): Promise<Workspace>
   exportData(format: ExportFormat): Promise<string>
   importData(content: string, format: ExportFormat): Promise<Workspace>

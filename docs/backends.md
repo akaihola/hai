@@ -12,12 +12,38 @@ Hai uses the repository TASKS.md through its Node service by default. The browse
 | `createIssue(input)` | Persisted issue with provider-assigned identity and timestamps |
 | `updateIssue(id, patch)` | Persisted issue; identity and creation time cannot change |
 | `deleteIssue(id)` | Deletes the issue or rejects if it does not exist |
+| `createProject(input)` / `createCycle(input)` | Optional; persisted entity with provider-assigned identity |
+| `updateProject(id, patch)` / `updateCycle(id, patch)` | Optional; persisted entity with unchanged identity and issue relations |
+| `deleteProject(id)` / `deleteCycle(id)` | Optional; removes the entity and clears its issue assignments atomically |
 | `reorderBacklog(issueIds)` | Optional; persists the complete Ordered backlog order and returns the workspace |
 | `exportData('json')` | Versioned workspace snapshot; a complete backup for the browser adapter |
 | `exportData('tasks')` | Original tracker for the file adapter; readable snapshot for the browser adapter |
 | `importData(content, 'json')` | Validates and replaces the workspace when the backend supports import |
 
 `capabilities` describes persistence and supported create, update, delete, import, and export operations. A future backend must report unsupported operations as unavailable. GitHub, file formats, and local storage have different deletion and workflow semantics; the frontend must not simulate an unsupported write.
+
+Project and cycle administration use independent `canCreateProject`,
+`canUpdateProject`, `canDeleteProject`, `canCreateCycle`, `canUpdateCycle`, and
+`canDeleteCycle` flags. The UI requires both the capability and its method;
+missing or false flags disable the operation. The browser adapter supports all
+six. TASKS.md declares them false, provides no entity methods, and has no implicit
+project or cycle records. Opening another TASKS.md folder is a separate operation.
+
+Entity IDs cannot be supplied or changed. Invalid names, project status/colors,
+calendar dates, and inverted cycle ranges reject the entire write. Deleting an
+entity retains every issue, clears only the matching relation, and updates the
+affected issues' timestamps in the same save. An optional project target date can
+be cleared with `targetDate: undefined`.
+
+Cycles are current when the present time lies within their date range. Date-only
+boundaries use local midnight through 23:59:59.999 on the ending day; ISO timestamps
+keep their exact instants. Persisted range validation keeps UTC day boundaries,
+including the ending day, and the existing `Date.parse` behavior for timestamps.
+Zone-less timestamps use the runtime's local timezone; explicit offsets preserve
+instants across timezones. Current badges update every minute and after edits.
+Overlapping ranges may produce multiple current badges; the first matching cycle
+in provider order is the navigation default. When no cycle is current, the shortcut
+is disabled; the cycle view can still browse past or upcoming cycles.
 
 `canOpenWorkspace` enables the project picker when `openWorkspace(path)` is available. It returns a fresh backend bound to the selected project, with `source.name` and `source.path` describing the canonical tracker. Unsupported providers omit the capability and method. Browser preferences remember the selection; they do not hold project data.
 
