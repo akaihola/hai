@@ -28,13 +28,13 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
-- [10] Add project and cycle administration for backends that support it.
-    - Depends on: [2]
-
 ## Scheduled
 
 - [*] I get a `Task title must contain 1–300 characters.` error when I try to open the
   `~/prg/drum-transcribe` project on akaihola@atom.
+
+- [10] Add project and cycle administration for backends that support it.
+    - Depends on: [2]
 
 ## In Progress
 
