@@ -11,3 +11,16 @@ project/cycle records; do not create fictional ones for it.
 
 Extend the domain/adapter contract, frontend capability checks, validation, and
 workflow tests together. Preserve existing issue navigation and summaries.
+
+## Implementation plan, 2026-10-03
+
+Expose independent project and cycle create, update, and delete capabilities and
+optional adapter methods. Implement them in browser storage with immutable IDs,
+validated writes, and atomic removal of issue relations when an entity is deleted.
+The TASKS.md provider continues to expose neither records nor administration.
+
+Add accessible creation and editing dialogs, preserve card navigation and progress
+summaries, and clear deleted selections. Derive current cycles from date ranges,
+including the entire last calendar day, without treating a fallback cycle as current.
+Cover persistence, relation cleanup, rejected writes, provider capabilities, and UI
+workflows. Run unit, build, and browser checks before completing the task.
