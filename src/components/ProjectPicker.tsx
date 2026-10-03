@@ -1,0 +1,46 @@
+import { useState } from 'react'
+import { Check, Folder, LoaderCircle } from 'lucide-react'
+import type { WorkspaceBackend, WorkspaceSource } from '../domain'
+import { Dialog } from './Dialog'
+
+function recentSources(source?: WorkspaceSource): WorkspaceSource[] {
+  let recent: WorkspaceSource[] = []
+  try {
+    const stored: unknown = JSON.parse(localStorage.getItem('hai:recent-projects') ?? '[]')
+    if (Array.isArray(stored)) recent = stored.filter(item => item && typeof item.name === 'string' && typeof item.path === 'string')
+  } catch { /* Recent projects are optional. */ }
+  return [...(source ? [source] : []), ...recent.filter(item => item.path !== source?.path)].slice(0, 8)
+}
+
+export function ProjectPicker({ backend, onClose, onOpened }: { backend: WorkspaceBackend; onClose: () => void; onOpened: (backend: WorkspaceBackend) => void }) {
+  const [path, setPath] = useState('')
+  const [recent] = useState(() => recentSources(backend.source))
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState('')
+
+  async function openProject(value: string) {
+    if (pending || !backend.capabilities.canOpenWorkspace || !backend.openWorkspace) return
+    setPending(true); setError('')
+    try {
+      const next = await backend.openWorkspace(value.trim())
+      if (next.source) {
+        try {
+          localStorage.setItem('hai:tasks-source', next.source.path)
+          localStorage.setItem('hai:recent-projects', JSON.stringify([next.source, ...recent.filter(item => item.path !== next.source!.path)].slice(0, 8)))
+        } catch { /* Opening a project does not require browser storage. */ }
+      }
+      onOpened(next)
+    } catch (failure) { setError(failure instanceof Error ? failure.message : 'Could not open this project.'); setPending(false) }
+  }
+
+  return <Dialog title="Open project" onClose={() => { if (!pending) onClose() }} className="project-picker">
+    <form onSubmit={event => { event.preventDefault(); void openProject(path) }}>
+      <div className="modal-body">
+        <label className="field">Project path<input autoFocus aria-label="Project path" value={path} onChange={event => setPath(event.target.value)} placeholder="~/prg/my-project/" disabled={pending} required aria-describedby="project-path-help" /><small id="project-path-help">Open a project folder or TASKS.md on the Hai server.</small></label>
+        {error && <p className="form-error" role="alert">{error}</p>}
+        {recent.length > 0 && <div className="recent-projects"><h3>Recent projects</h3>{recent.map((source, index) => <button type="button" key={source.path} disabled={pending} aria-label={`Open ${source.name}`} aria-describedby={`recent-project-${index}`} onClick={() => void openProject(source.path)}><Folder size={17} /><span><strong>{source.name}</strong><small id={`recent-project-${index}`}>{source.path}</small></span>{source.path === backend.source?.path && <Check size={15} aria-label="Current project" />}</button>)}</div>}
+      </div>
+      <div className="modal-footer"><button type="button" className="button" disabled={pending} onClick={onClose}>Cancel</button><button className="button primary" disabled={pending || !path.trim()}>{pending && <LoaderCircle className="spin" size={14} />}{pending ? 'Opening…' : 'Open project'}</button></div>
+    </form>
+  </Dialog>
+}
