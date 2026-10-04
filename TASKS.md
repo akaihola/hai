@@ -26,10 +26,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
-- [*] Evaluate automatic refresh when a tracker is edited outside Hai.
-  <!-- hai:{"id":"simple-23492cea2aaa55f4","updatedAt":"2026-10-03T17:46:21.006Z"} -->
-
 ## Scheduled
+
+- [*] Evaluate automatic refresh when a tracker is edited outside Hai.
+  <!-- hai:{"id":"simple-23492cea2aaa55f4","updatedAt":"2026-10-04T20:40:02.733Z"} -->
 
 ## In Progress
 
