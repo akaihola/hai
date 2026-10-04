@@ -26,6 +26,9 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
+- [17] Automatically refresh and retry new issue saves
+  <!-- hai:{"id":"simple-3e99c016-4b24-458f-b27c-5c0536f10309","createdAt":"2026-10-04T20:17:04.615Z","updatedAt":"2026-10-04T20:17:04.615Z"} -->
+
 - [15] Insufficient detail in error for tracker source
   <!-- hai:{"id":"simple-ddbc18e9-2ca9-4a1e-99c8-3260f171ad67","priority":"none","labels":[],"createdAt":"2026-10-03T21:05:31.331Z","updatedAt":"2026-10-03T21:05:31.331Z"} -->
 
@@ -107,7 +110,7 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 [11]: docs/tasks/11-allow-dragging-issues-from-a-group-to-another.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 -->
 
 [12]: docs/tasks/12-eliminate-runs-of-blank-lines-in-tasks-md.md
 [13]: docs/tasks/13-separate-groups-completed-and-accepted.md
@@ -116,6 +119,8 @@ Rules for TASKS.md usage are at the bottom of the file.
 [15]: docs/tasks/15-insufficient-detail-in-error-for-tracker-source.md
 
 [16]: docs/tasks/16-python-backend-and-tasks-md-api-cli.md
+
+[17]: docs/tasks/17-automatically-refresh-and-retry-new-issue-saves.md
 
 ## Rules
 
