@@ -1,6 +1,8 @@
 import { TASK_SECTIONS, type IssueInput, type IssuePatch, type WorkspaceBackend } from '../domain'
 import { assertWorkspace } from '../data/validation'
 
+class StaleRevisionError extends Error {}
+
 export function createTasksBackend(baseUrl = '/api', sourcePath?: string): WorkspaceBackend {
   let revision: string | null = null
   let source: WorkspaceBackend['source']
@@ -14,7 +16,8 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
       const message = typeof body?.error === 'string' ? body.error : `TASKS.md server returned ${response.status}.`
       if (response.status === 409 || response.status === 412 || response.status === 428) {
         revision = null
-        throw new Error(`${message} Close this editor and refresh the source before retrying.`)
+        const ConflictError = response.status === 412 ? StaleRevisionError : Error
+        throw new ConflictError(`${message} Close this editor and refresh the source before retrying.`)
       }
       throw new Error(message)
     }
@@ -57,7 +60,18 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
     get source() { return source },
     async openWorkspace(path) { const backend = createTasksBackend(baseUrl, path); await backend.load(); return backend },
     async load() { return (await snapshot(await request('/workspace'))).workspace },
-    async createIssue(input) { const { issue } = await mutate('POST', '/issues', input); if (!issue) throw new Error('Issue saved, but the response could not identify it. Refresh the source.'); return issue },
+    async createIssue(input) {
+      const draft = structuredClone(input)
+      let result
+      try { result = await mutate('POST', '/issues', draft) }
+      catch (error) {
+        if (!(error instanceof StaleRevisionError) || !source) throw error
+        await snapshot(await request('/workspace'))
+        result = await mutate('POST', '/issues', draft)
+      }
+      if (!result.issue) throw new Error('Issue saved, but the response could not identify it. Refresh the source.')
+      return result.issue
+    },
     async updateIssue(id, patch) { const { issue } = await mutate('PATCH', `/issues/${encodeURIComponent(id)}`, patch); if (!issue) throw new Error('Issue saved, but it was missing from the response. Refresh the source.'); return issue },
     async deleteIssue(id) { await mutate('DELETE', `/issues/${encodeURIComponent(id)}`) },
     async reorderBacklog(issueIds) { return (await mutate('POST', '/backlog/order', { issueIds })).workspace },

@@ -46,3 +46,31 @@ handles a stale revision during creation and does not require background refresh
 
 2026-10-04: Request moved to Hai for future implementation. No application code
 was changed, and the automatic retry behavior has not been implemented or deployed.
+
+## Implementation, 2026-10-04
+
+New issue creation captures the draft before sending the first request. An HTTP
+412 response invalidates the old revision. If the backend has identified its
+source, creation fetches `/workspace` for that pinned source, validates its
+identity, revision, workspace and workflow fields, then retries once. Both
+creation requests use the same draft; the second uses the refreshed revision.
+The server's revision checks remain unchanged.
+
+Refresh failures and repeated conflicts leave the editor open with its draft and
+an error. HTTP 409 conflicts, network failures, failed or malformed save
+responses, and responses missing the saved issue do not trigger a retry. Edits,
+deletes and backlog reordering retain their existing conflict behavior.
+
+Regression coverage includes request order, source identity, fresh revisions,
+all draft fields, a caller changing input during the save, refresh validation
+and network failures, repeated conflicts, partial saves and ambiguous failures.
+Filesystem integration tests change either the tracker or a linked description
+outside Hai and verify exactly one new issue, preserved existing issues,
+references, unrelated text, descriptions and acceptance flags. Browser tests
+verify automatic creation and retention of the complete draft after a repeated
+conflict.
+
+Validation passed with `npm run check`: 17 Python tests, 80 client/API tests,
+46 Chromium workflows, TypeScript checks and the production build. The first
+full run encountered an `EPIPE` in the existing oversized-request test; the
+focused suite and complete rerun passed without changing that test.

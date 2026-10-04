@@ -380,3 +380,45 @@ test('an unavailable API stays visibly disconnected without loading demo issues'
   await expect(page.locator('.issue-row')).toHaveCount(0)
   await expect(page.getByText('Source unavailable', { exact: true })).toBeVisible()
 })
+
+for (const repeatedConflict of [false, true]) test(`new issue ${repeatedConflict ? 'keeps its draft after a repeated conflict' : 'automatically refreshes and saves after an external change'}`, async ({ page, taskSource }) => {
+  await page.goto('/')
+  await expect(page.getByText('First source issue', { exact: true })).toBeVisible()
+  await page.keyboard.press('c')
+  const editor = page.getByRole('dialog', { name: 'New issue', exact: true })
+  await editor.getByRole('textbox', { name: 'Title', exact: true }).fill('Keep the original draft')
+  await editor.getByRole('textbox', { name: 'Description', exact: true }).fill('Original draft description\nwith details.')
+  await editor.getByRole('combobox', { name: 'Section', exact: true }).selectOption('Ordered backlog')
+  await editor.getByRole('combobox', { name: 'Priority', exact: true }).selectOption('high')
+  await editor.getByRole('textbox', { name: 'Labels', exact: true }).fill('original-label')
+  await writeFile(join(taskSource.directory, 'docs/tasks/1-first.md'), '# External description change\n')
+  let attempts = 0
+  await page.route('**/api/issues?*', async route => {
+    if (route.request().method() !== 'POST') return route.fallback()
+    attempts++
+    if (repeatedConflict) return route.fulfill({ status: 412, json: { error: 'TASKS.md or a description changed. Reload before saving.' } })
+    return route.fallback()
+  })
+  await editor.getByRole('button', { name: 'Create issue', exact: true }).click()
+  if (repeatedConflict) {
+    await expect(editor.getByRole('alert')).toContainText('description changed')
+    await expect(editor.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue('Keep the original draft')
+    await expect(editor.getByRole('textbox', { name: 'Description', exact: true })).toHaveValue('Original draft description\nwith details.')
+    await expect(editor.getByRole('textbox', { name: 'Labels', exact: true })).toHaveValue('original-label')
+    await expect(editor.getByRole('combobox', { name: 'Section', exact: true })).toHaveValue('Ordered backlog')
+    await expect(editor.getByRole('combobox', { name: 'Priority', exact: true })).toHaveValue('high')
+    expect(await readFile(taskSource.file, 'utf8')).toBe(initialTasks)
+  } else {
+    await expect(editor).not.toBeVisible()
+    await expect(page.getByText('Keep the original draft', { exact: true })).toBeVisible()
+    const source = await readFile(taskSource.file, 'utf8')
+    expect(source.match(/Keep the original draft/g)).toHaveLength(1)
+    expect(source).toContain('- [x] [*] Already accepted work')
+    await page.getByText('Keep the original draft', { exact: true }).click()
+    await expect(page.getByRole('dialog').getByRole('textbox', { name: 'Description', exact: true })).toHaveValue('Original draft description\nwith details.')
+    await expect(page.getByRole('dialog').getByRole('combobox', { name: 'Priority', exact: true })).toHaveValue('high')
+    await expect(page.getByRole('dialog').getByText('original-label', { exact: true })).toBeVisible()
+  }
+  expect(attempts).toBe(2)
+  expect(await readFile(join(taskSource.directory, 'docs/tasks/1-first.md'), 'utf8')).toBe('# External description change\n')
+})

@@ -190,3 +190,34 @@ test('unavailable project roots recover without losing successfully pinned roots
     assert.equal(await readFile(join(app.outside, 'TASKS.md'), 'utf8'), backlogFixture)
   } finally { await app.close() }
 })
+
+for (const changed of ['tracker', 'description'] as const) {
+  test(`stale creation after external ${changed} change saves exactly once and preserves source data`, async () => {
+    const app = await setup()
+    try {
+      const backend = createTasksBackend(app.url)
+      const original = await backend.load()
+      const tracker = join(app.first, 'TASKS.md')
+      const description = join(app.first, 'docs/tasks/7-example.md')
+      const externalTracker = changed === 'tracker' ? backlogFixture.replace('Independent task', 'Externally updated task') : backlogFixture
+      const externalDescription = changed === 'description' ? '# Human changes\nKeep these.\n' : '# Example\n'
+      await writeFile(tracker, externalTracker)
+      await writeFile(description, externalDescription)
+      const input = { title: 'Retry original draft', description: '# New description\n', priority: 'high' as const, labels: ['original'], sourceSection: 'Ordered backlog' as const, status: 'backlog' as const }
+      const created = await backend.createIssue(input)
+      const after = await backend.load()
+      assert.equal(after.issues.length, original.issues.length + 1)
+      assert.equal(after.issues.filter(issue => issue.title === input.title).length, 1)
+      for (const [key, value] of Object.entries(input)) assert.deepEqual(created[key as keyof typeof created], value)
+      assert.deepEqual(after.issues.filter(issue => issue.id !== created.id), original.issues.map(issue => issue.id === 'task-7' ? { ...issue, description: externalDescription } : changed === 'tracker' && issue.id === 'independent' ? { ...issue, title: 'Externally updated task' } : issue))
+      assert.equal(await readFile(description, 'utf8'), externalDescription)
+      assert.equal(await readFile(join(app.first, created.sourcePath!), 'utf8'), input.description)
+      const savedTracker = await readFile(tracker, 'utf8')
+      assert.ok(savedTracker.includes('[7]: docs/tasks/7-example.md'))
+      assert.ok(savedTracker.includes('Keep this unrelated paragraph between the last two slots.'))
+      assert.ok(savedTracker.includes('- [x] [*] Accepted by user'))
+      assert.ok(savedTracker.includes('- [ ] [*] Waiting for acceptance'))
+      assert.equal(await readFile(join(app.second, 'TASKS.md'), 'utf8'), backlogFixture)
+    } finally { await app.close() }
+  })
+}
