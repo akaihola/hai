@@ -25,6 +25,7 @@ The independent browser-storage demo remains available at `/?backend=local`. Its
 ## Workflows
 
 - Create, edit, and delete tasks with their source section, priority, labels, and description.
+- Local trackers and linked descriptions refresh automatically every five seconds while the tab is visible, and when returning to the tab. Refresh pauses during editing, saving and dragging so stale drafts still receive revision conflicts. Source errors keep the last workspace visible and retry on the next poll. SSH and GitHub aliases use **Refresh source** to avoid repeated remote reads.
 - Open another server project from **Open project** in the sidebar. Enter a folder such as `~/prg/my-project/` or its `TASKS.md` path. Recent projects and the last selection are saved in this browser.
 - Browse grouped lists or a board. Move tasks between source sections on the board or with the issue editor.
 - Search and filter issues. Backends that supply them also expose projects, cycles, assigned work, and recent activity.
@@ -53,7 +54,9 @@ import { myBackend } from './adapters/my-backend';
 
 Implement the asynchronous workspace load and issue mutation methods, declare supported capabilities, and map provider data into the shared model. The UI uses capabilities to control available actions. Provider credentials and direct filesystem access belong in a companion service or desktop bridge.
 
-GitHub Issues/Projects, Beans, taskmd, and markdown-ticket remain planned integrations. Projects, members, and cycles are supplied by the backend; project and cycle administration is available when the backend supports it. The deployment uses private Tailscale access rather than application accounts. There is no automatic background synchronization.
+Automatic refresh requires `canAutoRefresh` and `pollChanges(canApply)`. The backend must check `canApply()` immediately before committing a read or advancing its write revision, discard reads superseded by foreground operations, and return `null` for an unchanged revision. Local TASKS.md polling reuses the revision that covers both the tracker and linked descriptions; it needs no file watcher or persistent server connection. Five-second polling trades bounded read traffic for a short refresh delay. Remote aliases keep automatic refresh disabled because SSH reads incur network work and GitHub reads clone the repository.
+
+GitHub Issues/Projects, Beans, taskmd, and markdown-ticket remain planned integrations. Projects, members, and cycles are supplied by the backend; project and cycle administration is available when the backend supports it. The deployment uses private Tailscale access rather than application accounts.
 
 Research, provider mappings, and extension guidance are in [docs/backends.md](docs/backends.md). Design decisions and the implementation plan are in [docs/design.md](docs/design.md).
 

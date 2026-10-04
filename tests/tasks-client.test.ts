@@ -190,3 +190,40 @@ test('creation cannot automatically refresh a source that was never identified',
   await assert.rejects(backend.createIssue(draft), /description changed/)
   assert.equal(fetch.mock.callCount(), 2)
 })
+
+test('polling detects changed snapshots and declares local-only automatic refresh', async context => {
+  const changed = { ...retryWorkspace, issues: retryWorkspace.issues.slice(1) }
+  const responses = [loadedResponse('original'), loadedResponse('original'), loadedResponse('changed', { workspace: changed }), loadedResponse('saved'), loadedResponse('remote', { source: { name: 'Remote', path: '/@team' } })]
+  const fetch = context.mock.method(globalThis, 'fetch', async () => responses.shift()!)
+  const backend = createTasksBackend()
+  assert.equal(backend.capabilities.canAutoRefresh, false)
+  await backend.load()
+  assert.equal(backend.capabilities.canAutoRefresh, true)
+  assert.equal(await backend.pollChanges!(() => true), null)
+  assert.deepEqual(await backend.pollChanges!(() => true), changed)
+  await backend.deleteIssue('task-7')
+  assert.equal(new Headers((fetch.mock.calls[3].arguments[1] as RequestInit).headers).get('if-match'), '"changed"')
+  const remote = await backend.openWorkspace!('/@team')
+  assert.equal(remote.capabilities.canAutoRefresh, false)
+})
+
+for (const newerRead of [false, true]) test(`polling discards a response when ${newerRead ? 'a foreground read supersedes it' : 'an editor opens'}`, async context => {
+  let resolvePoll!: (response: Response) => void
+  let reads = 0
+  const fetch = context.mock.method(globalThis, 'fetch', async () => {
+    reads++
+    if (reads === 2) return new Promise<Response>(resolve => { resolvePoll = resolve })
+    return loadedResponse(reads === 1 ? 'original' : 'foreground')
+  })
+  const backend = createTasksBackend()
+  await backend.load()
+  let canApply = true
+  const polling = backend.pollChanges!(() => canApply)
+  if (newerRead) await backend.load()
+  else canApply = false
+  resolvePoll(loadedResponse('external'))
+  assert.equal(await polling, null)
+  await backend.deleteIssue('task-7')
+  const save = fetch.mock.calls.at(-1)!.arguments[1] as RequestInit
+  assert.equal(new Headers(save.headers).get('if-match'), newerRead ? '"foreground"' : '"original"')
+})

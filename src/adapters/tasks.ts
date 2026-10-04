@@ -23,8 +23,10 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
     }
     return response
   }
-  async function snapshot(response: Response) {
-    const value: unknown = await response.json().catch(() => { throw new Error('The TASKS.md server returned an invalid response.') })
+  async function read(response: Response): Promise<unknown> {
+    return response.json().catch(() => { throw new Error('The TASKS.md server returned an invalid response.') })
+  }
+  function snapshot(value: unknown) {
     if (!value || typeof value !== 'object' || !('workspace' in value) || !('revision' in value) || typeof value.revision !== 'string' || !value.revision) throw new Error('The TASKS.md server returned an invalid workspace response.')
     if ('source' in value) {
       const next = value.source
@@ -48,25 +50,34 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
   async function mutate(method: string, path: string, input?: IssueInput | IssuePatch | { issueIds: string[] }) {
     if (!revision) throw new Error('Refresh the source before saving changes to TASKS.md.')
     const response = await request(path, { method, headers: { 'Content-Type': 'application/json', 'If-Match': `"${revision}"` }, ...(input ? { body: JSON.stringify(input) } : {}) })
-    return snapshot(response)
+    return snapshot(await read(response))
   }
   return {
     capabilities: {
       id: 'tasks', name: 'TASKS.md', description: 'Connected to TASKS.md and its description files on the server.',
+      get canAutoRefresh() { return !!source && !source.path.startsWith('/@') },
       canCreate: true, canUpdate: true, canDelete: true, canImport: false, canExport: true, canReorderBacklog: true, canOpenWorkspace: true, persistence: 'filesystem', workflow: 'tasks',
       canCreateProject: false, canUpdateProject: false, canDeleteProject: false, canCreateCycle: false, canUpdateCycle: false, canDeleteCycle: false,
       fields: { assignee: false, project: false, cycle: false, description: true },
     },
     get source() { return source },
     async openWorkspace(path) { const backend = createTasksBackend(baseUrl, path); await backend.load(); return backend },
-    async load() { return (await snapshot(await request('/workspace'))).workspace },
+    async load() { return snapshot(await read(await request('/workspace'))).workspace },
+    async pollChanges(canApply) {
+      const previous = revision
+      const value = await read(await request('/workspace'))
+      // Never advance a draft's revision or replace a newer foreground read/save.
+      if (!canApply() || revision !== previous) return null
+      const result = snapshot(value)
+      return revision === previous ? null : result.workspace
+    },
     async createIssue(input) {
       const draft = structuredClone(input)
       let result
       try { result = await mutate('POST', '/issues', draft) }
       catch (error) {
         if (!(error instanceof StaleRevisionError) || !source) throw error
-        await snapshot(await request('/workspace'))
+        snapshot(await read(await request('/workspace')))
         result = await mutate('POST', '/issues', draft)
       }
       if (!result.issue) throw new Error('Issue saved, but the response could not identify it. Refresh the source.')

@@ -81,6 +81,7 @@ export interface BackendCapabilities {
   canDeleteCycle?: boolean
   canReorderBacklog?: boolean
   canOpenWorkspace?: boolean
+  canAutoRefresh?: boolean
   persistence: 'browser' | 'filesystem' | 'remote'
   workflow?: 'tasks'
   fields?: { assignee: boolean; project: boolean; cycle: boolean; description: boolean }
@@ -90,6 +91,7 @@ export interface WorkspaceBackend {
   readonly source?: WorkspaceSource
   openWorkspace?(path: string): Promise<WorkspaceBackend>
   load(): Promise<Workspace>
+  pollChanges?(canApply: () => boolean): Promise<Workspace | null>
   createIssue(input: IssueInput): Promise<Issue>
   updateIssue(id: string, patch: IssuePatch): Promise<Issue>
   deleteIssue(id: string): Promise<void>

@@ -45,6 +45,7 @@ function WorkspaceView({ backend, onOpened }: { backend: WorkspaceBackend; onOpe
   const [workspace, setWorkspace] = useState<Workspace>(emptyWorkspace)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [refreshError, setRefreshError] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [route, setRoute] = useState<Route>('issues')
@@ -93,10 +94,28 @@ function WorkspaceView({ backend, onOpened }: { backend: WorkspaceBackend; onOpe
     setFilters(previous => previous.project && !result.projects.some(item => item.id === previous.project) ? { ...previous, project: '' } : previous)
   }; return result }
   async function load() {
-    setLoading(true); setLoadError(''); setError('')
+    setLoading(true); setLoadError(''); setRefreshError(''); setError('')
     try { await refresh() } catch (failure) { if (activeBackend.current === activation) setLoadError(errorMessage(failure)) } finally { if (activeBackend.current === activation) setLoading(false) }
   }
-  useEffect(() => { let cancelled = false; endDrag(); setTab('all'); setSearchOpen(false); setQuery(''); setCollapsed([]); setProjectPickerOpen(false); setMutating(false); setSort(backend.capabilities.workflow === 'tasks' ? 'source' : 'identifier'); setEditor(null); setEntityEditor(null); setPendingImport(null); setSelectedProject(''); setSelectedCycle(''); setFilters(emptyFilters); setWorkspace(emptyWorkspace); setError(''); setNotice(''); setLoading(true); setLoadError(''); backend.load().then(data => { if (!cancelled) setWorkspace(data) }).catch(failure => { if (!cancelled) setLoadError(errorMessage(failure)) }).finally(() => { if (!cancelled) setLoading(false) }); return () => { cancelled = true } }, [backend])
+  useEffect(() => { let cancelled = false; endDrag(); setTab('all'); setSearchOpen(false); setQuery(''); setCollapsed([]); setProjectPickerOpen(false); setMutating(false); setSort(backend.capabilities.workflow === 'tasks' ? 'source' : 'identifier'); setEditor(null); setEntityEditor(null); setPendingImport(null); setSelectedProject(''); setSelectedCycle(''); setFilters(emptyFilters); setWorkspace(emptyWorkspace); setRefreshError(''); setError(''); setNotice(''); setLoading(true); setLoadError(''); backend.load().then(data => { if (!cancelled) setWorkspace(data) }).catch(failure => { if (!cancelled) setLoadError(errorMessage(failure)) }).finally(() => { if (!cancelled) setLoading(false) }); return () => { cancelled = true } }, [backend])
+  useEffect(() => {
+    if (!backend.capabilities.canAutoRefresh || !backend.pollChanges || loading || mutating || editor || entityEditor || projectPickerOpen || pendingImport) return
+    let cancelled = false, pending = false
+    const canApply = () => !cancelled && activeBackend.current === activation && document.visibilityState === 'visible' && !document.querySelector('dialog[open]') && !draggedIssue.current
+    async function poll() {
+      if (pending || !canApply()) return
+      pending = true
+      try {
+        const result = await backend.pollChanges!(canApply)
+        if (canApply()) { if (result) setWorkspace(result); setLoadError(''); setRefreshError('') }
+      } catch (failure) { if (canApply()) setRefreshError(errorMessage(failure)) }
+      finally { pending = false }
+    }
+    const timer = setInterval(() => void poll(), 5000)
+    window.addEventListener('focus', poll)
+    document.addEventListener('visibilitychange', poll)
+    return () => { cancelled = true; clearInterval(timer); window.removeEventListener('focus', poll); document.removeEventListener('visibilitychange', poll) }
+  }, [backend, loading, mutating, editor, entityEditor, projectPickerOpen, pendingImport])
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer) }, [])
   useEffect(() => { try { localStorage.setItem('hai:view', view) } catch { /* View preference is optional. */ } }, [view])
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 3500); return () => clearTimeout(timer) }, [notice])
@@ -265,8 +284,8 @@ function WorkspaceView({ backend, onOpened }: { backend: WorkspaceBackend; onOpe
       <div className="sidebar-footer"><div className="workspace-status"><span className="connection-dot" />{backend.capabilities.persistence === 'browser' ? 'Saved on this device' : backend.capabilities.name}</div>{navItem('Integrations', Blocks, 'integrations')}{fields?.assignee !== false && <button className="user-menu" onClick={() => navigate('my')}><Avatar member={currentMember} /><span>{currentMember?.name ?? 'Your workspace'}<small>Personal workspace</small></span><ChevronRight size={14} /></button>}</div>
     </aside>
     <main className="main-content" inert={mobileOpen}>
-      <header className="topbar"><div className="breadcrumbs"><button className="icon-button mobile-menu-button" aria-label="Open navigation" aria-expanded={mobileOpen} aria-controls="main-sidebar" onClick={() => setMobileOpen(true)}><Menu size={18} /></button><span className="breadcrumb-workspace" title={backend.source?.path}>{backend.source?.name ?? 'Hai workspace'}</span><ChevronRight size={12} /><span>{title}</span></div><div className="topbar-actions">{backend.capabilities.persistence !== 'browser' && <button className="button subtle refresh-source" aria-label="Refresh source" disabled={loading || mutating} onClick={() => void load()}><RefreshCw size={14} /><span>Refresh source</span></button>}<span className="local-badge"><span className="connection-dot" />{loadError ? 'Source unavailable' : backend.capabilities.persistence === 'browser' ? 'Local workspace' : backend.capabilities.name}</span><button className="icon-button" aria-label="Keyboard shortcuts" onClick={() => setShortcutsOpen(true)}><CircleHelp size={16} /></button>{fields?.assignee !== false && <Avatar member={currentMember} small />}</div></header>
-      {error && <div className="error-banner" role="alert"><TriangleAlert size={16} /><span>{error}</span><button className="icon-button" aria-label="Dismiss error" onClick={() => setError('')}><X size={15} /></button></div>}
+      <header className="topbar"><div className="breadcrumbs"><button className="icon-button mobile-menu-button" aria-label="Open navigation" aria-expanded={mobileOpen} aria-controls="main-sidebar" onClick={() => setMobileOpen(true)}><Menu size={18} /></button><span className="breadcrumb-workspace" title={backend.source?.path}>{backend.source?.name ?? 'Hai workspace'}</span><ChevronRight size={12} /><span>{title}</span></div><div className="topbar-actions">{backend.capabilities.persistence !== 'browser' && <button className="button subtle refresh-source" aria-label="Refresh source" disabled={loading || mutating} onClick={() => void load()}><RefreshCw size={14} /><span>Refresh source</span></button>}<span className="local-badge"><span className="connection-dot" />{loadError || refreshError ? 'Source unavailable' : backend.capabilities.persistence === 'browser' ? 'Local workspace' : backend.capabilities.name}</span><button className="icon-button" aria-label="Keyboard shortcuts" onClick={() => setShortcutsOpen(true)}><CircleHelp size={16} /></button>{fields?.assignee !== false && <Avatar member={currentMember} small />}</div></header>
+      {(error || refreshError) && <div className="error-banner" role="alert"><TriangleAlert size={16} /><span>{error || refreshError}</span><button className="icon-button" aria-label="Dismiss error" onClick={() => { setError(''); setRefreshError('') }}><X size={15} /></button></div>}
       <div className="page-header"><div className="page-heading">{project && <button className="icon-button" aria-label="Back to projects" onClick={() => navigate('projects')}><ArrowLeft size={16} /></button>}<span className="page-icon"><TitleIcon size={20} /></span><h1>{title}</h1>{isIssues && <span className="count-badge">{visibleIssues.length}</span>}</div>{project && <p className="page-description">{project.description}</p>}
         {isIssues ? <div className="page-tabs" role="tablist" aria-label="Issue scope">{([['all', 'All issues'], ['active', 'Active'], ['backlog', 'Backlog'], ['completed', 'Completed'], ...(tasks ? [['accepted', 'Accepted'] as const] : [])] as const).map(([id, label]) => <button role="tab" aria-selected={tab === id} className={tab === id ? 'active' : ''} key={id} onClick={() => setTab(id)}>{label}</button>)}</div> : <p className="page-description">{route === 'projects' ? 'A shared view of what you’re building.' : route === 'inbox' ? 'Recent issue activity across your workspace.' : 'Your workspace, connected your way.'}</p>}
       </div>
