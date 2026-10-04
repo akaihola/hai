@@ -33,10 +33,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [15] Insufficient detail in error for tracker source
-  <!-- hai:{"id":"simple-ddbc18e9-2ca9-4a1e-99c8-3260f171ad67","priority":"none","labels":[],"createdAt":"2026-10-03T21:05:31.331Z","updatedAt":"2026-10-04T20:34:28.915Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [15] Insufficient detail in error for tracker source
+  <!-- hai:{"id":"simple-ddbc18e9-2ca9-4a1e-99c8-3260f171ad67","priority":"none","labels":[],"createdAt":"2026-10-03T21:05:31.331Z","updatedAt":"2026-10-04T20:39:36.066Z"} -->
 
 - [ ] [17] Automatically refresh and retry new issue saves
   <!-- hai:{"id":"simple-3e99c016-4b24-458f-b27c-5c0536f10309","createdAt":"2026-10-04T20:17:04.615Z","updatedAt":"2026-10-04T20:27:23.619Z"} -->
