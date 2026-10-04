@@ -1,0 +1,1 @@
+Convert the backend from TypeScript into Python. Split the TASKS.md backend plugin so there's a Python API and CLI for parsing, querying, modifying, and reporting on TASKS.md files from multiple projects. Projects can be local, over SSH, or on GitHub. Always follow https://raw.githubusercontent.com/Green-PT/honey-for-devs/refs/heads/main/skills/honey/SKILL.md

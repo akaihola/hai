@@ -26,6 +26,9 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
+- [16] Python backend and TASKS.md API & CLI
+  <!-- hai:{"id":"simple-f04ebe20-a07c-42b6-b19a-13a9d5a39227","priority":"none","labels":[],"createdAt":"2026-10-04T07:46:09.160Z","updatedAt":"2026-10-04T07:46:09.160Z"} -->
+
 - [15] Insufficient detail in error for tracker source
   <!-- hai:{"id":"simple-ddbc18e9-2ca9-4a1e-99c8-3260f171ad67","priority":"none","labels":[],"createdAt":"2026-10-03T21:05:31.331Z","updatedAt":"2026-10-03T21:05:31.331Z"} -->
 
@@ -104,13 +107,15 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 [11]: docs/tasks/11-allow-dragging-issues-from-a-group-to-another.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 -->
 
 [12]: docs/tasks/12-eliminate-runs-of-blank-lines-in-tasks-md.md
 [13]: docs/tasks/13-separate-groups-completed-and-accepted.md
 [14]: docs/tasks/14-user-can-t-view-different-projects.md
 
 [15]: docs/tasks/15-insufficient-detail-in-error-for-tracker-source.md
+
+[16]: docs/tasks/16-python-backend-and-tasks-md-api-cli.md
 
 ## Rules
 
