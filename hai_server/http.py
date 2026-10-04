@@ -46,13 +46,14 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
                 if root not in canonical_roots:
                     try:
                         canonical_roots[root] = root.resolve(strict=True)
-                    except OSError:
-                        raise TasksError('A configured project root is unavailable. Check HAI_PROJECT_ROOTS.', 503) from None
+                    except OSError as error:
+                        raise TasksError(f'A configured project root is unavailable at {root}: {error}. Check HAI_PROJECT_ROOTS.', 503) from error
             if not any(file.is_relative_to(root) or file.is_relative_to(canonical_roots[root]) for root in roots):
                 raise TasksError('Project is outside the allowed project roots. Check HAI_PROJECT_ROOTS.', 403)
             try:
                 if file.is_symlink() or (file.exists() and not file.is_file()):
-                    raise TasksError('TASKS.md must be a regular file, not a symbolic link.', 422)
+                    reason = 'a regular file, not a symbolic link' if file.is_symlink() else 'a regular file'
+                    raise TasksError(f'TASKS.md must be {reason}: {file}', 422)
                 canonical = file.resolve(strict=True)
             except OSError as error:
                 raise TasksError(f'Cannot open TASKS.md at {file}: {error}', 404) from error

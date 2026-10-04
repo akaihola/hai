@@ -1,4 +1,5 @@
 """Local tracker storage with revisions, advisory locking and atomic file replacement."""
+import errno
 import fcntl
 import hashlib
 import json
@@ -16,15 +17,22 @@ from .markdown import TasksError, mutate_tasks, parse_tasks, validate_workspace,
 def regular_file(path, maximum=2 * 1024 * 1024):
     try:
         fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
-        with os.fdopen(fd, 'rb') as handle:
-            info = os.fstat(handle.fileno())
-            if not stat.S_ISREG(info.st_mode) or info.st_size > maximum:
-                raise TasksError(f'Tracker source must be a regular file within the size limit: {path}', 422)
-            content = handle.read(maximum + 1)
+        try:
+            info = os.fstat(fd)
+            if not stat.S_ISREG(info.st_mode):
+                raise TasksError(f'Tracker source must be a regular file: {path}', 422)
+            if info.st_size > maximum:
+                raise TasksError(f'Tracker source exceeds the {maximum}-byte size limit: {path}', 422)
+            with os.fdopen(fd, 'rb', closefd=False) as handle:
+                content = handle.read(maximum + 1)
+        finally:
+            os.close(fd)
         if len(content) > maximum:
-            raise TasksError(f'Tracker source exceeds the size limit: {path}', 422)
+            raise TasksError(f'Tracker source exceeds the {maximum}-byte size limit: {path}', 422)
         return content.decode('utf-8')
     except (OSError, UnicodeError) as error:
+        if isinstance(error, OSError) and error.errno == errno.ELOOP:
+            raise TasksError(f'Tracker source must be a regular file, not a symbolic link: {path}', 422) from error
         raise TasksError(f'Cannot read tracker source {path}: {error}', 422) from error
 
 
@@ -47,9 +55,9 @@ class TasksStore:
     def check_root(self):
         try:
             if self.root.resolve(strict=True) != self.root:
-                raise OSError('Project directory changed.')
+                raise OSError(f'Project directory resolves to {self.root.resolve()}; symbolic links are not allowed.')
         except OSError as error:
-            raise TasksError('Project directory changed, is unavailable, or contains symbolic links. Reopen the project.', 422) from error
+            raise TasksError(f'Project directory changed or cannot be opened at {self.root}: {error}. Reopen the project.', 422) from error
 
     @contextmanager
     def locked(self):
@@ -74,7 +82,8 @@ class TasksStore:
                 directory.mkdir(exist_ok=True)
             info = directory.lstat()
             if not stat.S_ISDIR(info.st_mode):
-                raise TasksError('Description directories must not contain symbolic links.', 422)
+                reason = 'is a symbolic link' if stat.S_ISLNK(info.st_mode) else 'is not a directory'
+                raise TasksError(f'Description directory {directory} {reason}. Use a directory without symbolic links.', 422)
         return absolute
 
     def _snapshot(self):
@@ -88,8 +97,8 @@ class TasksStore:
                 if path not in documents:
                     try:
                         documents[path] = regular_file(self.document_path(path), 256 * 1024)
-                    except OSError as error:
-                        raise TasksError(f'Cannot open description {path}: {error}', 422) from error
+                    except (TasksError, OSError) as error:
+                        raise TasksError(f'Cannot open description {self.root / path} referenced by {task["issue"]["sourceReference"]} in {self.tasks_file}: {error}', 422) from error
                 task['issue']['description'] = documents[path]
         workspace = workspace_of(parsed)
         validate_workspace(workspace)

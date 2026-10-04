@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 
 from hai_tasks import TasksError, TasksStore, mutate_tasks, open_source, parse_tasks, query, report
 from hai_tasks.sources import GitHubSource, SSHSource
-from hai_tasks.store import run_git
+from hai_tasks.store import regular_file, run_git
 from hai_server.http import create_server
 
 SOURCE = '''# Tasks
@@ -221,6 +221,98 @@ class TrackerTests(unittest.TestCase):
             (self.project / 'TASKS.md').write_text(SOURCE.replace('docs/tasks/1-first.md', path))
             with self.assertRaises(TasksError):
                 self.store.read()
+
+    def test_description_errors_identify_tracker_reference_path_and_reason(self):
+        description = self.project / 'docs/tasks/1-first.md'
+        description.unlink()
+        cases = [
+            ('missing', lambda: None, 'No such file or directory'),
+            ('symbolic link', lambda: description.symlink_to(self.project / 'TASKS.md'), 'symbolic link'),
+            ('directory', description.mkdir, 'regular file'),
+            ('fifo', lambda: os.mkfifo(description), 'regular file'),
+            ('oversized', lambda: description.write_bytes(b'x' * (256 * 1024 + 1)), '262144-byte size limit'),
+            ('invalid UTF-8', lambda: description.write_bytes(b'\xff'), 'utf-8'),
+        ]
+        for name, prepare, reason in cases:
+            with self.subTest(name=name):
+                prepare()
+                with self.assertRaises(TasksError) as caught:
+                    self.store.read()
+                self.assertEqual(caught.exception.status, 422)
+                message = str(caught.exception)
+                for detail in [str(description), '[1]', str(self.project / 'TASKS.md'), reason]:
+                    self.assertIn(detail, message)
+                if description.is_dir():
+                    description.rmdir()
+                else:
+                    description.unlink(missing_ok=True)
+
+    def test_description_directory_error_identifies_failing_component(self):
+        directory = self.project / 'docs/tasks'
+        directory.rename(self.project / 'descriptions')
+        for linked in [False, True]:
+            with self.subTest(linked=linked):
+                if linked:
+                    directory.symlink_to(self.project / 'descriptions', target_is_directory=True)
+                with self.assertRaises(TasksError) as caught:
+                    self.store.read()
+                self.assertIn(str(directory), str(caught.exception))
+                self.assertIn('symbolic link' if linked else 'No such file or directory', str(caught.exception))
+
+    def test_permission_error_identifies_source_and_os_reason(self):
+        description = self.project / 'docs/tasks/1-first.md'
+        real_open = os.open
+        def denied(path, *args, **kwargs):
+            if Path(path) == description:
+                raise PermissionError(13, 'Permission denied', str(path))
+            return real_open(path, *args, **kwargs)
+        with patch('hai_tasks.store.os.open', side_effect=denied):
+            with self.assertRaises(TasksError) as caught:
+                self.store.read()
+        self.assertIn(str(description), str(caught.exception))
+        self.assertIn('Permission denied', str(caught.exception))
+
+    def test_tracker_size_limit_identifies_path_and_limit(self):
+        tracker = self.project / 'TASKS.md'
+        with self.assertRaises(TasksError) as caught:
+            regular_file(tracker, 1)
+        self.assertIn(str(tracker), str(caught.exception))
+        self.assertIn('1-byte size limit', str(caught.exception))
+
+    def test_api_returns_specific_source_errors(self):
+        server = create_server(self.project / 'TASKS.md', self.root, port=0)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            tracker = self.project / 'TASKS.md'
+            description = self.project / 'docs/tasks/1-first.md'
+            description.unlink()
+            cases = [
+                (422, str(description), 'No such file or directory'),
+                (404, str(tracker), 'No such file or directory'),
+                (422, str(tracker), 'symbolic link'),
+                (422, str(tracker), 'regular file'),
+            ]
+            for index, (status, path, reason) in enumerate(cases):
+                with self.subTest(index=index):
+                    if index == 1:
+                        tracker.unlink()
+                    elif index == 2:
+                        tracker.symlink_to(description)
+                    elif index == 3:
+                        tracker.unlink()
+                        tracker.mkdir()
+                    with self.assertRaises(HTTPError) as caught:
+                        urlopen(f'http://127.0.0.1:{server.server_port}/api/workspace')
+                    self.assertEqual(caught.exception.code, status)
+                    with caught.exception as response:
+                        message = json.load(response)['error']
+                    self.assertIn(path, message)
+                    self.assertIn(reason, message)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
 
     def test_ssh_runs_remote_cli_with_json_stdin(self):
         source = SSHSource(f'ssh://user@example.test:2222{self.project}/TASKS.md')
