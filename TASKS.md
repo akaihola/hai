@@ -28,10 +28,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Scheduled
 
-- [*] Evaluate automatic refresh when a tracker is edited outside Hai.
-  <!-- hai:{"id":"simple-23492cea2aaa55f4","updatedAt":"2026-10-04T20:40:02.733Z"} -->
-
 ## In Progress
+
+- [~] [*] Evaluate automatic refresh when a tracker is edited outside Hai.
+  <!-- hai:{"id":"simple-23492cea2aaa55f4","updatedAt":"2026-10-04T20:40:41.606Z"} -->
 
 ## Completed / Accepted
 
