@@ -34,10 +34,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Scheduled
 
-- [16] Python backend and TASKS.md API & CLI
-  <!-- hai:{"id":"simple-f04ebe20-a07c-42b6-b19a-13a9d5a39227","priority":"none","labels":[],"createdAt":"2026-10-04T07:46:09.160Z","updatedAt":"2026-10-04T07:46:09.160Z"} -->
-
 ## In Progress
+
+- [~] [16] Python backend and TASKS.md API & CLI
+  <!-- hai:{"id":"simple-f04ebe20-a07c-42b6-b19a-13a9d5a39227","priority":"none","labels":[],"createdAt":"2026-10-04T07:46:09.160Z","updatedAt":"2026-10-04T07:46:09.160Z"} -->
 
 ## Completed / Accepted
 
