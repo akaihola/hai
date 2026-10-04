@@ -30,10 +30,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [*] Evaluate automatic refresh when a tracker is edited outside Hai.
-  <!-- hai:{"id":"simple-23492cea2aaa55f4","updatedAt":"2026-10-04T20:40:41.606Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [*] Evaluate automatic refresh when a tracker is edited outside Hai.
+  <!-- hai:{"id":"simple-23492cea2aaa55f4","updatedAt":"2026-10-04T20:45:17.245Z"} -->
 
 - [ ] [15] Insufficient detail in error for tracker source
   <!-- hai:{"id":"simple-ddbc18e9-2ca9-4a1e-99c8-3260f171ad67","priority":"none","labels":[],"createdAt":"2026-10-03T21:05:31.331Z","updatedAt":"2026-10-04T20:39:36.066Z"} -->
