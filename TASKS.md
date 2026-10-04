@@ -34,10 +34,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Scheduled
 
-- [17] Automatically refresh and retry new issue saves
-  <!-- hai:{"id":"simple-3e99c016-4b24-458f-b27c-5c0536f10309","createdAt":"2026-10-04T20:17:04.615Z","updatedAt":"2026-10-04T20:22:22.704Z"} -->
-
 ## In Progress
+
+- [~] [17] Automatically refresh and retry new issue saves
+  <!-- hai:{"id":"simple-3e99c016-4b24-458f-b27c-5c0536f10309","createdAt":"2026-10-04T20:17:04.615Z","updatedAt":"2026-10-04T20:22:47.890Z"} -->
 
 ## Completed / Accepted
 
