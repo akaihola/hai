@@ -74,3 +74,9 @@ Validation passed with `npm run check`: 17 Python tests, 80 client/API tests,
 46 Chromium workflows, TypeScript checks and the production build. The first
 full run encountered an `EPIPE` in the existing oversized-request test; the
 focused suite and complete rerun passed without changing that test.
+
+Merged into `main` and deployed on 2026-10-04. A production private HTTPS smoke
+test against a temporary tracker confirmed a stale creation, automatic refresh,
+and one successful retry with a fresh revision and the unchanged draft. The
+live tracker retained all 24 other issues and prior user acceptance. This issue
+is completed and unchecked, awaiting user acceptance.

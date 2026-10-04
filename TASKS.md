@@ -36,10 +36,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [17] Automatically refresh and retry new issue saves
-  <!-- hai:{"id":"simple-3e99c016-4b24-458f-b27c-5c0536f10309","createdAt":"2026-10-04T20:17:04.615Z","updatedAt":"2026-10-04T20:22:47.890Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [17] Automatically refresh and retry new issue saves
+  <!-- hai:{"id":"simple-3e99c016-4b24-458f-b27c-5c0536f10309","createdAt":"2026-10-04T20:17:04.615Z","updatedAt":"2026-10-04T20:27:23.619Z"} -->
 
 - [x] [16] Python backend and TASKS.md API & CLI
   <!-- hai:{"id":"simple-f04ebe20-a07c-42b6-b19a-13a9d5a39227","priority":"none","labels":[],"createdAt":"2026-10-04T07:46:09.160Z","updatedAt":"2026-10-04T18:03:18.693Z"} -->
