@@ -24,9 +24,13 @@ Rules for TASKS.md usage are at the bottom of the file.
 
     <!-- hai:{"updatedAt":"2026-10-03T15:44:02.099Z"} -->
 
-- [*] Evaluate automatic refresh when a tracker is edited outside Hai.
-
 ## Ordered backlog
+
+- [15] Insufficient detail in error for tracker source
+  <!-- hai:{"id":"simple-ddbc18e9-2ca9-4a1e-99c8-3260f171ad67","priority":"none","labels":[],"createdAt":"2026-10-03T21:05:31.331Z","updatedAt":"2026-10-03T21:05:31.331Z"} -->
+
+- [*] Evaluate automatic refresh when a tracker is edited outside Hai.
+  <!-- hai:{"id":"simple-23492cea2aaa55f4","updatedAt":"2026-10-03T17:46:21.006Z"} -->
 
 ## Scheduled
 
@@ -34,14 +38,15 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Completed / Accepted
 
-- [ ] [*] I get a `Task title must contain 1–300 characters.` error when I try to open the
+- [x] [*] I get a `Task title must contain 1–300 characters.` error when I try to open the
   `~/prg/drum-transcribe` project on akaihola@atom.
+  <!-- hai:{"id":"simple-1d9599496e6f6177","updatedAt":"2026-10-03T17:44:49.596Z"} -->
 
 - [ ] [10] Add project and cycle administration for backends that support it.
     - Depends on: [2]
 
-- [ ] [14] User can't view different projects
-    <!-- hai:{"id":"simple-81bf59c0-8436-49f6-bc43-e7c03bf5b966","priority":"none","labels":[],"createdAt":"2026-10-03T16:59:29.495Z","updatedAt":"2026-10-03T16:59:29.495Z"} -->
+- [x] [14] User can't view different projects
+  <!-- hai:{"id":"simple-81bf59c0-8436-49f6-bc43-e7c03bf5b966","priority":"none","labels":[],"createdAt":"2026-10-03T16:59:29.495Z","updatedAt":"2026-10-03T17:45:06.589Z"} -->
 
 - [ ] [13] Separate groups: Completed and Accepted
     <!-- hai:{"id":"simple-9a484642-438a-442a-9ff4-adaea52b4796","priority":"none","labels":[],"createdAt":"2026-10-03T16:27:07.487Z","updatedAt":"2026-10-03T16:27:07.487Z"} -->
@@ -49,8 +54,8 @@ Rules for TASKS.md usage are at the bottom of the file.
 - [ ] [12] Eliminate runs of blank lines in TASKS.md
     <!-- hai:{"id":"simple-07d5ee60-0b24-473c-becc-96c8c92af599","priority":"urgent","labels":[],"createdAt":"2026-10-03T15:47:37.833Z","updatedAt":"2026-10-03T16:25:01.441Z"} -->
 
-- [ ] [11] Allow dragging issues from a group to another
-    <!-- hai:{"id":"simple-3aa8f0ea-6ccc-4e8b-ac14-04d2b9478536","priority":"urgent","labels":[],"createdAt":"2026-10-03T15:43:52.664Z","updatedAt":"2026-10-03T15:56:59.479Z"} -->
+- [x] [11] Allow dragging issues from a group to another
+  <!-- hai:{"id":"simple-3aa8f0ea-6ccc-4e8b-ac14-04d2b9478536","priority":"urgent","labels":[],"createdAt":"2026-10-03T15:43:52.664Z","updatedAt":"2026-10-03T17:45:24.303Z"} -->
 
 - [ ] [*] Allow drag-and-drop ordering of the Ordered backlog issue group.
 
@@ -62,10 +67,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
     <!-- hai:{"updatedAt":"2026-10-03T15:30:43.123Z"} -->
 
-- [ ] [4] Make Hai read and edit its repository TASKS.md through a local service.
+- [x] [4] Make Hai read and edit its repository TASKS.md through a local service.
     - Depends on: [2], [3]
 
-    <!-- hai:{"updatedAt":"2026-10-03T13:13:16.018Z"} -->
+  <!-- hai:{"updatedAt":"2026-10-03T17:45:52.762Z"} -->
 
 - [ ] [3] Adopt Filemill's task tracker conventions for Hai.
     <!-- hai:{"updatedAt":"2026-10-03T13:13:15.461Z"} -->
@@ -99,11 +104,13 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 [11]: docs/tasks/11-allow-dragging-issues-from-a-group-to-another.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 -->
 
 [12]: docs/tasks/12-eliminate-runs-of-blank-lines-in-tasks-md.md
 [13]: docs/tasks/13-separate-groups-completed-and-accepted.md
 [14]: docs/tasks/14-user-can-t-view-different-projects.md
+
+[15]: docs/tasks/15-insufficient-detail-in-error-for-tracker-source.md
 
 ## Rules
 
