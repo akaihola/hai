@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtemp, mkdir, readFile, writeFile, rm, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createTasksServer } from '../server/http.ts'
+import { createTasksServer } from './python-bridge.ts'
 import type { Workspace } from '../src/domain.ts'
 import { backlogFixture, fixture } from './fixtures/tasks-markdown.ts'
 
@@ -104,35 +104,6 @@ test('simple task identity survives description promotion and retired numbers ar
     assert.equal(created.status, 201)
     assert.equal((await created.json()).issue.sourceReference, '[2]')
   } finally { await app.close() }
-})
-
-test('failed multi-file save preserves a newer human edit during rollback', async () => {
-  const fs = await import('node:fs/promises')
-  const { syncBuiltinESMExports } = await import('node:module')
-  const { mock } = await import('node:test')
-  const app = await setup()
-  const originalRename = fs.default.rename
-  const document = join(app.root, 'docs/tasks/7-example.md')
-  const tracker = join(app.root, 'TASKS.md')
-  const replacement = 'Human edit made while the save was finishing.\n'
-  const mocked = mock.method(fs.default, 'rename', async (from: Parameters<typeof originalRename>[0], to: Parameters<typeof originalRename>[1]) => {
-    if (to === tracker) throw new Error('Controlled tracker rename failure')
-    await originalRename(from, to)
-    if (to === document && String(from).endsWith('.tmp')) await fs.writeFile(document, replacement)
-  })
-  syncBuiltinESMExports()
-  try {
-    const before = await (await fetch(`${app.url}/api/workspace`)).json()
-    const response = await fetch(`${app.url}/api/issues/task-7`, { method: 'PATCH', headers: { 'content-type': 'application/json', 'if-match': before.revision }, body: JSON.stringify({ title: 'Attempted change', description: 'App description change' }) })
-    assert.equal(await readFile(document, 'utf8'), replacement)
-    assert.equal(response.status, 409)
-    assert.match((await response.json()).error, /partially|partial/i)
-    assert.equal(await readFile(tracker, 'utf8'), fixture)
-  } finally {
-    mocked.mock.restore()
-    syncBuiltinESMExports()
-    await app.close()
-  }
 })
 
 test('HTTP backlog ordering persists, shares revision protection, and preserves descriptions', async () => {

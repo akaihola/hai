@@ -4,7 +4,7 @@ import { request, type IncomingHttpHeaders } from 'node:http'
 import { mkdtemp, mkdir, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createTasksServer } from '../server/http.ts'
+import { createTasksServer } from './python-bridge.ts'
 
 const source = '# Tasks\n\n## Unverified proposals\n\n## Ordered backlog\n\n- [1] Original title\n\n## Scheduled\n\n## In Progress\n\n## Completed / Accepted\n\n[1]: docs/tasks/1-original.md\n[*]: TASKS.md\n\n## Rules\n\nOnly the user accepts completed work.\n'
 const privateHost = 'gogo.tailnet.example:8443'

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { parseTasks, mutateTasks } from '../server/tasks-markdown.ts'
+import { parseTasks, mutateTasks } from './python-bridge.ts'
 import { ISSUE_TITLE_MAX_LENGTH } from '../src/domain.ts'
 
 import { backlogFixture, fixture, longWrappedTitle } from './fixtures/tasks-markdown.ts'

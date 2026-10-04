@@ -3,8 +3,7 @@ import test from 'node:test'
 import { mkdtemp, mkdir, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
-import { createTasksServer } from '../server/http.ts'
-import { TasksStore } from '../server/tasks-store.ts'
+import { createTasksServer } from './python-bridge.ts'
 import { createTasksBackend } from '../src/adapters/tasks.ts'
 import { backlogFixture, longWrappedTitle } from './fixtures/tasks-markdown.ts'
 import { parseBackup } from '../src/data/validation.ts'
@@ -189,28 +188,5 @@ test('unavailable project roots recover without losing successfully pinned roots
     assert.equal((await fetch(`${app.url}/workspace`)).status, 200)
     assert.equal((await fetch(`${app.url}/../healthz`)).status, 200)
     assert.equal(await readFile(join(app.outside, 'TASKS.md'), 'utf8'), backlogFixture)
-  } finally { await app.close() }
-})
-
-test('queued operations reject a project directory replaced with an outside symlink', async () => {
-  const app = await setup()
-  try {
-    const store = new TasksStore(join(app.second, 'TASKS.md'))
-    const before = await store.read()
-    let release!: () => void
-    const blocked = new Promise<void>(resolve => { release = resolve })
-    ;(store as unknown as { queue: Promise<unknown> }).queue = blocked
-    const failures = Promise.all([
-      assert.rejects(store.mutate('update', before.revision, 'task-7', { title: 'Must not write outside', description: 'Must not overwrite outside description' }), /Project directory changed/),
-      assert.rejects(store.read(), /Project directory changed/),
-      assert.rejects(store.export('tasks'), /Project directory changed/),
-    ])
-    await rename(app.second, `${app.second}-old`)
-    await symlink(app.outside, app.second)
-    release()
-    await failures
-    assert.equal(await readFile(join(app.outside, 'TASKS.md'), 'utf8'), backlogFixture)
-    assert.equal(await readFile(join(app.outside, 'docs/tasks/7-example.md'), 'utf8'), '# Example\n')
-    assert.equal(await readFile(join(`${app.second}-old`, 'TASKS.md'), 'utf8'), backlogFixture)
   } finally { await app.close() }
 })

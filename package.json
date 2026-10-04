@@ -7,11 +7,11 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "test": "python3 -m unittest discover -s tests/python -p \"test_*.py\" && node --import tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
     "check": "npm test && npm run build && npm run test:e2e",
-    "start": "node --import tsx server/index.ts",
-    "dev:server": "node --import tsx --watch server/index.ts"
+    "start": "python3 -m hai_server",
+    "dev:server": "python3 -m hai_server"
   },
   "dependencies": {
     "lucide-react": "^1.51.0",

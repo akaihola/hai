@@ -1,6 +1,6 @@
 # Private deployment on gogo
 
-The production service serves `dist/` and the Node API from
+The production service serves `dist/` and the Python API from
 `/home/agent/prg/hai`, with `/home/agent/prg/hai/TASKS.md` as its tracker. It binds
 only to `127.0.0.1:4173`. Tailscale Serve provides two private addresses:
 
@@ -18,7 +18,7 @@ Existing Tailscale routes, including HTTPS port 443, must remain unchanged.
 ## Install after validation
 
 Run on gogo as `agent`. The checked-in service targets this repository's absolute
-path. Node is available through `/etc/profiles/per-user/agent/bin/node`; the path
+path. Python is available through `/etc/profiles/per-user/agent/bin/python3`; the path
 survives Nix profile updates. User lingering is already enabled, so enabled user
 services continue after logout and start at boot.
 
@@ -44,6 +44,12 @@ origin. Localhost remains available for local checks. The API does not trust
 forwarded headers to grant origins or host access.
 HTTP port 5173 uses the request's matching origin,
 `http://gogo.tailnet.example:5173`; it needs no additional origin allowance.
+
+Python 3.11+ runs the service directly from the repository with no Python runtime
+dependencies. Node is used for the frontend build and tests. Git must remain on
+the service PATH for description-number history checks. SSH and GitHub sources
+need credentials configured for the service account; see
+[Python API and CLI](python-api-cli.md).
 
 ## Verify and inspect
 

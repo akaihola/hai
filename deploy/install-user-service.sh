@@ -7,14 +7,14 @@ if [[ "$repo_root" != /home/agent/prg/hai ]]; then
   printf '%s\n' 'This unit targets /home/agent/prg/hai on gogo. Update deploy/hai.service before installing elsewhere.' >&2
   exit 1
 fi
-for path in dist/index.html server/index.ts TASKS.md node_modules/tsx/package.json; do
+for path in dist/index.html hai_server/__main__.py hai_tasks/store.py TASKS.md; do
   if [[ ! -f "$repo_root/$path" ]]; then
     printf 'Missing %s. Install dependencies and build Hai before deployment.\n' "$path" >&2
     exit 1
   fi
 done
-if [[ ! -x /etc/profiles/per-user/agent/bin/node ]]; then
-  printf '%s\n' 'The configured Node executable is unavailable.' >&2
+if [[ ! -x /etc/profiles/per-user/agent/bin/python3 ]]; then
+  printf '%s\n' 'The configured Python executable is unavailable.' >&2
   exit 1
 fi
 systemd-analyze --user verify "$repo_root/deploy/hai.service"

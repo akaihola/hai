@@ -1,10 +1,10 @@
 # Hai
 
-A Linear-inspired issue workspace with a replaceable backend. Built with React, TypeScript, Vite, and Lucide icons.
+A Linear-inspired issue workspace with a replaceable backend. Built with React, TypeScript, Vite, Lucide icons, and a Python backend.
 
 ## Run
 
-Use Node.js 22.12+ or 24+.
+Use Python 3.11+ and Git for the backend. Node.js 22.12+ or 24+ builds and tests the frontend.
 
 ```bash
 npm ci
@@ -17,6 +17,8 @@ Open http://localhost:4173. Hai reads and edits this repository's `TASKS.md` and
 For frontend development, run `npm run dev:server` and `npm run dev` in separate terminals. Vite serves http://127.0.0.1:5173 and forwards `/api` to the backend on port 4173. On gogo, the backend already runs as `hai.service`.
 
 The deployed app is available at http://gogo.tailnet.example:5173/ and https://gogo.tailnet.example:8443/ through Tailscale. Both addresses use the persistent production service. Vite binds only to loopback so development and tests can share port 5173 with the separate Tailscale address.
+
+The standalone [Python API and CLI](docs/python-api-cli.md) parses, queries, edits and reports on local, SSH and GitHub TASKS.md projects. Run `python3 -m hai_tasks --help`. Configured remote projects can also be opened in the browser by alias.
 
 The independent browser-storage demo remains available at `/?backend=local`. Its sample data and backups stay in that browser and origin.
 
@@ -51,7 +53,7 @@ import { myBackend } from './adapters/my-backend';
 
 Implement the asynchronous workspace load and issue mutation methods, declare supported capabilities, and map provider data into the shared model. The UI uses capabilities to control available actions. Provider credentials and direct filesystem access belong in a companion service or desktop bridge.
 
-GitHub Issues/Projects, Beans, taskmd, and markdown-ticket remain planned integrations. Projects, members, and cycles are supplied by the backend; their administrative editing is still upcoming. The deployment uses private Tailscale access rather than application accounts. There is no automatic background synchronization.
+GitHub Issues/Projects, Beans, taskmd, and markdown-ticket remain planned integrations. Projects, members, and cycles are supplied by the backend; project and cycle administration is available when the backend supports it. The deployment uses private Tailscale access rather than application accounts. There is no automatic background synchronization.
 
 Research, provider mappings, and extension guidance are in [docs/backends.md](docs/backends.md). Design decisions and the implementation plan are in [docs/design.md](docs/design.md).
 
@@ -63,7 +65,7 @@ npx playwright install chromium
 npm run check
 ```
 
-`npm test` checks the data model, adapters, Markdown parser, and file API. `npm run build` typechecks the client and server and produces `dist/`. `npm run test:e2e` runs Chromium workflows, including the file backend against temporary trackers. Tests do not mutate this repository's tracker.
+`npm test` runs Python package, CLI and transport tests plus the existing client and tracker regressions against Python. `npm run build` typechecks the client and test bridge and produces `dist/`. `npm run test:e2e` runs Chromium workflows, including the file backend against temporary trackers. Tests do not mutate this repository's tracker.
 
 Validation on October 3, 2026 passed 44 unit/API tests, 31 Chromium tests, TypeScript checks, and the production build. Live deployment checks are recorded in `docs/deployment.md`.
 

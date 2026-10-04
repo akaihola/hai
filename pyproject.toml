@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=65"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hai-tasks"
+version = "0.1.0"
+description = "Lossless TASKS.md tools and the Hai workspace server"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+hai-tasks = "hai_tasks.cli:main"
+hai-server = "hai_server.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["hai_tasks*", "hai_server*"]

@@ -5,9 +5,8 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/home/agent/prg/hai
-ExecStart=/etc/profiles/per-user/agent/bin/node --import tsx server/index.ts
+ExecStart=/etc/profiles/per-user/agent/bin/python3 -m hai_server
 Environment=SHELL=/bin/bash
-Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=4173
 Environment=HAI_TASKS_FILE=/home/agent/prg/hai/TASKS.md

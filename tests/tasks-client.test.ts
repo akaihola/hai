@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createTasksBackend } from '../src/adapters/tasks.ts'
-import { parseTasks, workspaceOf } from '../server/tasks-markdown.ts'
+import { parseTasks, workspaceOf } from './python-bridge.ts'
 import { backlogFixture } from './fixtures/tasks-markdown.ts'
 
 for (const message of [

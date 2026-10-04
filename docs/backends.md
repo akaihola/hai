@@ -1,6 +1,6 @@
 # Backends and portable data
 
-Hai uses the repository TASKS.md through its Node service by default. The browser-storage demo is available explicitly with `?backend=local`. GitHub, Beans, taskmd, and Markdown Ticket remain planned integrations.
+Hai uses the repository TASKS.md through its Python service by default. The browser-storage demo is available explicitly with `?backend=local`. GitHub, Beans, taskmd, and Markdown Ticket remain planned integrations.
 
 ## Adapter contract
 
@@ -53,6 +53,11 @@ is disabled; the cycle view can still browse past or upcoming cycles.
 
 ## TASKS.md service
 
+`hai_tasks` is the standalone Python parser, storage and multi-project API/CLI.
+`hai_server` supplies the HTTP adapter. Local, SSH and GitHub TASKS.md sources
+share the same parser and mutation rules. See [Python API and CLI](python-api-cli.md)
+for installation, transport behavior and configured remote source aliases.
+
 The service reads `TASKS.md` and numbered description references under `docs/tasks/`. It uses Filemill's five work sections and preserves the separate acceptance checkbox in `Completed / Accepted`. `Issue.sourceSection` retains the original section, including the distinction between unverified proposals and ordered backlog. `Issue.accepted` reflects explicit user acceptance. Completing work never checks that box.
 
 Existing wrapped summaries load in full. Titles have a shared 50,000-character
@@ -68,7 +73,7 @@ The service serializes writes, waits for pending writes before reading, and chec
 
 Simple tasks receive persistent IDs in Hai metadata comments on their first write. New description numbers are allocated from unused IDs after checking references, description filenames, available Git history, and the `hai:reserved-numbers` comment. Numbered creation and deletion preserve this ledger so retired numbers are not reused after cleanup without Git. Keep the ledger during tracker maintenance.
 
-API requests may include `?source=` with an absolute server folder or TASKS.md path, including `~/` paths. With no source, the configured tracker is used. Responses identify the canonical source; the HTTP adapter pins every subsequent operation to it. Store queues and revision tokens are scoped to that source, including when identical trackers have the same issue identifiers. `HAI_PROJECT_ROOTS` sets allowed roots using the OS path delimiter. The default is the parent of the configured project directory; the configured project itself remains allowed. Symbolic tracker files and project links escaping allowed roots are rejected.
+API requests may include `?source=` with an absolute server folder or TASKS.md path, including `~/` paths. With no source, the configured tracker is used. Responses identify the canonical source; the HTTP adapter pins every subsequent operation to it. Directory locks and revision tokens are scoped to that source, including when identical trackers have the same issue identifiers. `HAI_PROJECT_ROOTS` sets allowed roots using the OS path delimiter. The default is the parent of the configured project directory; the configured project itself remains allowed. Symbolic tracker files and project links escaping allowed roots are rejected.
 
 File mutations preserve unrelated source, reference links, and rules. The UI splits the combined completion section into Completed and Accepted groups without changing the source format. It exposes the native source sections and hides unsupported member/project/cycle controls. The **Refresh source** action reads external edits. Source import is disabled; edit the Markdown files directly instead.
 
@@ -88,7 +93,7 @@ JSON is the lossless exchange format for the browser workspace. Import replaces 
 
 `TASKS.md` is an export-only snapshot. Hai writes a document headed `# Tasks`, groups tasks under status headings, and writes `- [x]` for done issues and `- [ ]` for other statuses. The status heading distinguishes backlog, review, and canceled tasks. Each task includes its identifier, title, priority, project, assignee, cycle, labels, and indented description when present.
 
-The browser demo's readable Markdown export is independent of the live Filemill-style tracker. It is not a Beans, taskmd, or Markdown Ticket file. Markdown cannot be imported through this adapter; use the JSON backup to preserve IDs, timestamps, and entity relationships. The default file backend uses the Filemill-style schema and Node transport described above.
+The browser demo's readable Markdown export is independent of the live Filemill-style tracker. It is not a Beans, taskmd, or Markdown Ticket file. Markdown cannot be imported through this adapter; use the JSON backup to preserve IDs, timestamps, and entity relationships. The default file backend uses the Filemill-style schema and Python transport described above.
 
 ## Future connector mappings
 

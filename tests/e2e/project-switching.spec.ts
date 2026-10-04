@@ -2,7 +2,7 @@ import { test as base, expect } from '@playwright/test'
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { createTasksServer } from '../../server/http'
+import { createTasksServer } from '../python-bridge.ts'
 import { longWrappedTitle } from '../fixtures/tasks-markdown'
 
 const tracker = (name: string) => `# ${name}
