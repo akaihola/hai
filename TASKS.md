@@ -38,8 +38,8 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Completed / Accepted
 
-- [ ] [16] Python backend and TASKS.md API & CLI
-  <!-- hai:{"id":"simple-f04ebe20-a07c-42b6-b19a-13a9d5a39227","priority":"none","labels":[],"createdAt":"2026-10-04T07:46:09.160Z","updatedAt":"2026-10-04T18:00:34.010Z"} -->
+- [x] [16] Python backend and TASKS.md API & CLI
+  <!-- hai:{"id":"simple-f04ebe20-a07c-42b6-b19a-13a9d5a39227","priority":"none","labels":[],"createdAt":"2026-10-04T07:46:09.160Z","updatedAt":"2026-10-04T18:03:18.693Z"} -->
 
 - [x] [*] I get a `Task title must contain 1–300 characters.` error when I try to open the
   `~/prg/drum-transcribe` project on akaihola@atom.
