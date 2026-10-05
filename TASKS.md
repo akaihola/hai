@@ -26,20 +26,23 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
+- [18] All projects view
+  <!-- hai:{"id":"simple-204d2565-1a34-4ece-a417-21f4ae94d387","priority":"none","labels":[],"createdAt":"2026-10-05T19:53:39.313Z","updatedAt":"2026-10-05T19:53:39.313Z"} -->
+
 ## Scheduled
 
 ## In Progress
 
 ## Completed / Accepted
 
-- [ ] [*] Evaluate automatic refresh when a tracker is edited outside Hai.
-  <!-- hai:{"id":"simple-23492cea2aaa55f4","updatedAt":"2026-10-04T20:45:17.245Z"} -->
+- [x] [*] Evaluate automatic refresh when a tracker is edited outside Hai.
+  <!-- hai:{"id":"simple-23492cea2aaa55f4","updatedAt":"2026-10-05T19:55:46.838Z"} -->
 
-- [ ] [15] Insufficient detail in error for tracker source
-  <!-- hai:{"id":"simple-ddbc18e9-2ca9-4a1e-99c8-3260f171ad67","priority":"none","labels":[],"createdAt":"2026-10-03T21:05:31.331Z","updatedAt":"2026-10-04T20:39:36.066Z"} -->
+- [x] [15] Insufficient detail in error for tracker source
+  <!-- hai:{"id":"simple-ddbc18e9-2ca9-4a1e-99c8-3260f171ad67","priority":"none","labels":[],"createdAt":"2026-10-03T21:05:31.331Z","updatedAt":"2026-10-05T19:55:58.925Z"} -->
 
-- [ ] [17] Automatically refresh and retry new issue saves
-  <!-- hai:{"id":"simple-3e99c016-4b24-458f-b27c-5c0536f10309","createdAt":"2026-10-04T20:17:04.615Z","updatedAt":"2026-10-04T20:27:23.619Z"} -->
+- [x] [17] Automatically refresh and retry new issue saves
+  <!-- hai:{"id":"simple-3e99c016-4b24-458f-b27c-5c0536f10309","createdAt":"2026-10-04T20:17:04.615Z","updatedAt":"2026-10-05T19:55:34.449Z"} -->
 
 - [x] [16] Python backend and TASKS.md API & CLI
   <!-- hai:{"id":"simple-f04ebe20-a07c-42b6-b19a-13a9d5a39227","priority":"none","labels":[],"createdAt":"2026-10-04T07:46:09.160Z","updatedAt":"2026-10-04T18:03:18.693Z"} -->
@@ -54,16 +57,17 @@ Rules for TASKS.md usage are at the bottom of the file.
 - [x] [14] User can't view different projects
   <!-- hai:{"id":"simple-81bf59c0-8436-49f6-bc43-e7c03bf5b966","priority":"none","labels":[],"createdAt":"2026-10-03T16:59:29.495Z","updatedAt":"2026-10-03T17:45:06.589Z"} -->
 
-- [ ] [13] Separate groups: Completed and Accepted
-    <!-- hai:{"id":"simple-9a484642-438a-442a-9ff4-adaea52b4796","priority":"none","labels":[],"createdAt":"2026-10-03T16:27:07.487Z","updatedAt":"2026-10-03T16:27:07.487Z"} -->
+- [x] [13] Separate groups: Completed and Accepted
+  <!-- hai:{"id":"simple-9a484642-438a-442a-9ff4-adaea52b4796","priority":"none","labels":[],"createdAt":"2026-10-03T16:27:07.487Z","updatedAt":"2026-10-05T19:55:05.328Z"} -->
 
-- [ ] [12] Eliminate runs of blank lines in TASKS.md
-    <!-- hai:{"id":"simple-07d5ee60-0b24-473c-becc-96c8c92af599","priority":"urgent","labels":[],"createdAt":"2026-10-03T15:47:37.833Z","updatedAt":"2026-10-03T16:25:01.441Z"} -->
+- [x] [12] Eliminate runs of blank lines in TASKS.md
+  <!-- hai:{"id":"simple-07d5ee60-0b24-473c-becc-96c8c92af599","priority":"urgent","labels":[],"createdAt":"2026-10-03T15:47:37.833Z","updatedAt":"2026-10-05T19:55:02.047Z"} -->
 
 - [x] [11] Allow dragging issues from a group to another
   <!-- hai:{"id":"simple-3aa8f0ea-6ccc-4e8b-ac14-04d2b9478536","priority":"urgent","labels":[],"createdAt":"2026-10-03T15:43:52.664Z","updatedAt":"2026-10-03T17:45:24.303Z"} -->
 
-- [ ] [*] Allow drag-and-drop ordering of the Ordered backlog issue group.
+- [x] [*] Allow drag-and-drop ordering of the Ordered backlog issue group.
+  <!-- hai:{"id":"simple-f81b95eaa561efe0","updatedAt":"2026-10-05T19:54:55.034Z"} -->
 
 - [x] [*] Restore persistent access at http://gogo.tailnet.example:5173/.
     <!-- hai:{"id":"simple-b063810f-7c6b-4170-9c30-7f58afa3b59e","createdAt":"2026-10-03T15:22:16.015Z","updatedAt":"2026-10-03T15:30:31.696Z"} -->
@@ -78,21 +82,27 @@ Rules for TASKS.md usage are at the bottom of the file.
 
   <!-- hai:{"updatedAt":"2026-10-03T17:45:52.762Z"} -->
 
-- [ ] [3] Adopt Filemill's task tracker conventions for Hai.
-    <!-- hai:{"updatedAt":"2026-10-03T13:13:15.461Z"} -->
+- [x] [3] Adopt Filemill's task tracker conventions for Hai.
+  <!-- hai:{"updatedAt":"2026-10-05T19:54:45.199Z"} -->
 
-- [ ] [1] Build the working Linear-inspired issue workspace and responsive interface.
+- [x] [1] Build the working Linear-inspired issue workspace and responsive interface.
+  <!-- hai:{"updatedAt":"2026-10-05T19:54:32.820Z"} -->
 
-- [ ] [2] Define the replaceable backend contract and browser persistence adapter.
+- [x] [2] Define the replaceable backend contract and browser persistence adapter.
+  <!-- hai:{"updatedAt":"2026-10-05T19:54:22.529Z"} -->
 
-- [ ] [*] Research GitHub, Beans, taskmd, and Markdown Ticket provider mappings.
+- [x] [*] Research GitHub, Beans, taskmd, and Markdown Ticket provider mappings.
+  <!-- hai:{"id":"simple-5bdaf3b310caa03c","updatedAt":"2026-10-05T19:54:14.201Z"} -->
 
-- [ ] [*] Verify issue workflows, accessible dialogs, keyboard controls, and mobile
+- [x] [*] Verify issue workflows, accessible dialogs, keyboard controls, and mobile
       layout.
+  <!-- hai:{"id":"simple-5c22b703fc850a34","updatedAt":"2026-10-05T19:54:10.795Z"} -->
 
-- [ ] [*] Add workspace JSON backups and readable Markdown export.
+- [x] [*] Add workspace JSON backups and readable Markdown export.
+  <!-- hai:{"id":"simple-788e7e4b24de8e9d","updatedAt":"2026-10-05T19:54:04.817Z"} -->
 
-- [ ] [*] Allow gogo as a development server hostname.
+- [x] [*] Allow gogo as a development server hostname.
+  <!-- hai:{"id":"simple-8a9e06bba8a9059e","updatedAt":"2026-10-05T19:53:56.131Z"} -->
 
 [1]: docs/tasks/1-issue-workspace.md
 [2]: docs/tasks/2-backend-contract.md
@@ -110,7 +120,7 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 [11]: docs/tasks/11-allow-dragging-issues-from-a-group-to-another.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18 -->
 
 [12]: docs/tasks/12-eliminate-runs-of-blank-lines-in-tasks-md.md
 [13]: docs/tasks/13-separate-groups-completed-and-accepted.md
@@ -121,6 +131,8 @@ Rules for TASKS.md usage are at the bottom of the file.
 [16]: docs/tasks/16-python-backend-and-tasks-md-api-cli.md
 
 [17]: docs/tasks/17-automatically-refresh-and-retry-new-issue-saves.md
+
+[18]: docs/tasks/18-all-projects-view.md
 
 ## Rules
 

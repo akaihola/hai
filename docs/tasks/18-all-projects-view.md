@@ -1,0 +1,1 @@
+Make it possible to view all issues of all projects in the same view. Consider usability and see how Linear and T3 Code handle this.
