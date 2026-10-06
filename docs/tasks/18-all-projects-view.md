@@ -30,3 +30,14 @@ Make it possible to view all issues of all projects in the same view. Consider u
 - npm run check passed 22 Python tests, 86 client/API tests, TypeScript, the production build and all 52 Chromium workflows.
 - Final review changes passed all 22 Python tests, 87 client/API tests, another production build and all six project-navigation Chromium workflows. Desktop board and mobile list screenshots were inspected.
 - No acceptance was recorded. Aggregate refresh is manual; edits, creation, reordering and exports require opening a single project. Nested trackers need explicit opening or a configured parent root.
+
+
+## Deployment, 2026-10-06
+
+Merged into main and deployed to the existing private service. Loopback and both
+private Tailscale addresses passed health, exact HTML/asset content and catalog
+checks. The deployed browser showed 132 issues from eight readable projects;
+nine existing incompatible or incomplete trackers were explicitly reported.
+Sibling trackers were not edited. Unrelated Hai issues and user acceptance were
+verified unchanged. Validation logs, workspace snapshots and screenshots are in
+/tmp/hai-issue18-m1mvmd0g/. Issue 18 remains unchecked for user acceptance.

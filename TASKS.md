@@ -30,10 +30,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [18] All projects view
-  <!-- hai:{"id":"simple-204d2565-1a34-4ece-a417-21f4ae94d387","priority":"none","labels":[],"createdAt":"2026-10-05T19:53:39.313Z","updatedAt":"2026-10-06T04:53:56.236Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [18] All projects view
+  <!-- hai:{"id":"simple-204d2565-1a34-4ece-a417-21f4ae94d387","priority":"none","labels":[],"createdAt":"2026-10-05T19:53:39.313Z","updatedAt":"2026-10-06T04:55:25.836Z"} -->
 
 - [x] [*] Evaluate automatic refresh when a tracker is edited outside Hai.
   <!-- hai:{"id":"simple-23492cea2aaa55f4","updatedAt":"2026-10-05T19:55:46.838Z"} -->
