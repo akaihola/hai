@@ -28,10 +28,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Scheduled
 
-- [18] All projects view
-  <!-- hai:{"id":"simple-204d2565-1a34-4ece-a417-21f4ae94d387","priority":"none","labels":[],"createdAt":"2026-10-05T19:53:39.313Z","updatedAt":"2026-10-06T04:46:17.729Z"} -->
-
 ## In Progress
+
+- [~] [18] All projects view
+  <!-- hai:{"id":"simple-204d2565-1a34-4ece-a417-21f4ae94d387","priority":"none","labels":[],"createdAt":"2026-10-05T19:53:39.313Z","updatedAt":"2026-10-06T04:48:42.960Z"} -->
 
 ## Completed / Accepted
 
