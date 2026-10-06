@@ -21,3 +21,12 @@ Make it possible to view all issues of all projects in the same view. Consider u
 - Duplicate task IDs, unreadable projects, refresh recovery, read-only capabilities and opening/editing the correct owner without changing siblings.
 - Desktop/mobile list and board, project filter, search, reload persistence and project switching.
 - Run npm run check before merging and deploying. Completion remains unchecked pending user acceptance.
+
+
+## Implemented and validated, 2026-10-06
+
+- Added a read-only aggregate adapter, source discovery endpoint, persistent All projects navigation, project filter and source labels. The picker lists available projects when opened from the aggregate, including empty projects.
+- Repeated source references and metadata IDs are namespaced by canonical source. Opening an issue resolves its owner and original ID before editing. Failed sources remain explicit; an unavailable remembered source does not hide readable projects.
+- npm run check passed 22 Python tests, 86 client/API tests, TypeScript, the production build and all 52 Chromium workflows.
+- Final review changes passed all 22 Python tests, 87 client/API tests, another production build and all six project-navigation Chromium workflows. Desktop board and mobile list screenshots were inspected.
+- No acceptance was recorded. Aggregate refresh is manual; edits, creation, reordering and exports require opening a single project. Nested trackers need explicit opening or a configured parent root.

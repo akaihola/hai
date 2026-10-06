@@ -1,4 +1,4 @@
-import { TASK_SECTIONS, type IssueInput, type IssuePatch, type WorkspaceBackend } from '../domain'
+import { TASK_SECTIONS, type IssueInput, type IssuePatch, type WorkspaceBackend, type WorkspaceSource, type Issue } from '../domain'
 import { assertWorkspace } from '../data/validation'
 
 class StaleRevisionError extends Error {}
@@ -56,11 +56,12 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
     capabilities: {
       id: 'tasks', name: 'TASKS.md', description: 'Connected to TASKS.md and its description files on the server.',
       get canAutoRefresh() { return !!source && !source.path.startsWith('/@') },
-      canCreate: true, canUpdate: true, canDelete: true, canImport: false, canExport: true, canReorderBacklog: true, canOpenWorkspace: true, persistence: 'filesystem', workflow: 'tasks',
+      canCreate: true, canUpdate: true, canDelete: true, canImport: false, canExport: true, canReorderBacklog: true, canOpenWorkspace: true, canViewAllProjects: true, persistence: 'filesystem', workflow: 'tasks',
       canCreateProject: false, canUpdateProject: false, canDeleteProject: false, canCreateCycle: false, canUpdateCycle: false, canDeleteCycle: false,
       fields: { assignee: false, project: false, cycle: false, description: true },
     },
     get source() { return source },
+    openAllProjects() { return createAllTasksBackend(baseUrl, sourcePath) },
     async openWorkspace(path) { const backend = createTasksBackend(baseUrl, path); await backend.load(); return backend },
     async load() { return snapshot(await read(await request('/workspace'))).workspace },
     async pollChanges(canApply) {
@@ -88,6 +89,70 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
     async reorderBacklog(issueIds) { return (await mutate('POST', '/backlog/order', { issueIds })).workspace },
     async exportData(format) { return (await request(`/export?format=${format}`)).text() },
     async importData() { throw new Error('Import is unavailable for TASKS.md. Edit the source files and refresh the workspace.') },
+  }
+}
+
+export function createAllTasksBackend(baseUrl = '/api', sourcePath?: string): WorkspaceBackend {
+  let sources: WorkspaceSource[] = []
+  let sourceErrors: { source: WorkspaceSource; error: string }[] = []
+  let owners = new Map<string, { path: string; id: string }>()
+  const unavailable = async (): Promise<never> => { throw new Error('Open a project to edit or export its tracker.') }
+  return {
+    capabilities: {
+      id: 'tasks-all', name: 'All projects', description: 'Issues across available TASKS.md projects. Open an issue to edit it in its project.',
+      workspaceScope: 'all', canViewAllProjects: true, canOpenWorkspace: true,
+      canCreate: false, canUpdate: false, canDelete: false, canImport: false, canExport: false,
+      canReorderBacklog: false, canAutoRefresh: false, persistence: 'filesystem', workflow: 'tasks',
+      canCreateProject: false, canUpdateProject: false, canDeleteProject: false,
+      canCreateCycle: false, canUpdateCycle: false, canDeleteCycle: false,
+      fields: { assignee: false, project: false, cycle: false, description: true },
+    },
+    get sources() { return sources },
+    get sourceErrors() { return sourceErrors },
+    openAllProjects() { return createAllTasksBackend(baseUrl, sourcePath) },
+    async openWorkspace(path) { return createTasksBackend(baseUrl).openWorkspace!(path) },
+    async openIssue(id) {
+      const owner = owners.get(id)
+      if (!owner) throw new Error('This issue is no longer available. Refresh all projects.')
+      const backend = createTasksBackend(baseUrl, owner.path)
+      const workspace = await backend.load()
+      const issue = workspace.issues.find(item => item.id === owner.id)
+      if (!issue) throw new Error('This issue was removed from its project. Refresh all projects.')
+      return { backend, issue }
+    },
+    async load() {
+      const suffix = sourcePath ? `?source=${encodeURIComponent(sourcePath)}` : ''
+      const response = await fetch(`${baseUrl}/projects${suffix}`, { cache: 'no-store' })
+      const value = await response.json()
+      if (!response.ok) throw new Error(value.error ?? 'Could not list projects.')
+      if (!Array.isArray(value.sources) || value.sources.some((item: WorkspaceSource) => !item || typeof item.name !== 'string' || typeof item.path !== 'string' || !item.path.startsWith('/'))) throw new Error('The server returned an invalid project list.')
+      const listed = [...new Map<string, WorkspaceSource>(value.sources.map((item: WorkspaceSource) => [item.path, item])).values()]
+      const results = await Promise.allSettled(listed.map(async source => {
+        const backend = createTasksBackend(baseUrl, source.path)
+        const workspace = await backend.load()
+        return { source: backend.source!, issues: workspace.issues }
+      }))
+      const issues: Issue[] = [], nextSources: WorkspaceSource[] = [], errors: typeof sourceErrors = []
+      const nextOwners: typeof owners = new Map()
+      for (const [index, result] of results.entries()) {
+        if (result.status === 'rejected') {
+          errors.push({ source: listed[index]!, error: result.reason instanceof Error ? result.reason.message : 'Could not open project.' })
+          continue
+        }
+        const { source, issues: projectIssues } = result.value
+        if (nextSources.some(item => item.path === source.path)) continue
+        nextSources.push(source)
+        for (const issue of projectIssues) {
+          const id = JSON.stringify([source.path, issue.id])
+          nextOwners.set(id, { path: source.path, id: issue.id })
+          issues.push({ ...issue, id, workspaceSource: source })
+        }
+      }
+      sources = nextSources; sourceErrors = errors; owners = nextOwners
+      return { issues, projects: [], cycles: [], members: [], currentMemberId: null }
+    },
+    createIssue: unavailable, updateIssue: unavailable, deleteIssue: unavailable,
+    exportData: unavailable, importData: unavailable,
   }
 }
 

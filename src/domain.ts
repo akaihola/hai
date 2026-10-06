@@ -43,6 +43,7 @@ export interface Issue {
   sourcePath?: string
   sourceReference?: string
   dependencies?: string[]
+  workspaceSource?: WorkspaceSource
 }
 export interface Project {
   id: string
@@ -82,6 +83,8 @@ export interface BackendCapabilities {
   canReorderBacklog?: boolean
   canOpenWorkspace?: boolean
   canAutoRefresh?: boolean
+  canViewAllProjects?: boolean
+  workspaceScope?: 'all'
   persistence: 'browser' | 'filesystem' | 'remote'
   workflow?: 'tasks'
   fields?: { assignee: boolean; project: boolean; cycle: boolean; description: boolean }
@@ -89,7 +92,11 @@ export interface BackendCapabilities {
 export interface WorkspaceBackend {
   readonly capabilities: BackendCapabilities
   readonly source?: WorkspaceSource
+  readonly sources?: WorkspaceSource[]
+  readonly sourceErrors?: { source: WorkspaceSource; error: string }[]
   openWorkspace?(path: string): Promise<WorkspaceBackend>
+  openAllProjects?(): WorkspaceBackend
+  openIssue?(id: string): Promise<{ backend: WorkspaceBackend; issue: Issue }>
   load(): Promise<Workspace>
   pollChanges?(canApply: () => boolean): Promise<Workspace | null>
   createIssue(input: IssueInput): Promise<Issue>

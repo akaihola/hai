@@ -393,6 +393,9 @@ class TrackerTests(unittest.TestCase):
         thread.start()
         try:
             base = f'http://127.0.0.1:{server.server_port}'
+            with urlopen(base + '/api/projects') as response:
+                sources = json.load(response)['sources']
+            self.assertIn({'name': 'team', 'path': '/@team'}, sources)
             with urlopen(base + '/api/workspace?source=/@team') as response:
                 loaded = json.load(response)
             self.assertEqual(loaded['source'], {'name': 'team', 'path': '/@team'})

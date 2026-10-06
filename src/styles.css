@@ -547,3 +547,13 @@ kbd{min-width:18px;height:18px;color:var(--dim);font:inherit;white-space:nowrap;
 .entity-dialog input[type=color]{padding:4px;width:100%;min-height:36px;cursor:pointer}
 .nav-item:disabled{opacity:.5;cursor:default}
 @media(max-width:600px){.projects-page>.section-heading{align-items:flex-start;gap:14px;flex-direction:column}.section-heading .entity-actions{justify-content:flex-start}}
+
+.source-issue-title{display:flex;flex-direction:column;gap:3px;white-space:normal}
+.source-issue-title>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.source-label{color:var(--dim);font-size:10px;font-weight:400}
+.source-filter{display:flex;align-items:center;gap:10px;margin:0 24px 12px;color:var(--dim);font-size:12px}
+.source-filter select{max-width:min(520px,80%);min-width:0}
+.source-errors{margin:16px 24px;padding:12px 16px;border:1px solid var(--yellow);border-radius:6px;color:var(--yellow);font-size:12px;overflow-wrap:anywhere}
+.source-errors p{margin:8px 0 0;color:var(--dim)}
+
+.source-errors summary{cursor:pointer;font-weight:600}

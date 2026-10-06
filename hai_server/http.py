@@ -150,6 +150,30 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
                 if len(query.get('source', [])) > 1:
                     raise TasksError('Provide only one project source.')
                 if url.path.startswith('/api/'):
+                    if method == 'GET' and url.path == '/api/projects':
+                        # Discover trackers without recursively traversing repositories or links.
+                        candidates = {str(tasks_file), *remotes}
+                        for root in roots:
+                            if (root / 'TASKS.md').exists():
+                                candidates.add(str(root / 'TASKS.md'))
+                            for child in root.iterdir():
+                                if not child.is_symlink() and child.is_dir() and (child / 'TASKS.md').exists():
+                                    candidates.add(str(child / 'TASKS.md'))
+                        with selection_lock:
+                            candidates.update(stores)
+                        selected = query.get('source', [None])[0]
+                        if selected is not None:
+                            try:
+                                candidates.add(select_source(selected)[1]['path'])
+                            except TasksError as error:
+                                if error.status not in (404, 422):
+                                    raise
+                                # Keep an unavailable allowed selection in the partial-view diagnostics.
+                                path = Path(selected).expanduser()
+                                file = path if path.name == 'TASKS.md' or path == tasks_file else path / 'TASKS.md'
+                                candidates.add(os.path.abspath(file))
+                        sources = [{'name': path[2:] if path in remotes else Path(path).parent.name, 'path': path} for path in sorted(candidates)]
+                        return self.json(200, {'sources': sources})
                     store, source = select_source(query.get('source', [None])[0])
                     if method == 'GET' and url.path == '/api/workspace':
                         result = store.read()

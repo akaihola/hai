@@ -124,3 +124,30 @@ The documented MCP tools include `list_projects`, `list_crs`, `get_cr`, `create_
 ## Checks
 
 Run `npm test` to check browser persistence and backups, tracker parsing, acceptance semantics, identifier allocation, file mutations, guarded rollback, stale revisions, path boundaries, and host/origin checks. Tests use injected browser storage, temporary trackers, and loopback HTTP servers; they do not require external services. Browser workflows run separately with `npm run test:e2e`.
+
+
+## All projects
+
+The TASKS.md backend exposes an All projects scope through `WorkspaceBackend`.
+`GET /api/projects` lists the configured tracker, TASKS.md files directly in
+allowed project roots and their immediate project directories, previously opened
+nested trackers, and configured remote aliases. Discovery does not recurse or
+follow project-directory symlinks. Open a nested project once, or configure its
+parent in `HAI_PROJECT_ROOTS`, to include it. Every load still applies the existing
+source path and description security checks. Canonical paths deduplicate aliases.
+
+The aggregate adapter combines real source snapshots without synthetic project
+entities. Each issue carries its `workspaceSource`; its in-memory ID combines the
+canonical path and original task ID so repeated `[1]` references remain distinct.
+Project names appear in lists, board cards and search. The project selector shows
+paths as well as names. Unreadable sources produce a collapsible incomplete-view
+warning; successfully loaded projects remain browsable. Refresh retries all sources
+and discovers new trackers. The aggregate scope uses manual refresh, including for
+local sources, to avoid automatic remote operations when aliases are configured.
+
+The aggregate declares creation, mutation, backlog ordering and export unsupported.
+Opening an issue resolves its original ID and loads the owning single-project
+backend with a fresh revision, then opens the editor. Edits and exports use the
+normal single-tracker workflow. The browser remembers the selected scope and last
+single project. The browser-only workspace already combines its own project issues
+in All issues and retains its existing project filter.

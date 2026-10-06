@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, readFile, rename, rm, symlink, writeFile } from 'node:f
 import { homedir, tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { createTasksServer } from './python-bridge.ts'
-import { createTasksBackend } from '../src/adapters/tasks.ts'
+import { createTasksBackend, createAllTasksBackend } from '../src/adapters/tasks.ts'
 import { backlogFixture, longWrappedTitle } from './fixtures/tasks-markdown.ts'
 import { parseBackup } from '../src/data/validation.ts'
 import { ISSUE_TITLE_MAX_LENGTH } from '../src/domain.ts'
@@ -221,3 +221,90 @@ for (const changed of ['tracker', 'description'] as const) {
     } finally { await app.close() }
   })
 }
+
+
+test('all projects discovers trackers, namespaces repeated IDs and opens the correct owner', async () => {
+  const app = await setup()
+  try {
+    const all = createAllTasksBackend(app.url)
+    const workspace = await all.load()
+    assert.deepEqual(all.sources?.map(source => source.path).sort(), [app.first, app.second].map(path => join(path, 'TASKS.md')).sort())
+    assert.deepEqual(workspace.projects, [])
+    assert.equal(new Set(workspace.issues.map(issue => issue.id)).size, workspace.issues.length)
+    const twins = workspace.issues.filter(issue => issue.sourceReference === '[7]')
+    assert.equal(twins.length, 2)
+    assert.equal(all.capabilities.canUpdate, false)
+    assert.equal(all.capabilities.canCreate, false)
+    assert.equal(all.capabilities.canExport, false)
+    assert.equal(all.capabilities.fields?.project, false)
+    await assert.rejects(all.updateIssue(twins[0]!.id, { title: 'Forbidden' }), /Open a project/)
+    const selected = twins.find(issue => issue.workspaceSource?.path === join(app.second, 'TASKS.md'))!
+    const opened = await all.openIssue!(selected.id)
+    assert.equal(opened.issue.id, 'task-7')
+    assert.equal(opened.backend.source?.path, join(app.second, 'TASKS.md'))
+    await opened.backend.updateIssue(opened.issue.id, { title: 'Edited from all projects' })
+    assert.equal(await readFile(join(app.first, 'TASKS.md'), 'utf8'), backlogFixture)
+    assert.ok((await all.load()).issues.some(issue => issue.title === 'Edited from all projects'))
+    assert.equal(all.sourceErrors?.length, 0)
+  } finally { await app.close() }
+})
+
+test('all projects reports unreadable sources and recovers on refresh without modifying trackers', async () => {
+  const app = await setup()
+  try {
+    const description = join(app.second, 'docs/tasks/7-example.md')
+    await rm(description)
+    const all = createAllTasksBackend(app.url)
+    assert.ok((await all.load()).issues.every(issue => issue.workspaceSource?.path === join(app.first, 'TASKS.md')))
+    assert.equal(all.sourceErrors?.length, 1)
+    assert.equal(all.sourceErrors?.[0]?.source.path, join(app.second, 'TASKS.md'))
+    assert.match(all.sourceErrors![0]!.error, /7-example.md/)
+    await writeFile(description, '# Repaired')
+    await all.load()
+    assert.equal(all.sources?.length, 2)
+    assert.equal(all.sourceErrors?.length, 0)
+    for (const project of [app.first, app.second]) assert.equal(await readFile(join(project, 'TASKS.md'), 'utf8'), backlogFixture)
+  } finally { await app.close() }
+})
+
+test('project catalog includes selected nested trackers, deduplicates aliases and respects roots', async () => {
+  const app = await setup()
+  try {
+    const nested = join(app.second, 'nested')
+    await mkdir(join(nested, 'docs/tasks'), { recursive: true })
+    await writeFile(join(nested, 'TASKS.md'), backlogFixture)
+    await writeFile(join(nested, 'docs/tasks/7-example.md'), '# Nested')
+    await writeFile(join(nested, 'docs/tasks/4-example.md'), '# Backend')
+    await symlink(app.second, join(app.projects, 'alias'))
+    await symlink(app.outside, join(app.projects, 'outside-link'))
+    const all = createAllTasksBackend(app.url, nested)
+    await all.load()
+    assert.equal(all.sources?.length, 3)
+    assert.equal(all.sourceErrors?.length, 0)
+    assert.ok(all.sources?.some(source => source.path === join(nested, 'TASKS.md')))
+    assert.equal((await fetch(`${app.url}/projects?source=${encodeURIComponent(app.outside)}`)).status, 403)
+    const reopened = createAllTasksBackend(app.url)
+    await reopened.load()
+    assert.equal(reopened.sources?.length, 3)
+  } finally { await app.close() }
+  const restricted = await setup('restricted')
+  try {
+    const all = createAllTasksBackend(restricted.url)
+    await all.load()
+    assert.equal(all.sources?.length, 1)
+    assert.equal(all.sources?.[0]?.path, join(restricted.first, 'TASKS.md'))
+  } finally { await restricted.close() }
+})
+
+
+test('an unavailable remembered tracker does not hide other projects in the aggregate', async () => {
+  const app = await setup()
+  try {
+    const all = createAllTasksBackend(app.url, join(app.projects, 'removed-project', 'TASKS.md'))
+    await all.load()
+    assert.equal(all.sources?.length, 2)
+    assert.equal(all.sourceErrors?.length, 1)
+    assert.equal(all.sourceErrors?.[0]?.source.name, 'removed-project')
+    assert.match(all.sourceErrors![0]!.error, /Cannot open TASKS.md/)
+  } finally { await app.close() }
+})
