@@ -7,24 +7,28 @@ Rules for TASKS.md usage are at the bottom of the file.
 - [9] Connect Markdown Ticket through its configured bridge.
     - Depends on: [2]
 
-    <!-- hai:{"updatedAt":"2026-10-03T15:44:13.072Z"} -->
+      <!-- hai:{"updatedAt":"2026-10-03T15:44:13.072Z"} -->
 
 - [8] Connect taskmd without losing unsupported task metadata.
     - Depends on: [2]
 
-    <!-- hai:{"updatedAt":"2026-10-03T15:44:09.588Z"} -->
+      <!-- hai:{"updatedAt":"2026-10-03T15:44:09.588Z"} -->
 
 - [7] Connect Beans through its CLI or a local filesystem bridge.
     - Depends on: [2]
 
-    <!-- hai:{"updatedAt":"2026-10-03T15:44:06.413Z"} -->
+      <!-- hai:{"updatedAt":"2026-10-03T15:44:06.413Z"} -->
 
 - [6] Connect GitHub Issues and Projects with explicit workflow mappings.
     - Depends on: [2]
 
-    <!-- hai:{"updatedAt":"2026-10-03T15:44:02.099Z"} -->
+      <!-- hai:{"updatedAt":"2026-10-03T15:44:02.099Z"} -->
 
 ## Ordered backlog
+
+- [*] Can't switch to an arbitrary project among the configured projects, because the
+  `Switch project` drop-down only shows 8 recent projects and there's no other easy
+  project switch method.
 
 ## Scheduled
 
@@ -33,76 +37,76 @@ Rules for TASKS.md usage are at the bottom of the file.
 ## Completed / Accepted
 
 - [ ] [18] All projects view
-  <!-- hai:{"id":"simple-204d2565-1a34-4ece-a417-21f4ae94d387","priority":"none","labels":[],"createdAt":"2026-10-05T19:53:39.313Z","updatedAt":"2026-10-06T04:55:25.836Z"} -->
+    <!-- hai:{"id":"simple-204d2565-1a34-4ece-a417-21f4ae94d387","priority":"none","labels":[],"createdAt":"2026-10-05T19:53:39.313Z","updatedAt":"2026-10-06T04:55:25.836Z"} -->
 
 - [x] [*] Evaluate automatic refresh when a tracker is edited outside Hai.
-  <!-- hai:{"id":"simple-23492cea2aaa55f4","updatedAt":"2026-10-05T19:55:46.838Z"} -->
+    <!-- hai:{"id":"simple-23492cea2aaa55f4","updatedAt":"2026-10-05T19:55:46.838Z"} -->
 
 - [x] [15] Insufficient detail in error for tracker source
-  <!-- hai:{"id":"simple-ddbc18e9-2ca9-4a1e-99c8-3260f171ad67","priority":"none","labels":[],"createdAt":"2026-10-03T21:05:31.331Z","updatedAt":"2026-10-05T19:55:58.925Z"} -->
+    <!-- hai:{"id":"simple-ddbc18e9-2ca9-4a1e-99c8-3260f171ad67","priority":"none","labels":[],"createdAt":"2026-10-03T21:05:31.331Z","updatedAt":"2026-10-05T19:55:58.925Z"} -->
 
 - [x] [17] Automatically refresh and retry new issue saves
-  <!-- hai:{"id":"simple-3e99c016-4b24-458f-b27c-5c0536f10309","createdAt":"2026-10-04T20:17:04.615Z","updatedAt":"2026-10-05T19:55:34.449Z"} -->
+    <!-- hai:{"id":"simple-3e99c016-4b24-458f-b27c-5c0536f10309","createdAt":"2026-10-04T20:17:04.615Z","updatedAt":"2026-10-05T19:55:34.449Z"} -->
 
 - [x] [16] Python backend and TASKS.md API & CLI
-  <!-- hai:{"id":"simple-f04ebe20-a07c-42b6-b19a-13a9d5a39227","priority":"none","labels":[],"createdAt":"2026-10-04T07:46:09.160Z","updatedAt":"2026-10-04T18:03:18.693Z"} -->
+    <!-- hai:{"id":"simple-f04ebe20-a07c-42b6-b19a-13a9d5a39227","priority":"none","labels":[],"createdAt":"2026-10-04T07:46:09.160Z","updatedAt":"2026-10-04T18:03:18.693Z"} -->
 
-- [x] [*] I get a `Task title must contain 1–300 characters.` error when I try to open the
-  `~/prg/drum-transcribe` project on akaihola@atom.
-  <!-- hai:{"id":"simple-1d9599496e6f6177","updatedAt":"2026-10-03T17:44:49.596Z"} -->
+- [x] [*] I get a `Task title must contain 1–300 characters.` error when I try to open
+      the `~/prg/drum-transcribe` project on akaihola@atom.
+    <!-- hai:{"id":"simple-1d9599496e6f6177","updatedAt":"2026-10-03T17:44:49.596Z"} -->
 
 - [ ] [10] Add project and cycle administration for backends that support it.
     - Depends on: [2]
 
 - [x] [14] User can't view different projects
-  <!-- hai:{"id":"simple-81bf59c0-8436-49f6-bc43-e7c03bf5b966","priority":"none","labels":[],"createdAt":"2026-10-03T16:59:29.495Z","updatedAt":"2026-10-03T17:45:06.589Z"} -->
+    <!-- hai:{"id":"simple-81bf59c0-8436-49f6-bc43-e7c03bf5b966","priority":"none","labels":[],"createdAt":"2026-10-03T16:59:29.495Z","updatedAt":"2026-10-03T17:45:06.589Z"} -->
 
 - [x] [13] Separate groups: Completed and Accepted
-  <!-- hai:{"id":"simple-9a484642-438a-442a-9ff4-adaea52b4796","priority":"none","labels":[],"createdAt":"2026-10-03T16:27:07.487Z","updatedAt":"2026-10-05T19:55:05.328Z"} -->
+    <!-- hai:{"id":"simple-9a484642-438a-442a-9ff4-adaea52b4796","priority":"none","labels":[],"createdAt":"2026-10-03T16:27:07.487Z","updatedAt":"2026-10-05T19:55:05.328Z"} -->
 
 - [x] [12] Eliminate runs of blank lines in TASKS.md
-  <!-- hai:{"id":"simple-07d5ee60-0b24-473c-becc-96c8c92af599","priority":"urgent","labels":[],"createdAt":"2026-10-03T15:47:37.833Z","updatedAt":"2026-10-05T19:55:02.047Z"} -->
+    <!-- hai:{"id":"simple-07d5ee60-0b24-473c-becc-96c8c92af599","priority":"urgent","labels":[],"createdAt":"2026-10-03T15:47:37.833Z","updatedAt":"2026-10-05T19:55:02.047Z"} -->
 
 - [x] [11] Allow dragging issues from a group to another
-  <!-- hai:{"id":"simple-3aa8f0ea-6ccc-4e8b-ac14-04d2b9478536","priority":"urgent","labels":[],"createdAt":"2026-10-03T15:43:52.664Z","updatedAt":"2026-10-03T17:45:24.303Z"} -->
+    <!-- hai:{"id":"simple-3aa8f0ea-6ccc-4e8b-ac14-04d2b9478536","priority":"urgent","labels":[],"createdAt":"2026-10-03T15:43:52.664Z","updatedAt":"2026-10-03T17:45:24.303Z"} -->
 
 - [x] [*] Allow drag-and-drop ordering of the Ordered backlog issue group.
-  <!-- hai:{"id":"simple-f81b95eaa561efe0","updatedAt":"2026-10-05T19:54:55.034Z"} -->
+    <!-- hai:{"id":"simple-f81b95eaa561efe0","updatedAt":"2026-10-05T19:54:55.034Z"} -->
 
 - [x] [*] Restore persistent access at http://gogo.tailnet.example:5173/.
-    <!-- hai:{"id":"simple-b063810f-7c6b-4170-9c30-7f58afa3b59e","createdAt":"2026-10-03T15:22:16.015Z","updatedAt":"2026-10-03T15:30:31.696Z"} -->
+      <!-- hai:{"id":"simple-b063810f-7c6b-4170-9c30-7f58afa3b59e","createdAt":"2026-10-03T15:22:16.015Z","updatedAt":"2026-10-03T15:30:31.696Z"} -->
 
 - [x] [5] Deploy Hai persistently on gogo with private Tailscale access.
     - Depends on: [4]
 
-    <!-- hai:{"updatedAt":"2026-10-03T15:30:43.123Z"} -->
+      <!-- hai:{"updatedAt":"2026-10-03T15:30:43.123Z"} -->
 
 - [x] [4] Make Hai read and edit its repository TASKS.md through a local service.
     - Depends on: [2], [3]
 
-  <!-- hai:{"updatedAt":"2026-10-03T17:45:52.762Z"} -->
+    <!-- hai:{"updatedAt":"2026-10-03T17:45:52.762Z"} -->
 
 - [x] [3] Adopt Filemill's task tracker conventions for Hai.
-  <!-- hai:{"updatedAt":"2026-10-05T19:54:45.199Z"} -->
+    <!-- hai:{"updatedAt":"2026-10-05T19:54:45.199Z"} -->
 
 - [x] [1] Build the working Linear-inspired issue workspace and responsive interface.
-  <!-- hai:{"updatedAt":"2026-10-05T19:54:32.820Z"} -->
+    <!-- hai:{"updatedAt":"2026-10-05T19:54:32.820Z"} -->
 
 - [x] [2] Define the replaceable backend contract and browser persistence adapter.
-  <!-- hai:{"updatedAt":"2026-10-05T19:54:22.529Z"} -->
+    <!-- hai:{"updatedAt":"2026-10-05T19:54:22.529Z"} -->
 
 - [x] [*] Research GitHub, Beans, taskmd, and Markdown Ticket provider mappings.
-  <!-- hai:{"id":"simple-5bdaf3b310caa03c","updatedAt":"2026-10-05T19:54:14.201Z"} -->
+    <!-- hai:{"id":"simple-5bdaf3b310caa03c","updatedAt":"2026-10-05T19:54:14.201Z"} -->
 
 - [x] [*] Verify issue workflows, accessible dialogs, keyboard controls, and mobile
       layout.
-  <!-- hai:{"id":"simple-5c22b703fc850a34","updatedAt":"2026-10-05T19:54:10.795Z"} -->
+    <!-- hai:{"id":"simple-5c22b703fc850a34","updatedAt":"2026-10-05T19:54:10.795Z"} -->
 
 - [x] [*] Add workspace JSON backups and readable Markdown export.
-  <!-- hai:{"id":"simple-788e7e4b24de8e9d","updatedAt":"2026-10-05T19:54:04.817Z"} -->
+    <!-- hai:{"id":"simple-788e7e4b24de8e9d","updatedAt":"2026-10-05T19:54:04.817Z"} -->
 
 - [x] [*] Allow gogo as a development server hostname.
-  <!-- hai:{"id":"simple-8a9e06bba8a9059e","updatedAt":"2026-10-05T19:53:56.131Z"} -->
+    <!-- hai:{"id":"simple-8a9e06bba8a9059e","updatedAt":"2026-10-05T19:53:56.131Z"} -->
 
 [1]: docs/tasks/1-issue-workspace.md
 [2]: docs/tasks/2-backend-contract.md
@@ -125,13 +129,9 @@ Rules for TASKS.md usage are at the bottom of the file.
 [12]: docs/tasks/12-eliminate-runs-of-blank-lines-in-tasks-md.md
 [13]: docs/tasks/13-separate-groups-completed-and-accepted.md
 [14]: docs/tasks/14-user-can-t-view-different-projects.md
-
 [15]: docs/tasks/15-insufficient-detail-in-error-for-tracker-source.md
-
 [16]: docs/tasks/16-python-backend-and-tasks-md-api-cli.md
-
 [17]: docs/tasks/17-automatically-refresh-and-retry-new-issue-saves.md
-
 [18]: docs/tasks/18-all-projects-view.md
 
 ## Rules
