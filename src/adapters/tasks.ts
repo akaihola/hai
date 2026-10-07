@@ -3,6 +3,15 @@ import { assertWorkspace } from '../data/validation'
 
 class StaleRevisionError extends Error {}
 
+async function listTasksProjects(baseUrl: string, sourcePath?: string): Promise<WorkspaceSource[]> {
+  const suffix = sourcePath ? `?source=${encodeURIComponent(sourcePath)}` : ''
+  const response = await fetch(`${baseUrl}/projects${suffix}`, { cache: 'no-store' })
+  const value = await response.json()
+  if (!response.ok) throw new Error(value.error ?? 'Could not list projects.')
+  if (!Array.isArray(value.sources) || value.sources.some((item: WorkspaceSource) => !item || typeof item.name !== 'string' || typeof item.path !== 'string' || !item.path.startsWith('/'))) throw new Error('The server returned an invalid project list.')
+  return [...new Map<string, WorkspaceSource>(value.sources.map((item: WorkspaceSource) => [item.path, item])).values()]
+}
+
 export function createTasksBackend(baseUrl = '/api', sourcePath?: string): WorkspaceBackend {
   let revision: string | null = null
   let source: WorkspaceBackend['source']
@@ -56,11 +65,12 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
     capabilities: {
       id: 'tasks', name: 'TASKS.md', description: 'Connected to TASKS.md and its description files on the server.',
       get canAutoRefresh() { return !!source && !source.path.startsWith('/@') },
-      canCreate: true, canUpdate: true, canDelete: true, canImport: false, canExport: true, canReorderBacklog: true, canOpenWorkspace: true, canViewAllProjects: true, persistence: 'filesystem', workflow: 'tasks',
+      canCreate: true, canUpdate: true, canDelete: true, canImport: false, canExport: true, canReorderBacklog: true, canOpenWorkspace: true, canListWorkspaces: true, canViewAllProjects: true, persistence: 'filesystem', workflow: 'tasks',
       canCreateProject: false, canUpdateProject: false, canDeleteProject: false, canCreateCycle: false, canUpdateCycle: false, canDeleteCycle: false,
       fields: { assignee: false, project: false, cycle: false, description: true },
     },
     get source() { return source },
+    listWorkspaces() { return listTasksProjects(baseUrl, sourcePath) },
     openAllProjects() { return createAllTasksBackend(baseUrl, sourcePath) },
     async openWorkspace(path) { const backend = createTasksBackend(baseUrl, path); await backend.load(); return backend },
     async load() { return snapshot(await read(await request('/workspace'))).workspace },
@@ -100,7 +110,7 @@ export function createAllTasksBackend(baseUrl = '/api', sourcePath?: string): Wo
   return {
     capabilities: {
       id: 'tasks-all', name: 'All projects', description: 'Issues across available TASKS.md projects. Open an issue to edit it in its project.',
-      workspaceScope: 'all', canViewAllProjects: true, canOpenWorkspace: true,
+      workspaceScope: 'all', canViewAllProjects: true, canOpenWorkspace: true, canListWorkspaces: true,
       canCreate: false, canUpdate: false, canDelete: false, canImport: false, canExport: false,
       canReorderBacklog: false, canAutoRefresh: false, persistence: 'filesystem', workflow: 'tasks',
       canCreateProject: false, canUpdateProject: false, canDeleteProject: false,
@@ -109,6 +119,7 @@ export function createAllTasksBackend(baseUrl = '/api', sourcePath?: string): Wo
     },
     get sources() { return sources },
     get sourceErrors() { return sourceErrors },
+    listWorkspaces() { return listTasksProjects(baseUrl, sourcePath) },
     openAllProjects() { return createAllTasksBackend(baseUrl, sourcePath) },
     async openWorkspace(path) { return createTasksBackend(baseUrl).openWorkspace!(path) },
     async openIssue(id) {
@@ -121,12 +132,7 @@ export function createAllTasksBackend(baseUrl = '/api', sourcePath?: string): Wo
       return { backend, issue }
     },
     async load() {
-      const suffix = sourcePath ? `?source=${encodeURIComponent(sourcePath)}` : ''
-      const response = await fetch(`${baseUrl}/projects${suffix}`, { cache: 'no-store' })
-      const value = await response.json()
-      if (!response.ok) throw new Error(value.error ?? 'Could not list projects.')
-      if (!Array.isArray(value.sources) || value.sources.some((item: WorkspaceSource) => !item || typeof item.name !== 'string' || typeof item.path !== 'string' || !item.path.startsWith('/'))) throw new Error('The server returned an invalid project list.')
-      const listed = [...new Map<string, WorkspaceSource>(value.sources.map((item: WorkspaceSource) => [item.path, item])).values()]
+      const listed = await listTasksProjects(baseUrl, sourcePath)
       const results = await Promise.allSettled(listed.map(async source => {
         const backend = createTasksBackend(baseUrl, source.path)
         const workspace = await backend.load()

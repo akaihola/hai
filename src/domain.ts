@@ -81,6 +81,7 @@ export interface BackendCapabilities {
   canUpdateCycle?: boolean
   canDeleteCycle?: boolean
   canReorderBacklog?: boolean
+  canListWorkspaces?: boolean
   canOpenWorkspace?: boolean
   canAutoRefresh?: boolean
   canViewAllProjects?: boolean
@@ -94,6 +95,7 @@ export interface WorkspaceBackend {
   readonly source?: WorkspaceSource
   readonly sources?: WorkspaceSource[]
   readonly sourceErrors?: { source: WorkspaceSource; error: string }[]
+  listWorkspaces?(): Promise<WorkspaceSource[]>
   openWorkspace?(path: string): Promise<WorkspaceBackend>
   openAllProjects?(): WorkspaceBackend
   openIssue?(id: string): Promise<{ backend: WorkspaceBackend; issue: Issue }>

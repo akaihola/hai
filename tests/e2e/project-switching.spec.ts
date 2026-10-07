@@ -199,3 +199,47 @@ test('mobile all projects retains source labels and reports incomplete views unt
   await page.getByRole('button', { name: 'Board view', exact: true }).click()
   await expect(page.locator('.issue-card .source-label').filter({ hasText: 'second-project' })).toBeVisible()
 })
+
+test('finds and opens configured projects beyond eight recents on desktop and mobile', async ({ page, projects }) => {
+  const root = resolve(projects.first, '..')
+  for (let index = 0; index < 10; index++) {
+    const path = join(root, `configured-${index}`)
+    await mkdir(path)
+    await writeFile(join(path, 'TASKS.md'), tracker(`Configured ${index}`).replace('- [1]', '- [*]').replace('[1]: docs/tasks/1-issue.md\n', ''))
+  }
+  await page.addInitScript(root => localStorage.setItem('hai:recent-projects', JSON.stringify(Array.from({ length: 8 }, (_, index) => ({ name: `configured-${index}`, path: `${root}/configured-${index}/TASKS.md` })))), root)
+  await page.goto('/')
+  await expect(page.getByText('First issue', { exact: true })).toBeVisible()
+  for (const mobile of [false, true]) {
+    if (mobile) {
+      await page.setViewportSize({ width: 390, height: 844 })
+      await page.getByRole('button', { name: 'Open navigation', exact: true }).click()
+    }
+    await page.getByRole('button', { name: 'Open project', exact: true }).click()
+    const picker = page.getByRole('dialog', { name: 'Open project', exact: true })
+    await expect(picker.getByRole('button', { name: 'Open configured-9', exact: true })).toBeVisible()
+    await expect(picker.locator('.recent-projects button')).toHaveCount(12)
+    await picker.getByRole('textbox', { name: 'Find project', exact: true }).fill('NOT-A-PROJECT')
+    await expect(picker.getByRole('status')).toHaveText('No matching projects.')
+    await picker.getByRole('textbox', { name: 'Find project', exact: true }).fill(mobile ? `${root}/configured-8` : 'CONFIGURED-9')
+    await expect(picker.locator('.recent-projects button')).toHaveCount(1)
+    await picker.getByRole('textbox', { name: 'Find project', exact: true }).press('Tab')
+    await page.keyboard.press('Enter')
+    await expect(picker).toHaveCount(0)
+    await expect(page.getByText(`Configured ${mobile ? 8 : 9} issue`, { exact: true })).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  expect(await readFile(join(projects.first, 'TASKS.md'), 'utf8')).toBe(tracker('First'))
+})
+
+test('catalog failure preserves path switching and the current workspace', async ({ page, projects }) => {
+  await page.route('**/api/projects*', route => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Catalog unavailable.' }) }))
+  await page.goto('/')
+  await expect(page.getByText('First issue', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Open project', exact: true }).click()
+  const picker = page.getByRole('dialog', { name: 'Open project', exact: true })
+  await expect(picker.getByRole('alert')).toContainText('Catalog unavailable.')
+  await picker.getByRole('textbox', { name: 'Project path', exact: true }).fill(projects.second)
+  await picker.getByRole('button', { name: 'Open project', exact: true }).click()
+  await expect(page.getByText('Second issue', { exact: true })).toBeVisible()
+})

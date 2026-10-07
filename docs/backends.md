@@ -8,6 +8,7 @@ Hai uses the repository TASKS.md through its Python service by default. The brow
 
 | Operation | Result |
 | --- | --- |
+| `listWorkspaces()` | Optional; configured workspace sources, enabled by `canListWorkspaces` |
 | `load()` | Workspace with issues, projects, cycles, members, and explicit `currentMemberId` |
 | `createIssue(input)` | Persisted issue with provider-assigned identity and timestamps |
 | `updateIssue(id, patch)` | Persisted issue; identity and creation time cannot change |
@@ -151,3 +152,9 @@ backend with a fresh revision, then opens the editor. Edits and exports use the
 normal single-tracker workflow. The browser remembers the selected scope and last
 single project. The browser-only workspace already combines its own project issues
 in All issues and retains its existing project filter.
+
+The TASKS.md picker fetches the configured project catalog in both single-project
+and all-project views through `listWorkspaces()`, gated by `canListWorkspaces`.
+Recent projects remain first; the full list can be filtered by name or path,
+without loading each tracker. Catalog errors retain recent entries and manual
+path opening.

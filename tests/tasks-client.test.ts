@@ -227,3 +227,18 @@ for (const newerRead of [false, true]) test(`polling discards a response when ${
   const save = fetch.mock.calls.at(-1)!.arguments[1] as RequestInit
   assert.equal(new Headers(save.headers).get('if-match'), newerRead ? '"foreground"' : '"original"')
 })
+
+test('project discovery lists all sources without loading their trackers', async context => {
+  const sources = Array.from({ length: 12 }, (_, index) => ({ name: `Project ${index}`, path: index === 11 ? '/@remote' : `/projects/${index}/TASKS.md` }))
+  const fetch = context.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ sources: [...sources, sources[0]] })))
+  const backend = createTasksBackend('/test-api', '/projects/selected/TASKS.md')
+  assert.equal(backend.capabilities.canListWorkspaces, true)
+  assert.deepEqual(await backend.listWorkspaces!(), sources)
+  assert.equal(fetch.mock.callCount(), 1)
+  assert.equal(fetch.mock.calls[0].arguments[0], '/test-api/projects?source=%2Fprojects%2Fselected%2FTASKS.md')
+})
+
+test('project discovery rejects malformed catalogs', async context => {
+  context.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ sources: [{ name: 'Bad path', path: 'relative' }] })))
+  await assert.rejects(createTasksBackend().listWorkspaces!(), /invalid project list/)
+})
