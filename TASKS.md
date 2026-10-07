@@ -30,12 +30,12 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [*] Can't switch to an arbitrary project among the configured projects, because the
+## Completed / Accepted
+
+- [ ] [*] Can't switch to an arbitrary project among the configured projects, because the
   `Switch project` drop-down only shows 8 recent projects and there's no other easy
   project switch method.
-  <!-- hai:{"id":"simple-78465aec7e7a2b2b","updatedAt":"2026-10-07T15:12:53.847Z"} -->
-
-## Completed / Accepted
+  <!-- hai:{"id":"simple-78465aec7e7a2b2b","updatedAt":"2026-10-07T15:16:40.679Z"} -->
 
 - [ ] [18] All projects view
     <!-- hai:{"id":"simple-204d2565-1a34-4ece-a417-21f4ae94d387","priority":"none","labels":[],"createdAt":"2026-10-05T19:53:39.313Z","updatedAt":"2026-10-06T04:55:25.836Z"} -->
