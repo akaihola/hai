@@ -1,0 +1,1 @@
+Pressing Ctrl+Enter in the `Description` field of the `New issue` dialog doesn't always select the `Create issue` button. Sometimes it does, but often not.

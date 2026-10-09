@@ -26,16 +26,28 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
+- [22] Support Matt Pocock skills' local issues
+  <!-- hai:{"id":"simple-90b5bb1c-bdda-47ac-bee5-6fd61c7015cf","priority":"none","labels":[],"createdAt":"2026-10-09T19:11:20.954Z","updatedAt":"2026-10-09T19:11:20.954Z"} -->
+
+- [21] Ctrl+Enter doesn't create issue
+  <!-- hai:{"id":"simple-956562e0-25d1-46d1-9357-a5de89a89491","priority":"none","labels":[],"createdAt":"2026-10-08T16:27:07.343Z","updatedAt":"2026-10-08T16:27:07.343Z"} -->
+
+- [20] New issue goes to top of ordered backlog
+  <!-- hai:{"id":"simple-0dd03d92-f5d8-485b-b5f4-781e657a6c90","priority":"none","labels":[],"createdAt":"2026-10-08T16:25:37.328Z","updatedAt":"2026-10-08T16:25:37.328Z"} -->
+
+- [19] Keyboard friendly project switching
+  <!-- hai:{"id":"simple-0507ac21-7daa-4768-b786-19289aebd18e","priority":"none","labels":[],"createdAt":"2026-10-07T18:58:40.973Z","updatedAt":"2026-10-07T18:58:40.973Z"} -->
+
 ## Scheduled
 
 ## In Progress
 
 ## Completed / Accepted
 
-- [ ] [*] Can't switch to an arbitrary project among the configured projects, because the
+- [x] [*] Can't switch to an arbitrary project among the configured projects, because the
   `Switch project` drop-down only shows 8 recent projects and there's no other easy
   project switch method.
-  <!-- hai:{"id":"simple-78465aec7e7a2b2b","updatedAt":"2026-10-07T15:16:40.679Z"} -->
+  <!-- hai:{"id":"simple-78465aec7e7a2b2b","updatedAt":"2026-10-07T19:48:08.433Z"} -->
 
 - [ ] [18] All projects view
     <!-- hai:{"id":"simple-204d2565-1a34-4ece-a417-21f4ae94d387","priority":"none","labels":[],"createdAt":"2026-10-05T19:53:39.313Z","updatedAt":"2026-10-06T04:55:25.836Z"} -->
@@ -125,7 +137,7 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 [11]: docs/tasks/11-allow-dragging-issues-from-a-group-to-another.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -->
 
 [12]: docs/tasks/12-eliminate-runs-of-blank-lines-in-tasks-md.md
 [13]: docs/tasks/13-separate-groups-completed-and-accepted.md
@@ -134,6 +146,14 @@ Rules for TASKS.md usage are at the bottom of the file.
 [16]: docs/tasks/16-python-backend-and-tasks-md-api-cli.md
 [17]: docs/tasks/17-automatically-refresh-and-retry-new-issue-saves.md
 [18]: docs/tasks/18-all-projects-view.md
+
+[19]: docs/tasks/19-keyboard-friendly-project-switching.md
+
+[20]: docs/tasks/20-new-issue-goes-to-top-of-ordered-backlog.md
+
+[21]: docs/tasks/21-ctrl-enter-doesn-t-create-issue.md
+
+[22]: docs/tasks/22-support-matt-pocock-skills-local-issues.md
 
 ## Rules
 

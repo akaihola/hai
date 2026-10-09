@@ -1,0 +1,1 @@
+A new issue created through the UI should go at the bottom of the ordered backlog instead.
