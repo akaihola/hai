@@ -23,3 +23,9 @@ regressions also caught React autoFocus running before the native dialog opened;
 the final implementation focuses the search field after Dialog's opening effect.
 Full validation logs are in `/tmp/hai-19-check-verified.log`.
 
+
+After rebasing onto main, the build and all nine project-switching workflows
+passed again. Merged and deployed on 2026-10-10. Loopback and both private
+endpoints passed health, exact HTML/assets, and workspace API checks. Issue 19
+is completed and unchecked pending acceptance. See `docs/deployment.md` for
+deployment evidence and backup locations.

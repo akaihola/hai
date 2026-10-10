@@ -33,10 +33,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [19] Keyboard friendly project switching
-  <!-- hai:{"id":"simple-0507ac21-7daa-4768-b786-19289aebd18e","priority":"none","labels":[],"createdAt":"2026-10-07T18:58:40.973Z","updatedAt":"2026-10-10T11:44:24.087Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [19] Keyboard friendly project switching
+  <!-- hai:{"id":"simple-0507ac21-7daa-4768-b786-19289aebd18e","priority":"none","labels":[],"createdAt":"2026-10-07T18:58:40.973Z","updatedAt":"2026-10-10T11:45:17.721Z"} -->
 
 - [ ] [20] New issue goes to top of ordered backlog
   <!-- hai:{"id":"simple-0dd03d92-f5d8-485b-b5f4-781e657a6c90","priority":"none","labels":[],"createdAt":"2026-10-08T16:25:37.328Z","updatedAt":"2026-10-10T11:38:25.029Z"} -->
