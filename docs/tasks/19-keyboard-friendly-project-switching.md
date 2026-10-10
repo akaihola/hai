@@ -16,3 +16,10 @@ Browser regressions cover immediate typing, a unique leading-name match,
 multiple matches, no matches, reopening focus, and desktop/mobile Enter
 switching. Existing tests cover direct paths, catalog errors, and isolation.
 
+Validation passed with `npm run check`: 32 Python tests, 89 client/API tests,
+TypeScript, the production build, and 59 Chromium workflows. Earlier runs hit
+the previously documented oversized-request EPIPE failure. The initial focus
+regressions also caught React autoFocus running before the native dialog opened;
+the final implementation focuses the search field after Dialog's opening effect.
+Full validation logs are in `/tmp/hai-19-check-verified.log`.
+
