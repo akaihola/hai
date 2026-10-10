@@ -26,9 +26,6 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
-- [21] Ctrl+Enter doesn't create issue
-  <!-- hai:{"id":"simple-956562e0-25d1-46d1-9357-a5de89a89491","priority":"none","labels":[],"createdAt":"2026-10-08T16:27:07.343Z","updatedAt":"2026-10-08T16:27:07.343Z"} -->
-
 - [20] New issue goes to top of ordered backlog
   <!-- hai:{"id":"simple-0dd03d92-f5d8-485b-b5f4-781e657a6c90","priority":"none","labels":[],"createdAt":"2026-10-08T16:25:37.328Z","updatedAt":"2026-10-08T16:25:37.328Z"} -->
 
@@ -39,6 +36,9 @@ Rules for TASKS.md usage are at the bottom of the file.
   <!-- hai:{"id":"simple-a61b1e2a-60b4-4bfe-b453-3d1ea87234c8","createdAt":"2026-10-10T11:06:37.830Z","updatedAt":"2026-10-10T11:06:37.830Z"} -->
 
 ## Scheduled
+
+- [21] Ctrl+Enter doesn't create issue
+  <!-- hai:{"id":"simple-956562e0-25d1-46d1-9357-a5de89a89491","priority":"none","labels":[],"createdAt":"2026-10-08T16:27:07.343Z","updatedAt":"2026-10-10T11:25:59.665Z"} -->
 
 ## In Progress
 
