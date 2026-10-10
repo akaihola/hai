@@ -12,6 +12,41 @@ async function createIssue(page: Page, title: string) {
   await expect(dialog).not.toBeVisible();
 }
 
+for (const modifier of ['Control', 'Meta']) test(`${modifier}+Enter creates an issue from its description`, async ({ page }) => {
+  await page.goto('/?backend=local');
+  await page.getByRole('button', { name: 'New issue', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'New issue', exact: true });
+  const title = `Created with ${modifier}+Enter`;
+  await dialog.getByRole('textbox', { name: 'Title', exact: true }).fill(title);
+  const description = dialog.getByRole('textbox', { name: 'Description', exact: true });
+  await description.fill('First line');
+  await description.press('Enter');
+  await description.press(`${modifier}+Enter`);
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByText(title, { exact: true })).toHaveCount(1);
+  await page.reload();
+  await page.getByText(title, { exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Description', exact: true })).toHaveValue('First line\n');
+});
+
+test('Ctrl+Enter validates the title and leaves ordinary Enter available for newlines', async ({ page }) => {
+  await page.goto('/?backend=local');
+  await page.getByRole('button', { name: 'New issue', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'New issue', exact: true });
+  const description = dialog.getByRole('textbox', { name: 'Description', exact: true });
+  await description.fill('Draft');
+  await description.press('Control+Enter');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('textbox', { name: 'Title', exact: true })).toBeFocused();
+  await expect(description).toHaveValue('Draft');
+  await dialog.getByRole('textbox', { name: 'Title', exact: true }).fill('Valid title');
+  await description.press('Enter');
+  await expect(description).toHaveValue('Draft\n');
+  await expect(dialog).toBeVisible();
+  await description.press('Control+Enter');
+  await expect(dialog).not.toBeVisible();
+});
+
 test('issue creation, editing, persistence, and deletion', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));

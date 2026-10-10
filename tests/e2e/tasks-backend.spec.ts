@@ -169,7 +169,7 @@ test('create, description edit, completion, explicit acceptance, export and dele
   await editor.getByRole('textbox', { name: 'Title', exact: true }).fill('Created in the filesystem')
   await editor.getByRole('textbox', { name: 'Description', exact: true }).fill('# New description\n\nStored beside TASKS.md.\n')
   await editor.getByRole('combobox', { name: 'Priority', exact: true }).selectOption('high')
-  await editor.getByRole('button', { name: 'Create issue', exact: true }).click()
+  await editor.getByRole('textbox', { name: 'Description', exact: true }).press('Control+Enter')
   await expect(editor).toHaveCount(0)
   await expect.poll(() => readFile(taskSource.file, 'utf8')).toContain('Created in the filesystem')
   await page.reload()
