@@ -42,7 +42,7 @@ Rules for TASKS.md usage are at the bottom of the file.
 ## Completed / Accepted
 
 - [ ] [21] Ctrl+Enter doesn't create issue
-  <!-- hai:{"id":"simple-956562e0-25d1-46d1-9357-a5de89a89491","priority":"none","labels":[],"createdAt":"2026-10-08T16:27:07.343Z","updatedAt":"2026-10-10T11:30:53.431Z"} -->
+  <!-- hai:{"id":"simple-956562e0-25d1-46d1-9357-a5de89a89491","priority":"none","labels":[],"createdAt":"2026-10-08T16:27:07.343Z","updatedAt":"2026-10-10T11:32:33.043Z"} -->
 
 - [ ] [22] Support Matt Pocock skills' local issues
   <!-- hai:{"id":"simple-90b5bb1c-bdda-47ac-bee5-6fd61c7015cf","priority":"none","labels":[],"createdAt":"2026-10-09T19:11:20.954Z","updatedAt":"2026-10-10T11:25:22.120Z"} -->
