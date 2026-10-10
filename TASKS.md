@@ -31,10 +31,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Scheduled
 
-- [19] Keyboard friendly project switching
-  <!-- hai:{"id":"simple-0507ac21-7daa-4768-b786-19289aebd18e","priority":"none","labels":[],"createdAt":"2026-10-07T18:58:40.973Z","updatedAt":"2026-10-10T11:32:44.001Z"} -->
-
 ## In Progress
+
+- [~] [19] Keyboard friendly project switching
+  <!-- hai:{"id":"simple-0507ac21-7daa-4768-b786-19289aebd18e","priority":"none","labels":[],"createdAt":"2026-10-07T18:58:40.973Z","updatedAt":"2026-10-10T11:44:24.087Z"} -->
 
 ## Completed / Accepted
 
