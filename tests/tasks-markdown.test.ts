@@ -77,6 +77,18 @@ test('moving a dependent task into backlog keeps its prerequisite first', () => 
   assert.deepEqual(parseTasks(childBacklog).tasks.filter(task => task.issue.sourceSection === 'Ordered backlog').map(task => task.marker), ['4', '7'])
 })
 
+test('a new issue joins the end of the ordered backlog while moves keep the top', () => {
+  const backlogIds = (source: string) => parseTasks(source).tasks.filter(task => task.issue.sourceSection === 'Ordered backlog').map(task => task.issue.id)
+  const created = mutateTasks(backlogFixture, 'create', undefined, { title: 'Newest idea', sourceSection: 'Ordered backlog' })
+  assert.deepEqual(backlogIds(created.source), [...backlogIds(backlogFixture), created.id])
+  assert.ok(created.source.includes('  - Keep these inline notes.\n\n- [*] Newest idea\n  <!-- hai:'))
+  assert.ok(created.source.includes('Keep this unrelated paragraph between the last two slots.'))
+  const proposal = mutateTasks(backlogFixture, 'create', undefined, { title: 'Newest proposal' })
+  assert.equal(parseTasks(proposal.source).tasks.filter(task => task.issue.sourceSection === 'Unverified proposals')[0].issue.id, proposal.id)
+  const moved = mutateTasks(backlogFixture, 'update', 'task-4', { sourceSection: 'Ordered backlog' }).source
+  assert.deepEqual(backlogIds(moved), ['task-4', ...backlogIds(backlogFixture)])
+})
+
 test('backlog ordering moves raw blocks up and down while preserving source slots and identities', () => {
   for (const newline of ['\n', '\r\n']) {
     const source = backlogFixture.replaceAll('\n', newline)

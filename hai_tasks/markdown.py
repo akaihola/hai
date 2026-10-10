@@ -243,8 +243,10 @@ def mutate_tasks(source, operation, id=None, input=None, new_reference=None):
         output = source[:task['start']] + raw + source[task['end']:] if section == issue['sourceSection'] else remove_task(source, task)
     if not task or section != issue['sourceSection']:
         remaining = parse_tasks(output)
-        dependencies = [t for t in remaining['tasks'] if t['issue']['sourceSection'] == section and t['marker'] in issue.get('dependencies', [])] if section == 'Ordered backlog' else []
-        destination = dependencies[-1]['end'] if dependencies else remaining['sections'][section]['start']
+        ordered = [t for t in remaining['tasks'] if t['issue']['sourceSection'] == section] if section == 'Ordered backlog' else []
+        dependencies = [t for t in ordered if t['marker'] in issue.get('dependencies', [])]
+        anchor = dependencies[-1] if dependencies else ordered[-1] if ordered and not task else None
+        destination = anchor['end'] if anchor else remaining['sections'][section]['start']
         output = output[:destination] + parsed['newline'] * 2 + raw + output[destination:]
     if path and marker not in parsed['references']:
         rules = re.search(r'^## Rules\r?$', output, re.M).start()
