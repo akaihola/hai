@@ -38,6 +38,9 @@ Rules for TASKS.md usage are at the bottom of the file.
 - [19] Keyboard friendly project switching
   <!-- hai:{"id":"simple-0507ac21-7daa-4768-b786-19289aebd18e","priority":"none","labels":[],"createdAt":"2026-10-07T18:58:40.973Z","updatedAt":"2026-10-07T18:58:40.973Z"} -->
 
+- [23] Add a `hai-tasks` agent skill so agents stop editing trackers by hand.
+  <!-- hai:{"id":"simple-a61b1e2a-60b4-4bfe-b453-3d1ea87234c8","createdAt":"2026-10-10T11:06:37.830Z","updatedAt":"2026-10-10T11:06:37.830Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -137,7 +140,7 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 [11]: docs/tasks/11-allow-dragging-issues-from-a-group-to-another.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 -->
 
 [12]: docs/tasks/12-eliminate-runs-of-blank-lines-in-tasks-md.md
 [13]: docs/tasks/13-separate-groups-completed-and-accepted.md
@@ -154,6 +157,8 @@ Rules for TASKS.md usage are at the bottom of the file.
 [21]: docs/tasks/21-ctrl-enter-doesn-t-create-issue.md
 
 [22]: docs/tasks/22-support-matt-pocock-skills-local-issues.md
+
+[23]: docs/tasks/23-add-a-hai-tasks-agent-skill-so-agents-stop-editing-trackers-by-hand.md
 
 ## Rules
 
