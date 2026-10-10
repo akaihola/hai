@@ -53,3 +53,24 @@ and does not restate it, so the two cannot drift apart.
 - After nixos-config deploys the skill, start a Claude Code session in another
   repository with a Hai tracker and ask it to start an issue. Check that it
   loads the skill and runs `hai-tasks update --revision`.
+
+## Implementation notes, 2026-10-10
+
+Added `skills/hai-tasks/SKILL.md` with the Python package / CLI distinction,
+revision loop, exact move patches, acceptance guard, stale-write handling,
+partial-save stop condition, creation/reorder examples and API reference.
+
+Correction to the original creation requirement: the merged implementation of
+[20] appends newly created issues to Ordered backlog. The skill documents that
+behavior. Creation in other sections still inserts at the top; moves into
+Ordered backlog insert at the top after prerequisites. No CLI behavior changed.
+
+`tests/python/test_skill.py` extracts every Bash example from the skill and runs
+it through the published console entry point against a fixture tracker in a
+temporary Git repository. It checks revisions, all four section/status mappings,
+`[~]`, unchecked completion, creation position, reordering, and the Python module
+fallback. It runs automatically under `npm test`. The skill validator passed.
+
+Skill installation and the cross-repository Claude Code discovery check remain
+with the related nixos-config deployment task. This change requires no web
+service restart.
