@@ -26,9 +26,6 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
-- [22] Support Matt Pocock skills' local issues
-  <!-- hai:{"id":"simple-90b5bb1c-bdda-47ac-bee5-6fd61c7015cf","priority":"none","labels":[],"createdAt":"2026-10-09T19:11:20.954Z","updatedAt":"2026-10-09T19:11:20.954Z"} -->
-
 - [21] Ctrl+Enter doesn't create issue
   <!-- hai:{"id":"simple-956562e0-25d1-46d1-9357-a5de89a89491","priority":"none","labels":[],"createdAt":"2026-10-08T16:27:07.343Z","updatedAt":"2026-10-08T16:27:07.343Z"} -->
 
@@ -42,6 +39,9 @@ Rules for TASKS.md usage are at the bottom of the file.
   <!-- hai:{"id":"simple-a61b1e2a-60b4-4bfe-b453-3d1ea87234c8","createdAt":"2026-10-10T11:06:37.830Z","updatedAt":"2026-10-10T11:06:37.830Z"} -->
 
 ## Scheduled
+
+- [22] Support Matt Pocock skills' local issues
+  <!-- hai:{"id":"simple-90b5bb1c-bdda-47ac-bee5-6fd61c7015cf","priority":"none","labels":[],"createdAt":"2026-10-09T19:11:20.954Z","updatedAt":"2026-10-10T11:11:27.092Z"} -->
 
 ## In Progress
 
