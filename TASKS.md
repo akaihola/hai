@@ -40,10 +40,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Scheduled
 
-- [22] Support Matt Pocock skills' local issues
-  <!-- hai:{"id":"simple-90b5bb1c-bdda-47ac-bee5-6fd61c7015cf","priority":"none","labels":[],"createdAt":"2026-10-09T19:11:20.954Z","updatedAt":"2026-10-10T11:11:27.092Z"} -->
-
 ## In Progress
+
+- [~] [22] Support Matt Pocock skills' local issues
+  <!-- hai:{"id":"simple-90b5bb1c-bdda-47ac-bee5-6fd61c7015cf","priority":"none","labels":[],"createdAt":"2026-10-09T19:11:20.954Z","updatedAt":"2026-10-10T11:11:57.311Z"} -->
 
 ## Completed / Accepted
 
