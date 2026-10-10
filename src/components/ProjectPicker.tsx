@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Check, Folder, LoaderCircle } from 'lucide-react'
 import type { WorkspaceBackend, WorkspaceSource } from '../domain'
 import { Dialog } from './Dialog'
@@ -19,6 +19,8 @@ export function ProjectPicker({ backend, onClose, onOpened }: { backend: Workspa
   const [listing, setListing] = useState(!!backend.capabilities.canListWorkspaces && !!backend.listWorkspaces)
   const [listError, setListError] = useState('')
   const [query, setQuery] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
+  useEffect(() => { searchRef.current?.focus() }, [])
   useEffect(() => {
     if (!backend.capabilities.canListWorkspaces || !backend.listWorkspaces) return
     let active = true
@@ -50,9 +52,13 @@ export function ProjectPicker({ backend, onClose, onOpened }: { backend: Workspa
   return <Dialog title="Open project" onClose={() => { if (!pending) onClose() }} className="project-picker">
     <form onSubmit={event => { event.preventDefault(); void openProject(path) }}>
       <div className="modal-body">
-        <label className="field">Project path<input autoFocus aria-label="Project path" value={path} onChange={event => setPath(event.target.value)} placeholder="~/prg/my-project/" disabled={pending} required aria-describedby="project-path-help" /><small id="project-path-help">Open a project folder, TASKS.md, or .scratch/feature/issues on the Hai server.</small></label>
+        <label className="field">Project path<input aria-label="Project path" value={path} onChange={event => setPath(event.target.value)} placeholder="~/prg/my-project/" disabled={pending} required aria-describedby="project-path-help" /><small id="project-path-help">Open a project folder, TASKS.md, or .scratch/feature/issues on the Hai server.</small></label>
         {error && <p className="form-error" role="alert">{error}</p>}
-        <label className="field">Find project<input aria-label="Find project" value={query} onChange={event => setQuery(event.target.value)} placeholder="Filter by name or path" /></label>
+        <label className="field">Find project<input ref={searchRef} aria-label="Find project" value={query} onChange={event => setQuery(event.target.value)} placeholder="Filter by name or path" disabled={pending} onKeyDown={event => {
+          if (event.key !== 'Enter' || event.nativeEvent.isComposing) return
+          event.preventDefault()
+          if (filtered[0]) void openProject(filtered[0].path)
+        }} /></label>
         {listing && <p role="status">Loading projects…</p>}
         {listError && <p className="form-error" role="alert">{listError} You can still open a project by path.</p>}
         {!listing && filtered.length === 0 && <p role="status">No matching projects.</p>}
