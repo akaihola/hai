@@ -36,10 +36,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [20] New issue goes to top of ordered backlog
-  <!-- hai:{"id":"simple-0dd03d92-f5d8-485b-b5f4-781e657a6c90","priority":"none","labels":[],"createdAt":"2026-10-08T16:25:37.328Z","updatedAt":"2026-10-10T11:31:26.897Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [20] New issue goes to top of ordered backlog
+  <!-- hai:{"id":"simple-0dd03d92-f5d8-485b-b5f4-781e657a6c90","priority":"none","labels":[],"createdAt":"2026-10-08T16:25:37.328Z","updatedAt":"2026-10-10T11:38:25.029Z"} -->
 
 - [ ] [21] Ctrl+Enter doesn't create issue
   <!-- hai:{"id":"simple-956562e0-25d1-46d1-9357-a5de89a89491","priority":"none","labels":[],"createdAt":"2026-10-08T16:27:07.343Z","updatedAt":"2026-10-10T11:32:33.043Z"} -->
