@@ -43,6 +43,8 @@ test('local Markdown tickets support source states, edits, creation, deletion an
     await expect(page.getByRole('region', { name: 'wontfix column', exact: true })).toContainText('Edited search ticket')
     expect(await readFile(join(issues, '01-search.md'), 'utf8')).toContain('Status: wontfix')
     await page.getByRole('button', { name: 'Add issue to needs-info', exact: true }).click()
+    await expect(editor.locator('.source-details')).toContainText(feature)
+    await expect(editor.locator('.source-details')).not.toContainText('TASKS.md')
     await expect(editor.getByRole('combobox', { name: 'Status', exact: true })).toHaveValue('needs-info')
     await editor.getByRole('textbox', { name: 'Title', exact: true }).fill('Follow-up ticket')
     await editor.getByRole('button', { name: 'Create issue', exact: true }).click()

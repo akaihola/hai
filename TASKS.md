@@ -45,7 +45,7 @@ Rules for TASKS.md usage are at the bottom of the file.
 ## Completed / Accepted
 
 - [ ] [22] Support Matt Pocock skills' local issues
-  <!-- hai:{"id":"simple-90b5bb1c-bdda-47ac-bee5-6fd61c7015cf","priority":"none","labels":[],"createdAt":"2026-10-09T19:11:20.954Z","updatedAt":"2026-10-10T11:24:11.617Z"} -->
+  <!-- hai:{"id":"simple-90b5bb1c-bdda-47ac-bee5-6fd61c7015cf","priority":"none","labels":[],"createdAt":"2026-10-09T19:11:20.954Z","updatedAt":"2026-10-10T11:25:22.120Z"} -->
 
 - [x] [*] Can't switch to an arbitrary project among the configured projects, because the
   `Switch project` drop-down only shows 8 recent projects and there's no other easy

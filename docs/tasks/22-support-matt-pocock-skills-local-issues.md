@@ -43,3 +43,15 @@ Validation on the final merged main branch:
   as a spec-only workspace without writing any files there.
 
 Work is completed; the tracker checkbox remains unchecked pending user acceptance.
+
+### Deployment verification and display correction, 2026-10-10
+
+The service restarted successfully. HTTP 5173 and HTTPS 8443 health endpoints
+returned healthy responses. The collaborative browser opened the real
+filemill-screencast feature and displayed the five triage roles and three
+wayfinder states without saving a test ticket.
+
+Live inspection found an inherited TASKS.md source label in the new scratch
+ticket dialog. Corrected it to the feature destination and added a browser
+assertion. The production build and scratch browser test passed again.
+The feature worktree and branch were removed after merging.
