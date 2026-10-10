@@ -50,7 +50,7 @@ export function ProjectPicker({ backend, onClose, onOpened }: { backend: Workspa
   return <Dialog title="Open project" onClose={() => { if (!pending) onClose() }} className="project-picker">
     <form onSubmit={event => { event.preventDefault(); void openProject(path) }}>
       <div className="modal-body">
-        <label className="field">Project path<input autoFocus aria-label="Project path" value={path} onChange={event => setPath(event.target.value)} placeholder="~/prg/my-project/" disabled={pending} required aria-describedby="project-path-help" /><small id="project-path-help">Open a project folder or TASKS.md on the Hai server.</small></label>
+        <label className="field">Project path<input autoFocus aria-label="Project path" value={path} onChange={event => setPath(event.target.value)} placeholder="~/prg/my-project/" disabled={pending} required aria-describedby="project-path-help" /><small id="project-path-help">Open a project folder, TASKS.md, or .scratch/feature/issues on the Hai server.</small></label>
         {error && <p className="form-error" role="alert">{error}</p>}
         <label className="field">Find project<input aria-label="Find project" value={query} onChange={event => setQuery(event.target.value)} placeholder="Filter by name or path" /></label>
         {listing && <p role="status">Loading projects…</p>}

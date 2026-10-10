@@ -38,6 +38,7 @@ export interface Issue {
   labels: string[]
   createdAt: string
   updatedAt: string
+  sourceState?: string
   sourceSection?: TaskSection
   accepted?: boolean
   sourcePath?: string
@@ -87,8 +88,9 @@ export interface BackendCapabilities {
   canViewAllProjects?: boolean
   workspaceScope?: 'all'
   persistence: 'browser' | 'filesystem' | 'remote'
-  workflow?: 'tasks'
-  fields?: { assignee: boolean; project: boolean; cycle: boolean; description: boolean }
+  sourceStates?: { id: string; status: IssueStatus }[]
+  workflow?: 'tasks' | 'scratch'
+  fields?: { assignee: boolean; project: boolean; cycle: boolean; description: boolean; priority?: boolean; labels?: boolean }
 }
 export interface WorkspaceBackend {
   readonly capabilities: BackendCapabilities

@@ -43,7 +43,7 @@ def main(argv=None):
         command.add_argument('sources', nargs='+')
         command.add_argument('--text', default='')
         command.add_argument('--section', choices=SECTIONS)
-        command.add_argument('--status', choices=['backlog', 'todo', 'in_progress', 'done'])
+        command.add_argument('--status', choices=['backlog', 'todo', 'in_progress', 'done', 'canceled'])
         command.add_argument('--priority', choices=['none', 'low', 'medium', 'high', 'urgent'])
         command.add_argument('--label')
         command.add_argument('--accepted', action=argparse.BooleanOptionalAction, default=None)
@@ -73,7 +73,7 @@ def main(argv=None):
             store = open_source(args.source)
             if args.command == 'read':
                 snapshot = store.read()
-                result = dict(workspace=snapshot['workspace'], revision=snapshot['revision'], capabilities=store.capabilities)
+                result = dict(workspace=snapshot['workspace'], revision=snapshot['revision'], capabilities=snapshot.get('capabilities', store.capabilities))
             elif args.command == 'export':
                 sys.stdout.write(store.export(args.format))
                 return 0

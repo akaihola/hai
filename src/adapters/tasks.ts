@@ -1,4 +1,4 @@
-import { TASK_SECTIONS, type IssueInput, type IssuePatch, type WorkspaceBackend, type WorkspaceSource, type Issue } from '../domain'
+import { STATUSES, TASK_SECTIONS, type BackendCapabilities, type IssueInput, type IssuePatch, type WorkspaceBackend, type WorkspaceSource, type Issue } from '../domain'
 import { assertWorkspace } from '../data/validation'
 
 class StaleRevisionError extends Error {}
@@ -15,6 +15,7 @@ async function listTasksProjects(baseUrl: string, sourcePath?: string): Promise<
 export function createTasksBackend(baseUrl = '/api', sourcePath?: string): WorkspaceBackend {
   let revision: string | null = null
   let source: WorkspaceBackend['source']
+  let scratch: Pick<BackendCapabilities, 'workflow' | 'sourceStates' | 'fields'> | undefined
   async function request(path: string, options?: RequestInit): Promise<Response> {
     let response: Response
     if (sourcePath !== undefined) path += `${path.includes('?') ? '&' : '?'}source=${encodeURIComponent(sourcePath)}`
@@ -41,8 +42,18 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
       const next = value.source
       if (!next || typeof next !== 'object' || !('name' in next) || typeof next.name !== 'string' || !next.name || !('path' in next) || typeof next.path !== 'string' || !next.path.startsWith('/') || (source && next.path !== source.path)) throw new Error('The TASKS.md server returned invalid source information.')
     } else if (sourcePath !== undefined) throw new Error('The TASKS.md server did not identify the requested source.')
+    let nextScratch: typeof scratch
+    if ('capabilities' in value && value.capabilities && typeof value.capabilities === 'object' && 'workflow' in value.capabilities && value.capabilities.workflow === 'scratch') {
+      const states = 'sourceStates' in value.capabilities ? value.capabilities.sourceStates : null
+      if (!Array.isArray(states) || !states.length || states.some(item => !item || typeof item.id !== 'string' || !item.id || !STATUSES.some(status => status.id === item.status)) || new Set(states.map(item => item.id)).size !== states.length) throw new Error('The server returned invalid local issue states.')
+      nextScratch = { workflow: 'scratch', sourceStates: states, fields: { assignee: false, project: false, cycle: false, description: true, priority: false, labels: false } }
+    }
     assertWorkspace(value.workspace)
     for (const issue of value.workspace.issues) {
+      if (nextScratch) {
+        if (!nextScratch.sourceStates?.some(state => state.id === issue.sourceState && state.status === issue.status) || typeof issue.sourcePath !== 'string') throw new Error('The server returned invalid local issue workflow information.')
+        continue
+      }
       if (!TASK_SECTIONS.some(section => section.id === issue.sourceSection && section.status === issue.status) || typeof issue.accepted !== 'boolean'
         || (issue.accepted && issue.status !== 'done') || (issue.sourcePath !== undefined && typeof issue.sourcePath !== 'string')
         || (issue.sourceReference !== undefined && (typeof issue.sourceReference !== 'string' || !/^\[(?:\d+|\*)\]$/.test(issue.sourceReference)))
@@ -52,6 +63,7 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
       source = Object.freeze({ ...(value.source as NonNullable<WorkspaceBackend['source']>) })
       sourcePath = source.path
     }
+    scratch = nextScratch
     revision = value.revision
     const issueId = 'issue' in value && value.issue && typeof value.issue === 'object' && 'id' in value.issue ? value.issue.id : undefined
     return { workspace: value.workspace, issue: value.workspace.issues.find(issue => issue.id === issueId) }
@@ -63,11 +75,11 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
   }
   return {
     capabilities: {
-      id: 'tasks', name: 'TASKS.md', description: 'Connected to TASKS.md and its description files on the server.',
+      get id() { return scratch ? 'scratch' : 'tasks' }, get name() { return scratch ? 'Local Markdown issues' : 'TASKS.md' }, get description() { return scratch ? 'Connected to .scratch feature tickets on the server.' : 'Connected to TASKS.md and its description files on the server.' },
       get canAutoRefresh() { return !!source && !source.path.startsWith('/@') },
-      canCreate: true, canUpdate: true, canDelete: true, canImport: false, canExport: true, canReorderBacklog: true, canOpenWorkspace: true, canListWorkspaces: true, canViewAllProjects: true, persistence: 'filesystem', workflow: 'tasks',
+      canCreate: true, canUpdate: true, canDelete: true, canImport: false, canExport: true, get canReorderBacklog() { return !scratch }, canOpenWorkspace: true, canListWorkspaces: true, canViewAllProjects: true, persistence: 'filesystem', get workflow() { return scratch?.workflow ?? 'tasks' }, get sourceStates() { return scratch?.sourceStates },
       canCreateProject: false, canUpdateProject: false, canDeleteProject: false, canCreateCycle: false, canUpdateCycle: false, canDeleteCycle: false,
-      fields: { assignee: false, project: false, cycle: false, description: true },
+      get fields() { return scratch?.fields ?? { assignee: false, project: false, cycle: false, description: true } },
     },
     get source() { return source },
     listWorkspaces() { return listTasksProjects(baseUrl, sourcePath) },

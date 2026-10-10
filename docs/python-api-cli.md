@@ -154,3 +154,20 @@ stable source path returned by the API and pinned by `WorkspaceBackend`.
 Unconfigured remote URIs are rejected; browser requests cannot choose arbitrary
 SSH hosts or GitHub repositories. The credentials belong to the server account.
 The private host/origin restrictions and Tailscale deployment still apply.
+
+## Local Markdown feature tickets
+
+The same API and revision-checked CLI can open `.scratch/<feature-slug>` or its
+`issues/` directory. `read` returns `workflow: scratch`, the available
+`sourceStates`, and unsupported fields in its capabilities. Use `sourceState` to
+retain the triage role when changing status:
+
+```bash
+python3 -m hai_tasks read /path/to/project/.scratch/search
+python3 -m hai_tasks create /path/to/project/.scratch/search --revision REVISION --json '{"title":"Add search","sourceState":"ready-for-agent"}'
+python3 -m hai_tasks update /path/to/project/.scratch/search ISSUE_ID --revision REVISION --json '{"sourceState":"ready-for-human"}'
+python3 -m hai_tasks query /path/to/project/.scratch/search --status canceled
+```
+
+JSON export is a workspace snapshot. Markdown export combines the original tickets
+for reading, rather than creating a TASKS.md tracker. See [backend conventions](backends.md#matt-pocock-local-markdown-issues).

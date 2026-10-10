@@ -1,0 +1,397 @@
+"""One feature's Matt Pocock local Markdown tickets, without rewriting specs."""
+
+import hashlib
+import os
+import re
+import stat
+from pathlib import Path
+
+from .markdown import EPOCH, TasksError, text_length, validate_patch, validate_workspace
+from .store import TasksStore, export_snapshot, regular_file
+
+STATES = {
+    "needs-triage": "backlog",
+    "needs-info": "backlog",
+    "ready-for-agent": "todo",
+    "ready-for-human": "todo",
+    "wontfix": "canceled",
+    "open": "backlog",
+    "claimed": "in_progress",
+    "resolved": "done",
+}
+TICKET = re.compile(r"(\d+)-[A-Za-z0-9][A-Za-z0-9._-]*\.md")
+
+
+class ScratchStore(TasksStore):
+    def __init__(self, directory):
+        self.capabilities = {
+            "canCreate": True,
+            "canUpdate": True,
+            "canDelete": True,
+            "canReorderBacklog": False,
+            "canImport": False,
+            "fields": {
+                "description": True,
+                "assignee": False,
+                "project": False,
+                "cycle": False,
+                "priority": False,
+                "labels": False,
+            },
+        }
+        path = Path(os.path.abspath(Path(directory).expanduser()))
+        self.root = (
+            path.parent
+            if path.name == "issues" and path.parent.parent.name == ".scratch"
+            else path
+        )
+        if self.root.parent.name != ".scratch":
+            raise TasksError(
+                "Use .scratch/<feature-slug> or its issues directory as the local issue source.",
+                422,
+            )
+        self.directory = self.root / "issues"
+        self.revision_key = str(self.root)
+
+    def states(self):
+        labels = {role: role for role in STATES}
+        mapping = self.root.parents[1] / "docs/agents/triage-labels.md"
+        content = ""
+        if mapping.exists() or mapping.is_symlink():
+            if mapping.parent.resolve() != mapping.parent:
+                raise TasksError(
+                    "Triage mapping directories must not contain symbolic links.", 422
+                )
+            content = regular_file(mapping, 256 * 1024)
+            for role, label in re.findall(
+                r"^\|\s*`([^`]+)`\s*\|\s*`([^`]+)`\s*\|", content, re.MULTILINE
+            ):
+                if role in list(STATES)[:5]:
+                    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 _-]{0,99}", label):
+                        raise TasksError("Invalid local triage label.", 422)
+                    labels[role] = label
+        if len(set(labels.values())) != len(labels):
+            raise TasksError("Conflicting local triage labels.", 422)
+        states = {labels[role]: status for role, status in STATES.items()}
+        return states, content
+
+    @staticmethod
+    def parse_ticket(path, content, states):
+        title = re.search(r"^# (.+?)\r?$", content, re.MULTILINE)
+        header = re.split(r"^## ", content, maxsplit=1, flags=re.MULTILINE)[0]
+        statuses = list(
+            re.finditer(r"^Status:[ \t]*([^\r\n]*)(\r?\n|$)", header, re.MULTILINE)
+        )
+        if not title or len(statuses) > 1:
+            raise TasksError(
+                f"{path}: expected one # title and at most one Status: line.", 422
+            )
+        state = (
+            statuses[0][1].strip()
+            if statuses
+            else next(s for s, value in states.items() if value == "backlog")
+        )
+        if state not in states:
+            raise TasksError(
+                f"{path}: unsupported Status: {state}. Use a triage role or open/claimed/resolved.",
+                422,
+            )
+        body = content
+        spans = [
+            (
+                title.start(),
+                title.end() + (1 if content[title.end() :].startswith("\n") else 0),
+            )
+        ]
+        if statuses:
+            spans.append((statuses[0].start(), statuses[0].end()))
+        for start, end in sorted(spans, reverse=True):
+            body = body[:start] + body[end:]
+        issue = {
+            "id": "scratch-" + hashlib.sha256(path.name.encode()).hexdigest()[:24],
+            "identifier": path.stem,
+            "title": title[1],
+            "description": body.strip("\r\n"),
+            "status": states[state],
+            "sourceState": state,
+            "sourcePath": "issues/" + path.name,
+            "priority": "none",
+            "labels": [],
+            "assigneeId": None,
+            "projectId": None,
+            "cycleId": None,
+            "createdAt": EPOCH,
+            "updatedAt": EPOCH,
+            "accepted": False,
+            "dependencies": re.findall(
+                r"\d+",
+                (
+                    re.search(r"^Blocked by:([^\r\n]*)", content, re.MULTILINE)
+                    or ["", ""]
+                )[1],
+            ),
+        }
+        if text_length(issue["title"]) > 50000:
+            raise TasksError(f"{path}: title exceeds 50,000 characters.", 422)
+        validate_patch({"title": issue["title"]})
+        validate_workspace({"issues": [issue]})
+        return issue
+
+    def _snapshot(self):
+        self.check_root()
+        states, mapping = self.states()
+        documents, issues = {}, []
+        digest = hashlib.sha256((self.revision_key + "\0" + mapping).encode())
+        if self.directory.is_symlink() or (
+            self.directory.exists() and not self.directory.is_dir()
+        ):
+            raise TasksError(
+                "The issues path must be a directory without symbolic links.", 422
+            )
+        for path in (
+            sorted(
+                self.directory.iterdir(),
+                key=lambda p: (
+                    int(p.name.split("-")[0]) if TICKET.fullmatch(p.name) else -1,
+                    p.name,
+                ),
+            )
+            if self.directory.exists()
+            else []
+        ):
+            if not TICKET.fullmatch(path.name):
+                continue
+            content = regular_file(path, 256 * 1024)
+            issue = self.parse_ticket(path, content, states)
+            documents[path.name] = content
+            issues.append(issue)
+            digest.update(("\0" + path.name + "\0" + content).encode())
+        workspace = {
+            "issues": issues,
+            "projects": [],
+            "members": [],
+            "cycles": [],
+            "currentMemberId": None,
+        }
+        validate_workspace(workspace)
+        return {
+            "workspace": workspace,
+            "documents": documents,
+            "revision": digest.hexdigest(),
+            "capabilities": dict(
+                self.capabilities,
+                workflow="scratch",
+                sourceStates=[{"id": k, "status": v} for k, v in states.items()],
+            ),
+            "parsed": {"source": "\n\n".join(documents.values())},
+        }
+
+    def mutate(self, operation, revision, id=None, input=None):
+        with self.locked():
+            before = self._snapshot()
+            if (
+                not isinstance(revision, str)
+                or revision.strip('"') != before["revision"]
+            ):
+                raise TasksError(
+                    "Local issues or triage labels changed. Reload before saving.", 412
+                )
+            if operation not in ["create", "update", "delete"]:
+                raise TasksError("Local issues do not support this operation.", 422)
+            patch = {} if input is None else input
+            if not isinstance(patch, dict) or set(patch) - {
+                "title",
+                "description",
+                "status",
+                "sourceState",
+                "priority",
+                "labels",
+                "assigneeId",
+                "projectId",
+                "cycleId",
+            }:
+                raise TasksError("Unsupported local issue fields.", 422)
+            validate_patch(
+                {k: v for k, v in patch.items() if k not in ["sourceState", "status"]}
+            )
+            if patch.get("priority", "none") != "none" or patch.get("labels", []):
+                raise TasksError(
+                    "Local issues do not support priority or arbitrary labels.", 422
+                )
+            issue = next(
+                (i for i in before["workspace"]["issues"] if i["id"] == id), None
+            )
+            if operation != "create" and issue is None:
+                raise TasksError("Issue not found.", 404)
+            states = {
+                s["id"]: s["status"] for s in before["capabilities"]["sourceStates"]
+            }
+            state = patch.get(
+                "sourceState", issue["sourceState"] if issue else next(iter(states))
+            )
+            if (
+                not isinstance(state, str)
+                or state not in states
+                or ("status" in patch and patch["status"] != states[state])
+            ):
+                raise TasksError(
+                    "Choose a source state matching the issue status.", 422
+                )
+            if operation == "create":
+                if len(before["workspace"]["issues"]) >= 10000:
+                    raise TasksError("A workspace supports at most 10,000 issues.", 422)
+                title = patch.get("title", "")
+                if not title:
+                    raise TasksError("A title is required.")
+                number = (
+                    max((int(p.split("-")[0]) for p in before["documents"]), default=0)
+                    + 1
+                )
+                slug = (
+                    re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:70] or "issue"
+                )
+                path = self.directory / f"{number:02d}-{slug}.md"
+                content = f"# {title}\n\nStatus: {state}\n\n" + patch.get(
+                    "description", ""
+                )
+            else:
+                assert issue is not None
+                path = self.root / issue["sourcePath"]
+                content = before["documents"][path.name]
+                if operation == "delete":
+                    number = str(int(path.name.split("-")[0]))
+                    if any(
+                        number in {str(int(d)) for d in i["dependencies"]}
+                        for i in before["workspace"]["issues"]
+                        if i != issue
+                    ):
+                        raise TasksError(
+                            "Other tickets are blocked by this issue.", 409
+                        )
+                if (
+                    "description" in patch
+                    and patch["description"] != issue["description"]
+                ):
+                    content = (
+                        f"# {patch.get('title', issue['title'])}\n\nStatus: {state}\n\n"
+                        + patch["description"]
+                    )
+                else:
+                    if "title" in patch:
+                        content = re.sub(
+                            r"^# .+?\r?$",
+                            lambda m: (
+                                "# "
+                                + patch["title"]
+                                + ("\r" if m[0].endswith("\r") else "")
+                            ),
+                            content,
+                            count=1,
+                            flags=re.MULTILINE,
+                        )
+                    if "sourceState" in patch:
+                        header = re.split(
+                            r"^## ", content, maxsplit=1, flags=re.MULTILINE
+                        )[0]
+                        if re.search(r"^Status:", header, re.MULTILINE):
+                            content = re.sub(
+                                r"^(Status:[ \t]*)[^\r\n]*",
+                                lambda m: m[1] + state,
+                                content,
+                                count=1,
+                                flags=re.MULTILINE,
+                            )
+                        else:
+                            newline = "\r\n" if "\r\n" in content else "\n"
+                            content = re.sub(
+                                r"^(# [^\r\n]*)(\r?\n|$)",
+                                lambda m: m[1] + newline + "Status: " + state + newline,
+                                content,
+                                count=1,
+                                flags=re.MULTILINE,
+                            )
+            if operation != "delete" and (
+                len(content.encode()) > 256 * 1024
+                or re.search(
+                    r"^Status:",
+                    re.split(
+                        r"^## ",
+                        patch.get("description", ""),
+                        maxsplit=1,
+                        flags=re.MULTILINE,
+                    )[0],
+                    re.MULTILINE,
+                )
+            ):
+                raise TasksError(
+                    "Ticket exceeds the size limit or its description contains a second Status: line.",
+                    422,
+                )
+            if operation != "delete":
+                self.parse_ticket(path, content, states)
+            temporary = None
+            published = False
+            previous = before["documents"].get(path.name)
+            mode = (
+                stat.S_IMODE(path.lstat().st_mode) if operation != "create" else 0o600
+            )
+            try:
+                if operation != "delete":
+                    self.directory.mkdir(exist_ok=True)
+                    temporary = self.stage(path, content, mode)
+                if self._snapshot()["revision"] != before["revision"]:
+                    raise TasksError("Local issues changed during save.", 412)
+                if operation == "delete":
+                    path.unlink()
+                elif operation == "create":
+                    assert temporary is not None
+                    os.link(temporary, path)
+                else:
+                    assert temporary is not None
+                    os.replace(temporary, path)
+                published = True
+                after = self._snapshot()
+            except Exception:
+                if published:
+                    if operation == "delete":
+                        unchanged = not path.exists() and not path.is_symlink()
+                    else:
+                        try:
+                            unchanged = regular_file(path) == content
+                        except TasksError:
+                            unchanged = False
+                    if not unchanged:
+                        raise TasksError(
+                            "Save was partially applied and the ticket changed again. Reload and review the files.",
+                            409,
+                        ) from None
+                    if previous is None:
+                        path.unlink()
+                    else:
+                        restore = self.stage(path, previous, mode)
+                        try:
+                            if operation == "delete":
+                                os.link(restore, path)
+                            else:
+                                os.replace(restore, path)
+                        finally:
+                            Path(restore).unlink(missing_ok=True)
+                raise
+            finally:
+                if temporary:
+                    Path(temporary).unlink(missing_ok=True)
+            result = {
+                "workspace": after["workspace"],
+                "revision": after["revision"],
+                "capabilities": after["capabilities"],
+            }
+            if operation != "delete":
+                result["issue"] = next(
+                    i
+                    for i in after["workspace"]["issues"]
+                    if i["sourcePath"] == "issues/" + path.name
+                )
+            return result
+
+    def export(self, format="tasks"):
+        return export_snapshot(self.read(), format)

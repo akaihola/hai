@@ -12,6 +12,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 
 from .markdown import SECTIONS, TasksError
 from .store import TasksStore, export_snapshot, run_git
+from .scratch import ScratchStore
 
 
 class SSHSource:
@@ -146,6 +147,8 @@ def open_source(source):
         raise TasksError('Unsupported source scheme. Use a local path, ssh:// or github://.')
     path = Path(source).expanduser().absolute()
     if path.is_dir():
+        if path.parent.name == '.scratch' or (path.name == 'issues' and path.parent.parent.name == '.scratch'):
+            return ScratchStore(path)
         path /= 'TASKS.md'
     return TasksStore(path)
 
@@ -160,7 +163,7 @@ def query(sources, *, text='', section=None, status=None, accepted=None, priorit
         for issue in snapshot['workspace']['issues']:
             if text.casefold() not in (issue['title'] + '\n' + issue['description']).casefold():
                 continue
-            if any(value is not None and issue[key] != value for key, value in [('sourceSection', section), ('status', status), ('accepted', accepted), ('priority', priority)]):
+            if any(value is not None and issue.get(key) != value for key, value in [('sourceSection', section), ('status', status), ('accepted', accepted), ('priority', priority)]):
                 continue
             if label is not None and label not in issue['labels']:
                 continue
@@ -171,4 +174,4 @@ def query(sources, *, text='', section=None, status=None, accepted=None, priorit
 def report(sources, **filters):
     """Count query results by source, workflow section and acceptance."""
     rows = query(sources, **filters)
-    return dict(total=len(rows), accepted=sum(row['issue']['accepted'] for row in rows), awaitingAcceptance=sum(row['issue']['status'] == 'done' and not row['issue']['accepted'] for row in rows), bySource=dict(Counter(row['source'] for row in rows)), bySection=dict(Counter(row['issue']['sourceSection'] for row in rows)))
+    return dict(total=len(rows), accepted=sum(row['issue']['accepted'] for row in rows), awaitingAcceptance=sum(row['issue'].get('sourceSection') == 'Completed / Accepted' and not row['issue']['accepted'] for row in rows), bySource=dict(Counter(row['source'] for row in rows)), bySection=dict(Counter(row['issue'].get('sourceState', row['issue'].get('sourceSection')) for row in rows)))

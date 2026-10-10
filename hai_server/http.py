@@ -9,6 +9,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
 from hai_tasks import TasksError, TasksStore, open_source
+from hai_tasks.scratch import ScratchStore
 
 CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
 
@@ -38,7 +39,7 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
             path = Path(source).expanduser()
             if not path.is_absolute():
                 raise TasksError('Use an absolute server path or a path starting with ~/.')
-            file = path if path.name == 'TASKS.md' or path == tasks_file or str(path) in stores else path / 'TASKS.md'
+            file = path if path.name == 'TASKS.md' or path == tasks_file or str(path) in stores or (path.parent.name == '.scratch' or (path.name == 'issues' and path.parent.parent.name == '.scratch')) else path / 'TASKS.md'
             # Lexically normalize without resolving symlinks before the root check.
             file = Path(os.path.abspath(file))
         with selection_lock:
@@ -51,18 +52,23 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
             if not any(file.is_relative_to(root) or file.is_relative_to(canonical_roots[root]) for root in roots):
                 raise TasksError('Project is outside the allowed project roots. Check HAI_PROJECT_ROOTS.', 403)
             try:
-                if file.is_symlink() or (file.exists() and not file.is_file()):
-                    reason = 'a regular file, not a symbolic link' if file.is_symlink() else 'a regular file'
-                    raise TasksError(f'TASKS.md must be {reason}: {file}', 422)
+                scratch = file.parent.name == '.scratch' or (file.name == 'issues' and file.parent.parent.name == '.scratch')
+                if file.is_symlink() or (file.exists() and not (file.is_dir() if scratch else file.is_file())):
+                    kind = 'Local issue source' if scratch else 'TASKS.md'
+                    reason = ('a directory' if scratch else 'a regular file') + (', not a symbolic link' if file.is_symlink() else '')
+                    raise TasksError(f'{kind} must be {reason}: {file}', 422)
                 canonical = file.resolve(strict=True)
+                if scratch and canonical.name == 'issues' and canonical.parent.parent.name == '.scratch':
+                    canonical = canonical.parent
             except OSError as error:
-                raise TasksError(f'Cannot open TASKS.md at {file}: {error}', 404) from error
+                kind = 'local issue source' if scratch else 'TASKS.md'
+                raise TasksError(f'Cannot open {kind} at {file}: {error}', 404) from error
             if not any(canonical.is_relative_to(root) for root in canonical_roots.values()):
                 raise TasksError('Project links must stay inside the allowed project roots.', 403)
             key = str(canonical)
             if key not in stores:
-                stores[key] = TasksStore(canonical)
-            return stores[key], dict(name=canonical.parent.name, path=key)
+                stores[key] = ScratchStore(canonical) if scratch else TasksStore(canonical)
+            return stores[key], dict(name=f'{canonical.parents[1].name} / {canonical.name}' if scratch else canonical.parent.name, path=key)
 
     class Handler(BaseHTTPRequestHandler):
         def setup(self):
@@ -159,6 +165,14 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
                             for child in root.iterdir():
                                 if not child.is_symlink() and child.is_dir() and (child / 'TASKS.md').exists():
                                     candidates.add(str(child / 'TASKS.md'))
+                        for root in roots:
+                            projects = [root, *(child for child in root.iterdir() if child.is_dir() and not child.is_symlink())]
+                            for project in projects:
+                                scratch_root = project / '.scratch'
+                                if scratch_root.is_dir() and not scratch_root.is_symlink():
+                                    for feature in scratch_root.iterdir():
+                                        if feature.is_dir() and not feature.is_symlink():
+                                            candidates.add(str(feature))
                         with selection_lock:
                             candidates.update(stores)
                         selected = query.get('source', [None])[0]
@@ -170,14 +184,14 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
                                     raise
                                 # Keep an unavailable allowed selection in the partial-view diagnostics.
                                 path = Path(selected).expanduser()
-                                file = path if path.name == 'TASKS.md' or path == tasks_file else path / 'TASKS.md'
+                                file = path if path.name == 'TASKS.md' or path == tasks_file or path.parent.name == '.scratch' else path.parent if path.name == 'issues' and path.parent.parent.name == '.scratch' else path / 'TASKS.md'
                                 candidates.add(os.path.abspath(file))
-                        sources = [{'name': path[2:] if path in remotes else Path(path).parent.name, 'path': path} for path in sorted(candidates)]
+                        sources = [{'name': path[2:] if path in remotes else (f'{Path(path).parents[1].name} / {Path(path).name}' if Path(path).parent.name == '.scratch' else Path(path).parent.name), 'path': path} for path in sorted(candidates)]
                         return self.json(200, {'sources': sources})
                     store, source = select_source(query.get('source', [None])[0])
                     if method == 'GET' and url.path == '/api/workspace':
                         result = store.read()
-                        return self.json(200, dict(workspace=result['workspace'], revision=result['revision'], source=source), result['revision'])
+                        return self.json(200, dict(workspace=result['workspace'], revision=result['revision'], source=source, capabilities=result.get('capabilities', store.capabilities)), result['revision'])
                     if method == 'GET' and url.path == '/api/export':
                         format = query.get('format', ['tasks'])[0]
                         return self.send_content(200, store.export(format), 'application/json; charset=utf-8' if format == 'json' else 'text/markdown; charset=utf-8', **{'Cache-Control': 'no-store', 'Content-Disposition': 'attachment; filename="' + ('hai-workspace.json' if format == 'json' else 'TASKS.md') + '"'})

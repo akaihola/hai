@@ -1,0 +1,68 @@
+import { test, expect } from '@playwright/test'
+import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
+import { createTasksServer } from '../python-bridge.ts'
+
+test('local Markdown tickets support source states, edits, creation, deletion and all projects', async ({ page }) => {
+  const directory = await mkdtemp(join(tmpdir(), 'hai-scratch-browser-'))
+  const project = join(directory, 'project'), feature = join(project, '.scratch/search')
+  const issues = join(feature, 'issues')
+  await mkdir(issues, { recursive: true })
+  const content = '# Search ticket\n\nStatus: ready-for-agent\nType: task\n\n## Requirements\n\nKeep this.\n\n## Comments\n\nConversation.\n'
+  await writeFile(join(issues, '01-search.md'), content)
+  await writeFile(join(feature, 'spec.md'), '# Spec\n')
+  await writeFile(join(project, 'TASKS.md'), '# Tasks\n\n## Unverified proposals\n\n## Ordered backlog\n\n## Scheduled\n\n## In Progress\n\n## Completed / Accepted\n\n## Rules\n\nOnly users accept.\n')
+  const server = createTasksServer({ tasksFile: join(project, 'TASKS.md'), distDir: resolve('dist'), allowedOrigins: ['http://127.0.0.1:5173'] })
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+  const address = server.address()
+  if (!address || typeof address === 'string') throw new Error('Test server did not start.')
+  await page.route('**/api/**', async route => {
+    const url = new URL(route.request().url())
+    await route.fulfill({ response: await route.fetch({ url: `http://127.0.0.1:${address.port}${url.pathname}${url.search}` }) })
+  })
+  try {
+    await page.setViewportSize({ width: 1920, height: 1000 })
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Open project', exact: true }).click()
+    const picker = page.getByRole('dialog', { name: 'Open project', exact: true })
+    await picker.getByRole('button', { name: 'Open project / search', exact: true }).click()
+    await expect(page.getByRole('region', { name: 'ready-for-agent group', exact: true })).toContainText('Search ticket')
+    await page.getByText('Search ticket', { exact: true }).click()
+    const editor = page.getByRole('dialog')
+    await expect(editor.getByRole('combobox', { name: 'Priority', exact: true })).toHaveCount(0)
+    await expect(editor.getByLabel('Labels', { exact: true })).toHaveCount(0)
+    await expect(editor.getByRole('combobox', { name: 'Status', exact: true })).toHaveValue('ready-for-agent')
+    await editor.getByRole('textbox', { name: 'Title', exact: true }).fill('Edited search ticket')
+    await editor.getByRole('combobox', { name: 'Status', exact: true }).selectOption('ready-for-human')
+    await editor.getByRole('button', { name: 'Save changes', exact: true }).click()
+    await expect(editor).toHaveCount(0)
+    expect(await readFile(join(issues, '01-search.md'), 'utf8')).toBe(content.replace('# Search ticket', '# Edited search ticket').replace('Status: ready-for-agent', 'Status: ready-for-human'))
+    await page.getByRole('button', { name: 'Board view', exact: true }).click()
+    await page.getByRole('button', { name: /01-search.*Edited search ticket/ }).dragTo(page.getByRole('region', { name: 'wontfix column', exact: true }))
+    await expect(page.getByRole('region', { name: 'wontfix column', exact: true })).toContainText('Edited search ticket')
+    expect(await readFile(join(issues, '01-search.md'), 'utf8')).toContain('Status: wontfix')
+    await page.getByRole('button', { name: 'Add issue to needs-info', exact: true }).click()
+    await expect(editor.getByRole('combobox', { name: 'Status', exact: true })).toHaveValue('needs-info')
+    await editor.getByRole('textbox', { name: 'Title', exact: true }).fill('Follow-up ticket')
+    await editor.getByRole('button', { name: 'Create issue', exact: true }).click()
+    await expect(editor).toHaveCount(0)
+    expect(await readdir(issues)).toContain('02-follow-up-ticket.md')
+    await page.getByRole('button', { name: /02-follow-up-ticket.*Follow-up ticket/ }).click()
+    await editor.getByRole('button', { name: 'Delete issue', exact: true }).click()
+    await editor.getByRole('button', { name: 'Confirm delete', exact: true }).click()
+    await expect(editor).toHaveCount(0)
+    expect(await readdir(issues)).not.toContain('02-follow-up-ticket.md')
+    expect(await readFile(join(feature, 'spec.md'), 'utf8')).toBe('# Spec\n')
+    await page.reload()
+    await expect(page.getByRole('region', { name: 'wontfix column', exact: true })).toContainText('Edited search ticket')
+    await page.getByRole('button', { name: 'All projects', exact: true }).click()
+    await expect(page.getByRole('region', { name: 'wontfix column', exact: true })).toContainText('Edited search ticket')
+    await page.getByRole('button', { name: /01-search.*Edited search ticket/ }).click()
+    await expect(editor.getByRole('combobox', { name: 'Status', exact: true })).toHaveValue('wontfix')
+  } finally {
+    await page.unrouteAll({ behavior: 'wait' })
+    await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()))
+    await rm(directory, { recursive: true, force: true })
+  }
+})

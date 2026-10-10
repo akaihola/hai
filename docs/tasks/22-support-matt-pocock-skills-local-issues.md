@@ -6,6 +6,7 @@ See `~/prg/filemill-screencast/` for how Matt Pocock's skills organize issues:
 >The five default role names (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), recorded as a `Status:` line in each issue file. See `docs/agents/triage-labels.md`.
 
 Add support for this similarly how `TASKS.md` is supported. Grill me if necessary.
+
 ## Implementation plan, 2026-10-10
 
 - Expose each `.scratch/<feature>/` as a filesystem workspace through
