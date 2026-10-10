@@ -74,3 +74,13 @@ fallback. It runs automatically under `npm test`. The skill validator passed.
 Skill installation and the cross-repository Claude Code discovery check remain
 with the related nixos-config deployment task. This change requires no web
 service restart.
+
+Validation: `npm run check` passed 33 Python tests, 90 client/API tests,
+TypeScript checks, the production build and all 59 Chromium workflows. The
+final stronger example test also passed separately. The first check lacked
+Node dependencies; after `npm ci`, the complete check passed. Full output is
+retained in `/tmp/hai-23-check.log`. The skill validator passed using an isolated
+temporary Python environment with PyYAML.
+
+Merged into main. Issue [23] is completed and remains unchecked for user
+acceptance.

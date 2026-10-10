@@ -30,10 +30,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [23] Add a `hai-tasks` agent skill so agents stop editing trackers by hand.
-  <!-- hai:{"id":"simple-a61b1e2a-60b4-4bfe-b453-3d1ea87234c8","createdAt":"2026-10-10T11:06:37.830Z","updatedAt":"2026-10-10T12:49:07.222Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [23] Add a `hai-tasks` agent skill so agents stop editing trackers by hand.
+  <!-- hai:{"id":"simple-a61b1e2a-60b4-4bfe-b453-3d1ea87234c8","createdAt":"2026-10-10T11:06:37.830Z","updatedAt":"2026-10-10T12:51:27.672Z"} -->
 
 - [ ] [19] Keyboard friendly project switching
   <!-- hai:{"id":"simple-0507ac21-7daa-4768-b786-19289aebd18e","priority":"none","labels":[],"createdAt":"2026-10-07T18:58:40.973Z","updatedAt":"2026-10-10T11:45:17.721Z"} -->
