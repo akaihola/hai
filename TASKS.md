@@ -26,6 +26,9 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
+- [26] Deleting an issue leaves its description file and link behind
+  <!-- hai:{"id":"simple-723c1791-f392-475b-9518-2fd8673c4887","createdAt":"2026-10-11T10:29:45.032Z","updatedAt":"2026-10-11T10:29:45.032Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -140,7 +143,7 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 [11]: docs/tasks/11-allow-dragging-issues-from-a-group-to-another.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26 -->
 
 [12]: docs/tasks/12-eliminate-runs-of-blank-lines-in-tasks-md.md
 [13]: docs/tasks/13-separate-groups-completed-and-accepted.md
@@ -159,6 +162,8 @@ Rules for TASKS.md usage are at the bottom of the file.
 [22]: docs/tasks/22-support-matt-pocock-skills-local-issues.md
 
 [23]: docs/tasks/23-add-a-hai-tasks-agent-skill-so-agents-stop-editing-trackers-by-hand.md
+
+[26]: docs/tasks/26-deleting-an-issue-leaves-its-description-file-and-link-behind.md
 
 ## Rules
 
