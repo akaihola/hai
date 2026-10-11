@@ -12,6 +12,26 @@ async function createIssue(page: Page, title: string) {
   await expect(dialog).not.toBeVisible();
 }
 
+for (const trigger of ['button', 'keyboard']) test(`new issue focuses Title when opened by ${trigger}`, async ({ page }) => {
+  await page.goto('/?backend=local');
+  const button = page.getByRole('button', { name: 'New issue', exact: true });
+  await expect(button).toBeVisible();
+  for (let opening = 0; opening < 2; opening++) {
+    if (trigger === 'button') await button.click();
+    else await page.keyboard.press('c');
+    const dialog = page.getByRole('dialog', { name: 'New issue', exact: true });
+    const title = dialog.getByRole('textbox', { name: 'Title', exact: true });
+    await expect(title).toBeFocused();
+    await page.keyboard.type('Start typing immediately');
+    await expect(title).toHaveValue('Start typing immediately');
+    await page.keyboard.press('Tab');
+    await expect(dialog.getByRole('textbox', { name: 'Description', exact: true })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
+    if (trigger === 'button') await expect(button).toBeFocused();
+  }
+});
+
 for (const modifier of ['Control', 'Meta']) test(`${modifier}+Enter creates an issue from its description`, async ({ page }) => {
   await page.goto('/?backend=local');
   await page.getByRole('button', { name: 'New issue', exact: true }).click();
