@@ -178,6 +178,9 @@ class TasksStore:
                 changes.append(dict(path=self.document_path(description['path'], True), content=description['content'], previous=before['documents'].get(description['path'])))
             if result['source'] != before['parsed']['source']:
                 changes.append(dict(path=self.tasks_file, content=result['source'], previous=before['parsed']['source']))
+            deleted_path = current.get('sourcePath') if operation == 'delete' else None
+            if deleted_path and deleted_path not in candidate['references'].values():
+                changes.append(dict(path=self.document_path(deleted_path), content=None, previous=before['documents'][deleted_path]))
             temps, committed = [], []
             try:
                 for change in changes:
@@ -192,11 +195,13 @@ class TasksStore:
                     except FileNotFoundError:
                         pass
                     change['mode'] = mode
-                    temps.append(self.stage(change['path'], change['content'], mode))
+                    temps.append(self.stage(change['path'], change['content'], mode) if change['content'] is not None else None)
                 if self._snapshot()['revision'] != before['revision']:
                     raise TasksError('Tracker changed during save. Reload before saving.', 412)
                 for temporary, change in zip(temps, changes):
-                    if change['previous'] is None:
+                    if change['content'] is None:
+                        change['path'].unlink()
+                    elif change['previous'] is None:
                         # Publish new files without overwriting an external creation.
                         os.link(temporary, change['path'])
                         os.unlink(temporary)
@@ -211,7 +216,7 @@ class TasksStore:
             except Exception:
                 for change in committed:
                     try:
-                        unchanged = regular_file(change['path']) == change['content']
+                        unchanged = not os.path.lexists(change['path']) if change['content'] is None else regular_file(change['path']) == change['content']
                     except TasksError:
                         unchanged = False
                     if not unchanged:
@@ -221,11 +226,16 @@ class TasksStore:
                         change['path'].unlink()
                     else:
                         temporary = self.stage(change['path'], change['previous'], change['mode'])
-                        os.replace(temporary, change['path'])
+                        if change['content'] is None:
+                            temps.append(temporary)
+                            os.link(temporary, change['path'])
+                        else:
+                            os.replace(temporary, change['path'])
                 raise
             finally:
                 for path in temps:
-                    Path(path).unlink(missing_ok=True)
+                    if path is not None:
+                        Path(path).unlink(missing_ok=True)
 
     @staticmethod
     def stage(path, content, mode):

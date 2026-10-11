@@ -99,7 +99,84 @@ class TrackerTests(unittest.TestCase):
         ordered = json.loads(order.stdout)
         deleted = self.cli('delete', self.project, issue['id'], '--revision', ordered['revision'])
         self.assertEqual(deleted.returncode, 0, deleted.stderr)
-        self.assertTrue((self.project / issue['sourcePath']).exists())
+        self.assertFalse((self.project / issue['sourcePath']).exists())
+        self.assertNotIn(issue['sourceReference'] + ':', self.store.export())
+        next_issue = self.store.mutate('create', self.store.read()['revision'], input={'title': 'Next', 'description': 'Body'})
+        self.assertEqual(next_issue['issue']['sourceReference'], '[3]')
+
+    def test_delete_preserves_shared_descriptions_and_unrelated_references(self):
+        for shared_reference in [False, True]:
+            with self.subTest(shared_reference=shared_reference):
+                extra = '- [*] See [1] for details' if shared_reference else '- [2] Shared description'
+                reference = '' if shared_reference else '[2]: docs/tasks/1-first.md\n'
+                source = SOURCE.replace('## Scheduled', extra + '\n\n## Scheduled').replace('## Rules', reference + '[99]: docs/tasks/unrelated.md\n\n## Rules')
+                (self.project / 'TASKS.md').write_text(source)
+                self.store.mutate('delete', self.store.read()['revision'], 'first')
+                after = self.store.export()
+                self.assertIn('[99]: docs/tasks/unrelated.md', after)
+                self.assertEqual('[1]: docs/tasks/1-first.md' in after, shared_reference)
+                self.assertEqual((self.project / 'docs/tasks/1-first.md').read_text(), '# Description\n')
+                self.assertIn('- [x] [*] Accepted task', after)
+
+    def test_delete_preserves_crlf_rules_and_reserves_number(self):
+        source = SOURCE + '\n[1]: docs/tasks/rules-example.md\n'
+        (self.project / 'TASKS.md').write_bytes(source.replace('\n', '\r\n').encode())
+        self.store.mutate('delete', self.store.read()['revision'], 'first')
+        content = (self.project / 'TASKS.md').read_bytes()
+        self.assertNotIn(b'\n', content.replace(b'\r\n', b''))
+        self.assertIn(b'[1]: docs/tasks/rules-example.md', content)
+        self.assertNotIn(b'[1]: docs/tasks/1-first.md', content)
+        self.assertIn(b'hai:reserved-numbers:1', content)
+        self.assertFalse((self.project / 'docs/tasks/1-first.md').exists())
+
+    def test_delete_rollback_preserves_recreated_description(self):
+        before = self.store.read()
+        document = self.project / 'docs/tasks/1-first.md'
+        snapshot = self.store._snapshot
+        calls = 0
+        def recreate_after_delete():
+            nonlocal calls
+            calls += 1
+            if calls == 3:
+                document.write_text('Human replacement')
+                raise OSError('injected final read failure')
+            return snapshot()
+        with patch.object(self.store, '_snapshot', side_effect=recreate_after_delete):
+            with self.assertRaises(TasksError) as error:
+                self.store.mutate('delete', before['revision'], 'first')
+        self.assertEqual(error.exception.status, 409)
+        self.assertEqual(document.read_text(), 'Human replacement')
+        self.assertNotIn('[1]: docs/tasks/1-first.md', self.store.export())
+
+    def test_delete_failure_restores_tracker_and_description(self):
+        before = self.store.read()
+        document = self.project / 'docs/tasks/1-first.md'
+        real_unlink = Path.unlink
+        def unlink(path, *args, **kwargs):
+            if path == document:
+                raise OSError('injected deletion failure')
+            return real_unlink(path, *args, **kwargs)
+        with patch('pathlib.Path.unlink', side_effect=unlink, autospec=True):
+            with self.assertRaisesRegex(OSError, 'injected deletion failure'):
+                self.store.mutate('delete', before['revision'], 'first')
+        self.assertEqual(self.store.read()['revision'], before['revision'])
+        self.assertEqual(list(self.project.rglob('*.hai-*')), [])
+
+    def test_delete_rolls_back_removed_file_after_snapshot_failure(self):
+        before = self.store.read()
+        snapshot = self.store._snapshot
+        calls = 0
+        def fail_after_delete():
+            nonlocal calls
+            calls += 1
+            if calls == 3:
+                raise OSError('injected final read failure')
+            return snapshot()
+        with patch.object(self.store, '_snapshot', side_effect=fail_after_delete):
+            with self.assertRaisesRegex(OSError, 'injected final read failure'):
+                self.store.mutate('delete', before['revision'], 'first')
+        self.assertEqual(self.store.read()['revision'], before['revision'])
+        self.assertEqual(list(self.project.rglob('*.hai-*')), [])
 
     def test_separate_processes_cannot_overwrite_each_other(self):
         revision = self.store.read()['revision']
@@ -367,6 +444,8 @@ class TrackerTests(unittest.TestCase):
         self.assertEqual(error.exception.status, 412)
         source.mutate('delete', after['revision'], created['issue']['id'])
         self.assertNotIn('Remote task', source.export())
+        self.assertNotIn(created['issue']['sourcePath'], run_git(remote, 'ls-tree', '-r', '--name-only', 'main').stdout.splitlines())
+        self.assertEqual(run_git(remote, 'show', 'main:unrelated.txt').stdout, 'Keep me')
 
     def test_github_rejects_competing_push(self):
         source, remote = self.github()

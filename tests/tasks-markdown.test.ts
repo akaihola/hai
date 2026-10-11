@@ -151,7 +151,8 @@ test('every write repairs excessive task and section separators with LF or CRLF'
       assert.doesNotMatch(output, /\r?\n(?:[ \t]*\r?\n){2,}/)
       assert.equal(output.replaceAll(newline, '\n').includes('\r'), false)
       assert.ok(output.includes('- [x] [*] Accepted by user'))
-      assert.equal(output.slice(output.indexOf('[7]:')), fixture.slice(fixture.indexOf('[7]:')).replaceAll('\n', newline))
+      const firstReference = parseTasks(output).tasks.some(task => task.issue.id === 'task-7') ? '[7]:' : '[4]:'
+      assert.equal(output.slice(output.indexOf(firstReference)), fixture.slice(fixture.indexOf(firstReference)).replaceAll('\n', newline))
     }
     assert.equal(results.at(-1)!.source, fixture.replace('- [x] [*] Accepted by user', '\n- [x] [*] Accepted by user').replaceAll('\n', newline))
   }

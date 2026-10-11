@@ -200,7 +200,10 @@ def mutate_tasks(source, operation, id=None, input=None, new_reference=None):
     if operation == 'delete':
         if task['marker'] != '*' and any(t is not task and task['marker'] in t['issue']['dependencies'] for t in parsed['tasks']):
             raise TasksError('Other issues depend on this task. Update their dependencies before deleting it.', 409)
-        return dict(source=normalize_spacing(remove_task(source, task)), id=id)
+        output = remove_task(source, task)
+        if task['marker'] != '*' and not any(t is not task and task['issue']['sourceReference'] in t['raw'] for t in parsed['tasks']):
+            output = re.sub(r'^\[' + task['marker'] + r'\]:[^\r\n]*(?:\r?\n|$)', '', output, count=1, flags=re.M)
+        return dict(source=normalize_spacing(output), id=id)
     if operation == 'create' and not patch.get('title'):
         raise TasksError('A title is required.')
     issue = task['issue'] if task else {}

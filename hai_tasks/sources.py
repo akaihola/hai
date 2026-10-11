@@ -114,9 +114,12 @@ class GitHubSource:
 
     def mutate(self, operation, revision, id=None, input=None):
         with self.checkout() as (root, branch, store):
+            deleted_description = None
+            if operation == 'delete':
+                deleted_description = next((i.get('sourcePath') for i in store.read()['workspace']['issues'] if i['id'] == id), None)
             result = store.mutate(operation, revision, id, input)
             paths = [self.path]
-            description = result.get('issue', {}).get('sourcePath')
+            description = result.get('issue', {}).get('sourcePath') or deleted_description
             if description:
                 paths.append(str(store.root.relative_to(root) / description))
             run_git(root, 'add', '--force', '--', *paths)
