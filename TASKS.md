@@ -38,17 +38,17 @@ Rules for TASKS.md usage are at the bottom of the file.
 - [ ] [23] Add a `hai-tasks` agent skill so agents stop editing trackers by hand.
   <!-- hai:{"id":"simple-a61b1e2a-60b4-4bfe-b453-3d1ea87234c8","createdAt":"2026-10-10T11:06:37.830Z","updatedAt":"2026-10-10T12:51:27.672Z"} -->
 
-- [ ] [19] Keyboard friendly project switching
-  <!-- hai:{"id":"simple-0507ac21-7daa-4768-b786-19289aebd18e","priority":"none","labels":[],"createdAt":"2026-10-07T18:58:40.973Z","updatedAt":"2026-10-10T11:45:17.721Z"} -->
+- [x] [19] Keyboard friendly project switching
+  <!-- hai:{"id":"simple-0507ac21-7daa-4768-b786-19289aebd18e","priority":"none","labels":[],"createdAt":"2026-10-07T18:58:40.973Z","updatedAt":"2026-10-10T19:41:19.698Z"} -->
 
-- [ ] [20] New issue goes to top of ordered backlog
-  <!-- hai:{"id":"simple-0dd03d92-f5d8-485b-b5f4-781e657a6c90","priority":"none","labels":[],"createdAt":"2026-10-08T16:25:37.328Z","updatedAt":"2026-10-10T11:38:25.029Z"} -->
+- [x] [20] New issue goes to top of ordered backlog
+  <!-- hai:{"id":"simple-0dd03d92-f5d8-485b-b5f4-781e657a6c90","priority":"none","labels":[],"createdAt":"2026-10-08T16:25:37.328Z","updatedAt":"2026-10-10T19:40:48.145Z"} -->
 
-- [ ] [21] Ctrl+Enter doesn't create issue
-  <!-- hai:{"id":"simple-956562e0-25d1-46d1-9357-a5de89a89491","priority":"none","labels":[],"createdAt":"2026-10-08T16:27:07.343Z","updatedAt":"2026-10-10T11:32:33.043Z"} -->
+- [x] [21] Ctrl+Enter doesn't create issue
+  <!-- hai:{"id":"simple-956562e0-25d1-46d1-9357-a5de89a89491","priority":"none","labels":[],"createdAt":"2026-10-08T16:27:07.343Z","updatedAt":"2026-10-10T19:38:30.265Z"} -->
 
-- [ ] [22] Support Matt Pocock skills' local issues
-  <!-- hai:{"id":"simple-90b5bb1c-bdda-47ac-bee5-6fd61c7015cf","priority":"none","labels":[],"createdAt":"2026-10-09T19:11:20.954Z","updatedAt":"2026-10-10T11:25:22.120Z"} -->
+- [x] [22] Support Matt Pocock skills' local issues
+  <!-- hai:{"id":"simple-90b5bb1c-bdda-47ac-bee5-6fd61c7015cf","priority":"none","labels":[],"createdAt":"2026-10-09T19:11:20.954Z","updatedAt":"2026-10-11T08:05:44.434Z"} -->
 
 - [x] [*] Can't switch to an arbitrary project among the configured projects, because the
   `Switch project` drop-down only shows 8 recent projects and there's no other easy
@@ -162,6 +162,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 [22]: docs/tasks/22-support-matt-pocock-skills-local-issues.md
 
 [23]: docs/tasks/23-add-a-hai-tasks-agent-skill-so-agents-stop-editing-trackers-by-hand.md
+
+[24]: docs/tasks/24-this-is-a-test-issue.md
+
+[25]: docs/tasks/25-test-issue.md
 
 [26]: docs/tasks/26-deleting-an-issue-leaves-its-description-file-and-link-behind.md
 
