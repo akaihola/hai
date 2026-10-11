@@ -93,6 +93,24 @@ test('issue creation, editing, persistence, and deletion', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('canceling deletion restores Title focus and immediate typing', async ({ page }) => {
+  await page.goto('/?backend=local');
+  await expect(page.getByRole('button', { name: 'New issue', exact: true })).toBeVisible();
+  await createIssue(page, 'Keep this issue');
+  await page.getByText('Keep this issue', { exact: true }).click();
+  await page.getByRole('button', { name: 'Delete issue', exact: true }).click();
+  const confirmation = page.getByRole('dialog', { name: 'Delete issue', exact: true });
+  await confirmation.getByRole('button', { name: 'Cancel', exact: true }).click();
+  const title = page.getByRole('dialog').getByRole('textbox', { name: 'Title', exact: true });
+  await expect(title).toBeFocused();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' updated');
+  await expect(title).toHaveValue('Keep this issue updated');
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await page.reload();
+  await expect(page.getByText('Keep this issue updated', { exact: true })).toBeVisible();
+});
+
 test('keyboard search opens an issue and Escape restores the workspace', async ({ page }) => {
   await page.goto('/?backend=local');
   await expect(page.getByRole('button', { name: 'All issues', exact: true })).toBeVisible();

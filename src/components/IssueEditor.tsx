@@ -5,7 +5,6 @@ import { Dialog } from './Dialog'
 
 export function IssueEditor({ issue, initial, workspace, backend, onClose, onSaved }: { issue?: Issue; initial?: Partial<IssueInput>; workspace: Workspace; backend: WorkspaceBackend; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
   const titleRef = useRef<HTMLInputElement>(null)
-  useEffect(() => { titleRef.current?.focus() }, [])
   const tasks = backend.capabilities.workflow === 'tasks'
   const states = backend.capabilities.sourceStates
   const fields = backend.capabilities.fields
@@ -15,6 +14,7 @@ export function IssueEditor({ issue, initial, workspace, backend, onClose, onSav
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [deleting, setDeleting] = useState(false)
+  useEffect(() => { titleRef.current?.focus() }, [deleting])
   const canSave = issue ? backend.capabilities.canUpdate : backend.capabilities.canCreate
   const hasChanges = issue && (['title', 'description', 'status', 'priority', 'sourceSection', 'sourceState'] as const).some(key => draft[key] !== issue[key]) || JSON.stringify(labels) !== JSON.stringify(issue?.labels ?? []) || Boolean(labelDraft.trim())
   function change<K extends keyof IssueInput>(key: K, value: IssueInput[K]) { setDraft(previous => ({ ...previous, [key]: value })) }
