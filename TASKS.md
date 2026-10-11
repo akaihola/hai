@@ -26,10 +26,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
-- [26] Deleting an issue leaves its description file and link behind
-  <!-- hai:{"id":"simple-723c1791-f392-475b-9518-2fd8673c4887","createdAt":"2026-10-11T10:29:45.032Z","updatedAt":"2026-10-11T10:29:45.032Z"} -->
-
 ## Scheduled
+
+- [26] Deleting an issue leaves its description file and link behind
+  <!-- hai:{"id":"simple-723c1791-f392-475b-9518-2fd8673c4887","createdAt":"2026-10-11T10:29:45.032Z","updatedAt":"2026-10-11T14:03:26.571Z"} -->
 
 ## In Progress
 
