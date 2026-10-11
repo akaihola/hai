@@ -31,3 +31,17 @@ calls `TasksStore.mutate("delete", ...)`. On a scratch tracker:
 - Keep the number in `hai:reserved-numbers`, as now, so it is never reused.
 - docs/backends.md says that file mutations preserve unrelated reference links. The
   deleted issue's own link isn't unrelated, so say what delete removes.
+
+## Implementation and validation, 2026-10-11
+
+Deletion removes the issue reference and unused description file, preserves shared
+references and files, and retains the reserved-number ledger. File removal uses
+the store rollback checks; a recreated file is preserved on partial failure.
+GitHub mutations stage the description deletion along with the tracker.
+
+`npm run check` passed 38 Python tests, 90 client/API tests, TypeScript, the
+production build, and all 61 Chromium workflows. Regression coverage includes
+shared references and descriptions, CRLF and rules preservation, retired-number
+allocation without Git, deletion failures, rollback and GitHub persistence.
+The first full run also hit the previously documented oversized-request EPIPE
+failure; the complete rerun passed. Validation log: `/tmp/hai26-check-rerun.log`.

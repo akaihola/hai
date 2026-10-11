@@ -30,10 +30,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [26] Deleting an issue leaves its description file and link behind
-  <!-- hai:{"id":"simple-723c1791-f392-475b-9518-2fd8673c4887","createdAt":"2026-10-11T10:29:45.032Z","updatedAt":"2026-10-11T14:03:53.047Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [26] Deleting an issue leaves its description file and link behind
+  <!-- hai:{"id":"simple-723c1791-f392-475b-9518-2fd8673c4887","createdAt":"2026-10-11T10:29:45.032Z","updatedAt":"2026-10-11T14:10:21.579Z"} -->
 
 - [ ] [23] Add a `hai-tasks` agent skill so agents stop editing trackers by hand.
   <!-- hai:{"id":"simple-a61b1e2a-60b4-4bfe-b453-3d1ea87234c8","createdAt":"2026-10-10T11:06:37.830Z","updatedAt":"2026-10-10T12:51:27.672Z"} -->
