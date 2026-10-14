@@ -150,9 +150,9 @@ def open_source(source):
     if '://' in source:
         raise TasksError('Unsupported source scheme. Use a local path, ssh:// or github://.')
     path = Path(source).expanduser().absolute()
+    if path.name == '.scratch' or path.parent.name == '.scratch' or (path.name == 'issues' and path.parent.parent.name == '.scratch'):
+        return ScratchStore(path)
     if path.is_dir():
-        if path.parent.name == '.scratch' or (path.name == 'issues' and path.parent.parent.name == '.scratch'):
-            return ScratchStore(path)
         root = backlog_root(path)
         if root is not None:
             return BacklogStore(root)

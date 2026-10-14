@@ -36,7 +36,7 @@ export default function App({ backend = tasksBackend }: { backend?: WorkspaceBac
   return <WorkspaceView backend={opened?.base === backend ? opened.backend : backend} initialIssueId={opened?.base === backend ? opened.issueId : undefined} onOpened={(next, issueId) => {
     try {
       localStorage.setItem('hai:tasks-all-projects', String(next.capabilities.workspaceScope === 'all'))
-      if (next.source) localStorage.setItem('hai:tasks-source', next.source.path)
+      if (next.source) localStorage.setItem('hai:tasks-source', next.source.selectionPath ?? next.source.path)
     } catch { /* Navigation does not require browser storage. */ }
     setOpened({ base: backend, backend: next, issueId })
   }} />
@@ -108,7 +108,7 @@ function WorkspaceView({ backend, onOpened, initialIssueId }: { backend: Workspa
     setLoading(true); setLoadError(''); setRefreshError(''); setError('')
     try { await refresh() } catch (failure) { if (activeBackend.current === activation) setLoadError(errorMessage(failure)) } finally { if (activeBackend.current === activation) setLoading(false) }
   }
-  useEffect(() => { let cancelled = false; endDrag(); setTab('all'); setSearchOpen(false); setQuery(''); setCollapsed([]); setProjectPickerOpen(false); setMutating(false); setSort(backend.capabilities.workflow === 'tasks' ? 'source' : 'identifier'); setEditor(null); setEntityEditor(null); setPendingImport(null); setSelectedProject(''); setSelectedCycle(''); setFilters(emptyFilters); setWorkspace(emptyWorkspace); setRefreshError(''); setError(''); setNotice(''); setLoading(true); setLoadError(''); backend.load().then(data => { if (!cancelled) { setWorkspace(data); const issue = data.issues.find(item => item.id === initialIssueId); if (issue) setEditor({ issue }) } }).catch(failure => { if (!cancelled) setLoadError(errorMessage(failure)) }).finally(() => { if (!cancelled) setLoading(false) }); return () => { cancelled = true } }, [backend])
+  useEffect(() => { let cancelled = false; endDrag(); setTab('all'); setSearchOpen(false); setQuery(''); setCollapsed([]); setProjectPickerOpen(false); setMutating(false); setSort(backend.capabilities.workflow === 'tasks' ? 'source' : 'identifier'); setEditor(null); setEntityEditor(null); setPendingImport(null); setSelectedProject(''); setSelectedCycle(''); setFilters(emptyFilters); setWorkspace(emptyWorkspace); setRefreshError(''); setError(''); setNotice(''); setLoading(true); setLoadError(''); backend.load().then(data => { if (!cancelled) { setWorkspace(data); setSelectedProject(backend.source?.projectId ?? ''); const issue = data.issues.find(item => item.id === initialIssueId); if (issue) setEditor({ issue }) } }).catch(failure => { if (!cancelled) setLoadError(errorMessage(failure)) }).finally(() => { if (!cancelled) setLoading(false) }); return () => { cancelled = true } }, [backend])
   useEffect(() => {
     if (!backend.capabilities.canAutoRefresh || !backend.pollChanges || loading || mutating || editor || entityEditor || projectPickerOpen || pendingImport) return
     let cancelled = false, pending = false
@@ -145,7 +145,7 @@ function WorkspaceView({ backend, onOpened, initialIssueId }: { backend: Workspa
     document.addEventListener('keydown', trapFocus)
     return () => { document.removeEventListener('keydown', trapFocus); previous?.focus() }
   }, [mobileOpen])
-  function newIssue(status: IssueStatus = tasks ? 'backlog' : 'todo', sourceSection?: TaskSection, sourceState?: string) { if (!canCreate || loading || loadError) return; setMobileOpen(false); setEditor({ initial: { status, ...(states ? { sourceState: sourceState ?? states[0].id, status: sourceState ? status : states[0].status } : {}), ...(tasks ? { sourceSection: sourceSection ?? 'Unverified proposals' } : {}), ...(selectedProject ? { projectId: selectedProject } : {}), ...(route === 'cycles' && cycle ? { cycleId: cycle.id } : {}), ...(route === 'my' && currentMember ? { assigneeId: currentMember.id } : {}) } }) }
+  function newIssue(status: IssueStatus = tasks ? 'backlog' : 'todo', sourceSection?: TaskSection, sourceState?: string) { if (!canCreate || loading || loadError) return; setMobileOpen(false); setEditor({ initial: { status, ...(states ? { sourceState: sourceState ?? states[0].id, status: sourceState ? status : states[0].status } : {}), ...(tasks ? { sourceSection: sourceSection ?? 'Unverified proposals' } : {}), ...(selectedProject || filters.project ? { projectId: selectedProject || filters.project } : {}), ...(route === 'cycles' && cycle ? { cycleId: cycle.id } : {}), ...(route === 'my' && currentMember ? { assigneeId: currentMember.id } : {}) } }) }
   useEffect(() => {
     function keydown(event: KeyboardEvent) {
       const target = event.target as HTMLElement
@@ -158,7 +158,7 @@ function WorkspaceView({ backend, onOpened, initialIssueId }: { backend: Workspa
     document.addEventListener('keydown', keydown)
     return () => document.removeEventListener('keydown', keydown)
   })
-  function navigate(next: Route, projectId = '') { setRoute(next); setSelectedProject(projectId); setTab('all'); setFilters(emptyFilters); setMobileOpen(false) }
+  function navigate(next: Route, projectId = '') { if (backend.capabilities.workflow === 'scratch' && backend.source) { const feature = workspace.projects.find(item => item.id === projectId); try { localStorage.setItem('hai:tasks-source', backend.source.path + (feature ? '/' + feature.name : '')) } catch { /* Selection storage is optional. */ } }; setRoute(next); setSelectedProject(projectId); setTab('all'); setFilters(emptyFilters); setMobileOpen(false) }
   async function openIssue(issue: Issue) {
     if (!backend.openIssue) { setEditor({ issue }); return }
     if (mutating) return

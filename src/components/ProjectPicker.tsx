@@ -9,6 +9,10 @@ function recentSources(source?: WorkspaceSource): WorkspaceSource[] {
     const stored: unknown = JSON.parse(localStorage.getItem('hai:recent-projects') ?? '[]')
     if (Array.isArray(stored)) recent = stored.filter(item => item && typeof item.name === 'string' && typeof item.path === 'string')
   } catch { /* Recent projects are optional. */ }
+  recent = recent.map(item => {
+    const root = /^(.*\/\.scratch)(?:\/[^/]+(?:\/issues)?)?\/?$/.exec(item.path)?.[1]
+    return root ? { name: `${root.split('/').at(-2)} / .scratch`, path: root } : item
+  })
   return [...(source ? [source] : []), ...recent.filter(item => item.path !== source?.path)].slice(0, 8)
 }
 
@@ -41,7 +45,7 @@ export function ProjectPicker({ backend, onClose, onOpened }: { backend: Workspa
       const next = await backend.openWorkspace(value.trim())
       if (next.source) {
         try {
-          localStorage.setItem('hai:tasks-source', next.source.path)
+          localStorage.setItem('hai:tasks-source', next.source.selectionPath ?? next.source.path)
           localStorage.setItem('hai:recent-projects', JSON.stringify([next.source, ...recent.filter(item => item.path !== next.source!.path)].slice(0, 8)))
         } catch { /* Opening a project does not require browser storage. */ }
       }
@@ -52,7 +56,7 @@ export function ProjectPicker({ backend, onClose, onOpened }: { backend: Workspa
   return <Dialog title="Open project" onClose={() => { if (!pending) onClose() }} className="project-picker">
     <form onSubmit={event => { event.preventDefault(); void openProject(path) }}>
       <div className="modal-body">
-        <label className="field">Project path<input aria-label="Project path" value={path} onChange={event => setPath(event.target.value)} placeholder="~/prg/my-project/" disabled={pending} required aria-describedby="project-path-help" /><small id="project-path-help">Open a project folder, TASKS.md, .scratch/feature/issues, or docs/backlog on the Hai server.</small></label>
+        <label className="field">Project path<input aria-label="Project path" value={path} onChange={event => setPath(event.target.value)} placeholder="~/prg/my-project/" disabled={pending} required aria-describedby="project-path-help" /><small id="project-path-help">Open a project folder, TASKS.md, .scratch/, .scratch/feature/issues, or docs/backlog on the Hai server.</small></label>
         {error && <p className="form-error" role="alert">{error}</p>}
         <label className="field">Find project<input ref={searchRef} aria-label="Find project" value={query} onChange={event => setQuery(event.target.value)} placeholder="Filter by name or path" disabled={pending} onKeyDown={event => {
           if (event.key !== 'Enter' || event.nativeEvent.isComposing) return

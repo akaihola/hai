@@ -157,17 +157,35 @@ The private host/origin restrictions and Tailscale deployment still apply.
 
 ## Local Markdown feature tickets
 
-The same API and revision-checked CLI can open `.scratch/<feature-slug>` or its
-`issues/` directory. `read` returns `workflow: scratch`, the available
-`sourceStates`, and unsupported fields in its capabilities. Use `sourceState` to
-retain the triage role when changing status:
+The API and revision-checked CLI open `<repo>/.scratch/` as one workspace.
+`read` and `query` return all features' tickets, even when given a legacy feature
+or `issues/` path. Each issue contains `feature`, `projectId`, a qualified
+`identifier` such as `search/01`, and `sourcePath` such as
+`search/issues/01-add-search.md`. `query` wraps each issue with its source and
+revision. Projects include every feature directory, including spec-only features.
+
+`read` returns `workflow: scratch`, `sourceStates`, and
+`projectAssignment: required-on-create` in capabilities. Supply a feature's
+project ID from `workspace.projects` when creating. Changing `projectId` on an
+existing ticket is rejected. Numbering and `Blocked by:` deletion protection
+apply within the feature. Use `sourceState` to retain the triage role:
 
 ```bash
-python3 -m hai_tasks read /path/to/project/.scratch/search
-python3 -m hai_tasks create /path/to/project/.scratch/search --revision REVISION --json '{"title":"Add search","sourceState":"ready-for-agent"}'
-python3 -m hai_tasks update /path/to/project/.scratch/search ISSUE_ID --revision REVISION --json '{"sourceState":"ready-for-human"}'
-python3 -m hai_tasks query /path/to/project/.scratch/search --status canceled
+python3 -m hai_tasks read /path/to/project/.scratch
+python3 -m hai_tasks create /path/to/project/.scratch --revision REVISION --json '{"title":"Add search","projectId":"FEATURE_PROJECT_ID","sourceState":"ready-for-agent"}'
+python3 -m hai_tasks update /path/to/project/.scratch ISSUE_ID --revision REVISION --json '{"sourceState":"ready-for-human"}'
+python3 -m hai_tasks query /path/to/project/.scratch --status canceled
 ```
+
+The HTTP API uses these same payloads and revision checks via `If-Match`.
+`GET /api/workspace?source=<absolute scratch path>` returns the repository source.
+For feature or `issues/` paths, `source.projectId` supplies the browser's initial
+feature filter and `source.selectionPath` retains the saved entry path. The full
+workspace still contains every feature. `/api/projects` lists one scratch source
+per repository. The browser's read-only Projects view and project filter narrow
+both list and board; creation requires a feature and editing cannot change it.
+Revisions and advisory locks cover the whole scratch workspace, so a ticket edit
+in another feature or a change to the triage-label mapping invalidates a save.
 
 JSON export is a workspace snapshot. Markdown export combines the original tickets
 for reading, rather than creating a TASKS.md tracker. See [backend conventions](backends.md#matt-pocock-local-markdown-issues).

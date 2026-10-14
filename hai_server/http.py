@@ -15,8 +15,8 @@ from hai_tasks.scratch import ScratchStore
 
 def source_name(path):
     path = Path(path)
-    if path.parent.name == '.scratch':
-        return f'{path.parents[1].name} / {path.name}'
+    if path.name == '.scratch':
+        return f'{path.parent.name} / .scratch'
     if path.name == 'docs':
         return f'{path.parent.name} / docs'
     return path.parent.name
@@ -49,7 +49,7 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
             path = Path(source).expanduser()
             if not path.is_absolute():
                 raise TasksError('Use an absolute server path or a path starting with ~/.')
-            file = path if path.name == 'TASKS.md' or path == tasks_file or str(path) in stores or (path.parent.name == '.scratch' or (path.name == 'issues' and path.parent.parent.name == '.scratch')) else backlog_root(path) or path / 'TASKS.md'
+            file = path if path.name == 'TASKS.md' or path == tasks_file or str(path) in stores or (path.name == '.scratch' or path.parent.name == '.scratch' or (path.name == 'issues' and path.parent.parent.name == '.scratch')) else backlog_root(path) or path / 'TASKS.md'
             # Lexically normalize without resolving symlinks before the root check.
             file = Path(os.path.abspath(file))
         with selection_lock:
@@ -62,15 +62,22 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
             if not any(file.is_relative_to(root) or file.is_relative_to(canonical_roots[root]) for root in roots):
                 raise TasksError('Project is outside the allowed project roots. Check HAI_PROJECT_ROOTS.', 403)
             try:
-                scratch = file.parent.name == '.scratch' or (file.name == 'issues' and file.parent.parent.name == '.scratch')
+                scratch = file.name == '.scratch' or file.parent.name == '.scratch' or (file.name == 'issues' and file.parent.parent.name == '.scratch')
                 backlog = not scratch and backlog_root(file) is not None
                 kind = 'local issue source' if scratch else 'backlog source' if backlog else 'TASKS.md'
                 if file.is_symlink() or (file.exists() and not (file.is_dir() if scratch or backlog else file.is_file())):
                     reason = ('a directory' if scratch or backlog else 'a regular file') + (', not a symbolic link' if file.is_symlink() else '')
                     raise TasksError(f'{kind[0].upper() + kind[1:]} must be {reason}: {file}', 422)
-                canonical = file.resolve(strict=True)
-                if scratch and canonical.name == 'issues' and canonical.parent.parent.name == '.scratch':
-                    canonical = canonical.parent
+                canonical = file.parent.resolve(strict=True) / 'issues' if scratch and file.name == 'issues' and file.parent.parent.name == '.scratch' and not file.exists() else file.resolve(strict=True)
+                feature = None
+                if scratch:
+                    if canonical != file:
+                        raise TasksError('Local issue source directories must not contain symbolic links.', 422)
+                    if canonical.name == 'issues' and canonical.parent.parent.name == '.scratch':
+                        canonical = canonical.parent
+                    if canonical.parent.name == '.scratch':
+                        feature = canonical.name
+                        canonical = canonical.parent
                 if backlog:
                     canonical = backlog_root(canonical) or canonical
             except OSError as error:
@@ -80,7 +87,7 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
             key = str(canonical)
             if key not in stores:
                 stores[key] = ScratchStore(canonical) if scratch else BacklogStore(canonical) if backlog else TasksStore(canonical)
-            return stores[key], dict(name=source_name(canonical), path=key)
+            return stores[key], dict(name=source_name(canonical), path=key, **(dict(projectId=ScratchStore.project_id(feature), selectionPath=str(file)) if feature else {}))
 
     class Handler(BaseHTTPRequestHandler):
         def setup(self):
@@ -182,9 +189,7 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
                             for project in projects:
                                 scratch_root = project / '.scratch'
                                 if scratch_root.is_dir() and not scratch_root.is_symlink():
-                                    for feature in scratch_root.iterdir():
-                                        if feature.is_dir() and not feature.is_symlink():
-                                            candidates.add(str(feature))
+                                    candidates.add(str(scratch_root))
                                 docs = project / 'docs'
                                 if not docs.is_symlink() and (docs / 'backlog').is_dir() and not (docs / 'backlog').is_symlink():
                                     candidates.add(str(docs))
@@ -199,7 +204,7 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
                                     raise
                                 # Keep an unavailable allowed selection in the partial-view diagnostics.
                                 path = Path(selected).expanduser()
-                                file = path if path.name == 'TASKS.md' or path == tasks_file or path.parent.name == '.scratch' else path.parent if path.name == 'issues' and path.parent.parent.name == '.scratch' else backlog_root(path) or path / 'TASKS.md'
+                                file = path if path.name == 'TASKS.md' or path == tasks_file or path.name == '.scratch' else path.parent if path.parent.name == '.scratch' else path.parents[1] if path.name == 'issues' and path.parent.parent.name == '.scratch' else backlog_root(path) or path / 'TASKS.md'
                                 candidates.add(os.path.abspath(file))
                         sources = [{'name': path[2:] if path in remotes else source_name(path), 'path': path} for path in sorted(candidates)]
                         return self.json(200, {'sources': sources})

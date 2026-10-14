@@ -15,7 +15,7 @@ async function listTasksProjects(baseUrl: string, sourcePath?: string): Promise<
 export function createTasksBackend(baseUrl = '/api', sourcePath?: string): WorkspaceBackend {
   let revision: string | null = null
   let source: WorkspaceBackend['source']
-  let local: Pick<BackendCapabilities, 'workflow' | 'sourceStates' | 'fields'> | undefined
+  let local: Pick<BackendCapabilities, 'workflow' | 'sourceStates' | 'fields' | 'projectAssignment'> | undefined
   async function request(path: string, options?: RequestInit): Promise<Response> {
     let response: Response
     if (sourcePath !== undefined) path += `${path.includes('?') ? '&' : '?'}source=${encodeURIComponent(sourcePath)}`
@@ -46,9 +46,14 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
     if ('capabilities' in value && value.capabilities && typeof value.capabilities === 'object' && 'workflow' in value.capabilities && (value.capabilities.workflow === 'scratch' || value.capabilities.workflow === 'backlog')) {
       const states = 'sourceStates' in value.capabilities ? value.capabilities.sourceStates : null
       if (!Array.isArray(states) || !states.length || states.some(item => !item || typeof item.id !== 'string' || !item.id || !STATUSES.some(status => status.id === item.status)) || new Set(states.map(item => item.id)).size !== states.length) throw new Error('The server returned invalid local issue states.')
-      nextLocal = { workflow: value.capabilities.workflow, sourceStates: states, fields: { assignee: false, project: false, cycle: false, description: true, priority: false, labels: false } }
+      nextLocal = { workflow: value.capabilities.workflow, sourceStates: states, fields: { assignee: false, project: value.capabilities.workflow === 'scratch', cycle: false, description: true, priority: false, labels: false }, ...(value.capabilities.workflow === 'scratch' ? { projectAssignment: 'required-on-create' } : {}) }
     }
     assertWorkspace(value.workspace)
+    if ('source' in value) {
+      const next = value.source as WorkspaceSource
+      if (next.projectId !== undefined && !value.workspace.projects.some(project => project.id === next.projectId)
+        || next.selectionPath !== undefined && (typeof next.selectionPath !== 'string' || !next.selectionPath.startsWith(`${next.path}/`))) throw new Error('The server returned invalid feature selection information.')
+    }
     for (const issue of value.workspace.issues) {
       if (nextLocal) {
         if (!nextLocal.sourceStates?.some(state => state.id === issue.sourceState && state.status === issue.status) || typeof issue.sourcePath !== 'string') throw new Error('The server returned invalid local issue workflow information.')
@@ -60,7 +65,7 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
         || (issue.dependencies !== undefined && (!Array.isArray(issue.dependencies) || issue.dependencies.some(item => typeof item !== 'string')))) throw new Error('The TASKS.md server returned invalid workflow information.')
     }
     if ('source' in value) {
-      source = Object.freeze({ ...(value.source as NonNullable<WorkspaceBackend['source']>) })
+      source = Object.freeze({ ...source, ...(value.source as NonNullable<WorkspaceBackend['source']>) })
       sourcePath = source.path
     }
     local = nextLocal
@@ -81,6 +86,7 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
       get canAutoRefresh() { return !!source && !source.path.startsWith('/@') },
       canCreate: true, canUpdate: true, canDelete: true, canImport: false, canExport: true, get canReorderBacklog() { return !local }, canOpenWorkspace: true, canListWorkspaces: true, canViewAllProjects: true, persistence: 'filesystem', get workflow() { return local?.workflow ?? 'tasks' }, get sourceStates() { return local?.sourceStates },
       canCreateProject: false, canUpdateProject: false, canDeleteProject: false, canCreateCycle: false, canUpdateCycle: false, canDeleteCycle: false,
+      get projectAssignment() { return local?.projectAssignment },
       get fields() { return local?.fields ?? { assignee: false, project: false, cycle: false, description: true } },
     },
     get source() { return source },
@@ -165,7 +171,7 @@ export function createAllTasksBackend(baseUrl = '/api', sourcePath?: string): Wo
         for (const issue of projectIssues) {
           const id = JSON.stringify([source.path, issue.id])
           nextOwners.set(id, { path: source.path, id: issue.id })
-          issues.push({ ...issue, id, workspaceSource: source })
+          issues.push({ ...issue, id, projectId: null, workspaceSource: source })
         }
       }
       sources = nextSources; sourceErrors = errors; owners = nextOwners

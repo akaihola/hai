@@ -161,17 +161,25 @@ path opening.
 
 ## Matt Pocock local Markdown issues
 
-Each `.scratch/<feature-slug>/` directory is a workspace. Open it from the
-project picker, enter its absolute server path, or enter its `issues/` directory.
-Hai discovers features beneath projects in the configured project roots, including
-features that only have a spec. Saving their first issue creates `issues/`.
-A project directory still opens its `TASKS.md`; features appear as separate sources
-in All projects.
+Open `<repo>/.scratch/` as one repository workspace. The workspace picker and
+All projects discover one scratch source per repository. Opening a legacy
+`.scratch/<feature-slug>/` or its `issues/` directory opens that same workspace,
+filtered to the feature. Saved feature paths retain this filter after reload.
+A repository directory still opens its `TASKS.md`.
 
-Hai reads `issues/NN-slug.md` tickets with a `# Title` and a `Status:` line before
-the first `##` heading. Missing status means `needs-triage`. New files use the next
-number after the highest existing ticket, starting at `01`. Editing a title keeps
-the filename and issue ID. Specs, maps and unrelated files are not issues.
+Every feature directory is a read-only Hai project, including spec-only features.
+Use Projects or the project filter to select a feature in the list or board.
+Project creation, edits and deletion are unsupported. Creating a ticket requires
+choosing a feature; a selected feature supplies the default. Tickets cannot move
+between features because their numbers and `Blocked by:` references are local.
+Saving a spec-only feature's first ticket creates its `issues/` directory.
+
+Hai reads `<feature>/issues/NN-slug.md` tickets with a `# Title` and a `Status:` line
+before the first `##` heading. Missing status means `needs-triage`. Identifiers
+are qualified by feature, such as `search/01`; IDs hash the feature and filename.
+Duplicate numbers within a feature are rejected. New files use the next number
+in that feature after its highest existing ticket, starting at `01`. Editing a
+title keeps the filename and ID. Specs, maps and unrelated files are not issues.
 
 The editor, list groups, board columns and drag actions retain the source state:
 
@@ -187,19 +195,20 @@ Renamed triage labels come from the backtick-delimited mapping table in
 `docs/agents/triage-labels.md`. Unknown or conflicting labels produce an error
 with the source path. Wayfinder's `Type:`, `Blocked by:`, answers and comments
 remain in the Markdown body. Hai prevents deleting tickets referenced by another
-ticket's `Blocked by:` line; it does not run wayfinder frontier selection or update
+ticket's `Blocked by:` line within the same feature; it does not run wayfinder frontier selection or update
 map decisions.
 
 Title and status edits preserve the rest of the file, including comments and line
 endings. The description editor contains the remaining Markdown body. Explicitly
-editing that body replaces it. Revisions include every ticket and the triage-label
+editing that body replaces it. Revisions include the feature directory names,
+every feature's tickets and the repository triage-label
 mapping; stale saves fail rather than overwrite changes made outside Hai. Writes
 use advisory locks and atomic replacement of individual files, with the same
 regular-file and symlink restrictions as the TASKS.md backend.
 
 This backend supports create, update, delete, automatic refresh, combined Markdown
 export and JSON snapshots. It has no user-acceptance checkbox, priority, arbitrary
-labels, assignments, projects, cycles, backlog reordering or import. `resolved`
+labels, assignees, editable projects, cycles, backlog reordering or import. `resolved`
 records resolution, without inventing TASKS.md acceptance. Local paths and SSH
 sources work; the GitHub TASKS.md source does not support scratch directories.
 

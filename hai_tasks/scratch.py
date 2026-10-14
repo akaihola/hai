@@ -1,4 +1,4 @@
-"""One feature's Matt Pocock local Markdown tickets, without rewriting specs."""
+"""Repository-wide Matt Pocock tickets, grouped by feature directories."""
 
 import hashlib
 import os
@@ -30,32 +30,36 @@ class ScratchStore(TasksStore):
             "canDelete": True,
             "canReorderBacklog": False,
             "canImport": False,
+            "projectAssignment": "required-on-create",
+            "canCreateProject": False,
+            "canUpdateProject": False,
+            "canDeleteProject": False,
             "fields": {
                 "description": True,
                 "assignee": False,
-                "project": False,
+                "project": True,
                 "cycle": False,
                 "priority": False,
                 "labels": False,
             },
         }
         path = Path(os.path.abspath(Path(directory).expanduser()))
-        self.root = (
-            path.parent
-            if path.name == "issues" and path.parent.parent.name == ".scratch"
-            else path
-        )
-        if self.root.parent.name != ".scratch":
-            raise TasksError(
-                "Use .scratch/<feature-slug> or its issues directory as the local issue source.",
-                422,
-            )
-        self.directory = self.root / "issues"
+        if path.name == "issues" and path.parent.parent.name == ".scratch":
+            path = path.parent
+        if not path.is_dir() or path.is_symlink():
+            raise TasksError("Local issue sources must be directories without symbolic links.", 422)
+        self.root = path.parent if path.parent.name == ".scratch" else path
+        if self.root.name != ".scratch":
+            raise TasksError("Use .scratch, a feature, or its issues directory as the local issue source.", 422)
         self.revision_key = str(self.root)
+
+    @staticmethod
+    def project_id(feature):
+        return "feature-" + hashlib.sha256(feature.encode()).hexdigest()[:24]
 
     def states(self):
         labels = {role: role for role in STATES}
-        mapping = self.root.parents[1] / "docs/agents/triage-labels.md"
+        mapping = self.root.parent / "docs/agents/triage-labels.md"
         content = ""
         if mapping.exists() or mapping.is_symlink():
             if mapping.parent.resolve() != mapping.parent:
@@ -77,6 +81,7 @@ class ScratchStore(TasksStore):
 
     @staticmethod
     def parse_ticket(path, content, states):
+        feature = path.parent.parent.name
         title = re.search(r"^# (.+?)\r?$", content, re.MULTILINE)
         header = re.split(r"^## ", content, maxsplit=1, flags=re.MULTILINE)[0]
         statuses = list(
@@ -108,13 +113,14 @@ class ScratchStore(TasksStore):
         for start, end in sorted(spans, reverse=True):
             body = body[:start] + body[end:]
         issue = {
-            "id": "scratch-" + hashlib.sha256(path.name.encode()).hexdigest()[:24],
-            "identifier": path.stem,
+            "id": "scratch-" + hashlib.sha256((feature + "/" + path.name).encode()).hexdigest()[:24],
+            "identifier": feature + "/" + TICKET.fullmatch(path.name)[1],
+            "feature": feature,
             "title": title[1],
             "description": body.strip("\r\n"),
             "status": states[state],
             "sourceState": state,
-            "sourcePath": "issues/" + path.name,
+            "sourcePath": feature + "/issues/" + path.name,
             "priority": "none",
             "labels": [],
             "assigneeId": None,
@@ -135,40 +141,43 @@ class ScratchStore(TasksStore):
             raise TasksError(f"{path}: title exceeds 50,000 characters.", 422)
         validate_patch({"title": issue["title"]})
         validate_workspace({"issues": [issue]})
+        issue["projectId"] = ScratchStore.project_id(feature)
         return issue
 
     def _snapshot(self):
         self.check_root()
         states, mapping = self.states()
-        documents, issues = {}, []
+        documents, issues, projects = {}, [], []
         digest = hashlib.sha256((self.revision_key + "\0" + mapping).encode())
-        if self.directory.is_symlink() or (
-            self.directory.exists() and not self.directory.is_dir()
-        ):
-            raise TasksError(
-                "The issues path must be a directory without symbolic links.", 422
-            )
-        for path in (
-            sorted(
-                self.directory.iterdir(),
-                key=lambda p: (
-                    int(p.name.split("-")[0]) if TICKET.fullmatch(p.name) else -1,
-                    p.name,
-                ),
-            )
-            if self.directory.exists()
-            else []
-        ):
-            if not TICKET.fullmatch(path.name):
+        for feature in sorted(self.root.iterdir()):
+            if feature.is_symlink():
+                raise TasksError("Feature directories must not contain symbolic links.", 422)
+            if not feature.is_dir():
                 continue
-            content = regular_file(path, 256 * 1024)
-            issue = self.parse_ticket(path, content, states)
-            documents[path.name] = content
-            issues.append(issue)
-            digest.update(("\0" + path.name + "\0" + content).encode())
+            digest.update(("\0feature:" + feature.name).encode())
+            projects.append(dict(id=self.project_id(feature.name), name=feature.name,
+                                 description="", color="#6e86d9", status="planned"))
+            directory = feature / "issues"
+            if directory.is_symlink() or (directory.exists() and not directory.is_dir()):
+                raise TasksError("The issues path must be a directory without symbolic links.", 422)
+            numbers = set()
+            for path in sorted(directory.iterdir()) if directory.exists() else []:
+                match = TICKET.fullmatch(path.name)
+                if not match:
+                    continue
+                number = int(match[1])
+                if number in numbers:
+                    raise TasksError(f"{feature.name}: duplicate ticket number {number}.", 422)
+                numbers.add(number)
+                content = regular_file(path, 256 * 1024)
+                issue = self.parse_ticket(path, content, states)
+                documents[issue["sourcePath"]] = content
+                issues.append(issue)
+                digest.update(("\0" + issue["sourcePath"] + "\0" + content).encode())
+        issues.sort(key=lambda issue: (issue["feature"], int(issue["identifier"].split("/")[-1])))
         workspace = {
             "issues": issues,
-            "projects": [],
+            "projects": projects,
             "members": [],
             "cycles": [],
             "currentMemberId": None,
@@ -212,7 +221,7 @@ class ScratchStore(TasksStore):
             }:
                 raise TasksError("Unsupported local issue fields.", 422)
             validate_patch(
-                {k: v for k, v in patch.items() if k not in ["sourceState", "status"]}
+                {k: v for k, v in patch.items() if k not in ["sourceState", "status", "projectId"]}
             )
             if patch.get("priority", "none") != "none" or patch.get("labels", []):
                 raise TasksError(
@@ -237,6 +246,13 @@ class ScratchStore(TasksStore):
                 raise TasksError(
                     "Choose a source state matching the issue status.", 422
                 )
+            project_id = patch.get("projectId", issue["projectId"] if issue else None)
+            project = next((p for p in before["workspace"]["projects"] if p["id"] == project_id), None)
+            if project is None:
+                raise TasksError("Choose a feature when creating a ticket.", 422)
+            if issue and project_id != issue["projectId"]:
+                raise TasksError("Tickets cannot move between features.", 422)
+            directory = self.root / project["name"] / "issues"
             if operation == "create":
                 if len(before["workspace"]["issues"]) >= 10000:
                     raise TasksError("A workspace supports at most 10,000 issues.", 422)
@@ -244,26 +260,26 @@ class ScratchStore(TasksStore):
                 if not title:
                     raise TasksError("A title is required.")
                 number = (
-                    max((int(p.split("-")[0]) for p in before["documents"]), default=0)
+                    max((int(Path(p).name.split("-")[0]) for p in before["documents"] if Path(p).parts[0] == project["name"]), default=0)
                     + 1
                 )
                 slug = (
                     re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:70] or "issue"
                 )
-                path = self.directory / f"{number:02d}-{slug}.md"
+                path = directory / f"{number:02d}-{slug}.md"
                 content = f"# {title}\n\nStatus: {state}\n\n" + patch.get(
                     "description", ""
                 )
             else:
                 assert issue is not None
                 path = self.root / issue["sourcePath"]
-                content = before["documents"][path.name]
+                content = before["documents"][issue["sourcePath"]]
                 if operation == "delete":
                     number = str(int(path.name.split("-")[0]))
                     if any(
                         number in {str(int(d)) for d in i["dependencies"]}
                         for i in before["workspace"]["issues"]
-                        if i != issue
+                        if i != issue and i["projectId"] == issue["projectId"]
                     ):
                         raise TasksError(
                             "Other tickets are blocked by this issue.", 409
@@ -331,13 +347,14 @@ class ScratchStore(TasksStore):
                 self.parse_ticket(path, content, states)
             temporary = None
             published = False
-            previous = before["documents"].get(path.name)
+            relative = str(path.relative_to(self.root))
+            previous = before["documents"].get(relative)
             mode = (
                 stat.S_IMODE(path.lstat().st_mode) if operation != "create" else 0o600
             )
             try:
                 if operation != "delete":
-                    self.directory.mkdir(exist_ok=True)
+                    directory.mkdir(exist_ok=True)
                     temporary = self.stage(path, content, mode)
                 if self._snapshot()["revision"] != before["revision"]:
                     raise TasksError("Local issues changed during save.", 412)
@@ -389,7 +406,7 @@ class ScratchStore(TasksStore):
                 result["issue"] = next(
                     i
                     for i in after["workspace"]["issues"]
-                    if i["sourcePath"] == "issues/" + path.name
+                    if i["sourcePath"] == relative
                 )
             return result
 

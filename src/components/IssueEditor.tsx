@@ -7,6 +7,7 @@ export function IssueEditor({ issue, initial, workspace, backend, onClose, onSav
   const titleRef = useRef<HTMLInputElement>(null)
   const tasks = backend.capabilities.workflow === 'tasks'
   const states = backend.capabilities.sourceStates
+  const featureRequired = backend.capabilities.projectAssignment === 'required-on-create'
   const fields = backend.capabilities.fields
   const [draft, setDraft] = useState<IssueInput>({ title: '', description: '', status: tasks ? 'backlog' : 'todo', ...(tasks ? { sourceSection: 'Unverified proposals' } : {}), priority: 'none', assigneeId: null, projectId: null, cycleId: null, labels: [], ...(states ? { sourceState: states[0].id, status: states[0].status } : {}), ...initial, ...issue })
   const [labels, setLabels] = useState<string[]>(issue?.labels ?? initial?.labels ?? [])
@@ -71,7 +72,7 @@ export function IssueEditor({ issue, initial, workspace, backend, onClose, onSav
         </div>
         {(fields?.assignee !== false || fields?.project !== false) && <div className="field-row">
           {fields?.assignee !== false && <label className="field">Assignee<select value={draft.assigneeId ?? ''} disabled={!canSave || busy} onChange={event => change('assigneeId', event.target.value || null)}><option value="">Unassigned</option>{workspace.members.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}</select></label>}
-          {fields?.project !== false && <label className="field">Project<select value={draft.projectId ?? ''} disabled={!canSave || busy} onChange={event => change('projectId', event.target.value || null)}><option value="">No project</option>{workspace.projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>}
+          {fields?.project !== false && <label className="field">{featureRequired ? 'Feature' : 'Project'}<select required={featureRequired} value={draft.projectId ?? ''} disabled={!canSave || busy || featureRequired && !!issue} onChange={event => change('projectId', event.target.value || null)}><option value="">{featureRequired ? 'Choose feature' : 'No project'}</option>{workspace.projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>}
         </div>}
         <div className="field-row">
           {fields?.cycle !== false && <label className="field">Cycle<select value={draft.cycleId ?? ''} disabled={!canSave || busy} onChange={event => change('cycleId', event.target.value || null)}><option value="">No cycle</option>{workspace.cycles.map(cycle => <option key={cycle.id} value={cycle.id}>{cycle.name}</option>)}</select></label>}

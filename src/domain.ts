@@ -38,6 +38,7 @@ export interface Issue {
   labels: string[]
   createdAt: string
   updatedAt: string
+  feature?: string
   sourceState?: string
   sourceSection?: TaskSection
   accepted?: boolean
@@ -65,7 +66,7 @@ export type IssueInput = Pick<Issue, 'title'> & Partial<Omit<Issue, 'id' | 'iden
 export type IssuePatch = Partial<IssueInput>
 export const ISSUE_TITLE_MAX_LENGTH = 50000
 export type ExportFormat = 'json' | 'tasks'
-export interface WorkspaceSource { name: string; path: string }
+export interface WorkspaceSource { name: string; path: string; projectId?: string; selectionPath?: string }
 export interface BackendCapabilities {
   id: string
   name: string
@@ -88,6 +89,7 @@ export interface BackendCapabilities {
   canViewAllProjects?: boolean
   workspaceScope?: 'all'
   persistence: 'browser' | 'filesystem' | 'remote'
+  projectAssignment?: 'required-on-create'
   sourceStates?: { id: string; status: IssueStatus }[]
   workflow?: 'tasks' | 'scratch' | 'backlog'
   fields?: { assignee: boolean; project: boolean; cycle: boolean; description: boolean; priority?: boolean; labels?: boolean }

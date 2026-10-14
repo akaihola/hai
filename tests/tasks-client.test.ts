@@ -242,3 +242,26 @@ test('project discovery rejects malformed catalogs', async context => {
   context.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ sources: [{ name: 'Bad path', path: 'relative' }] })))
   await assert.rejects(createTasksBackend().listWorkspaces!(), /invalid project list/)
 })
+
+test('scratch aliases bind one repository source and retain the initial feature selection', async context => {
+  const original = workspaceOf(parseTasks(backlogFixture))
+  const project = { id: 'feature-search', name: 'search', description: '', color: '#6e86d9', status: 'planned' as const }
+  const workspace = { ...original, projects: [project], issues: original.issues.map((issue, index) => ({ ...issue, projectId: project.id, identifier: `search/${index + 1}`, feature: 'search', sourceState: 'open', status: 'backlog' as const, sourcePath: `search/issues/${index + 1}-ticket.md` })) }
+  const source = { name: 'repo / .scratch', path: '/projects/repo/.scratch' }
+  const capabilities = { workflow: 'scratch', sourceStates: [{ id: 'open', status: 'backlog' }], projectAssignment: 'required-on-create' }
+  const responses = [
+    new Response(JSON.stringify({ revision: 'first', workspace, capabilities, source: { ...source, projectId: project.id, selectionPath: `${source.path}/search/issues` } })),
+    new Response(JSON.stringify({ revision: 'second', workspace, capabilities, source })),
+  ]
+  const fetch = context.mock.method(globalThis, 'fetch', async () => responses.shift()!)
+  const backend = createTasksBackend('/test-api', `${source.path}/search/issues`)
+  await backend.load()
+  assert.equal(backend.capabilities.fields?.project, true)
+  assert.equal(backend.capabilities.projectAssignment, 'required-on-create')
+  assert.equal(backend.capabilities.canUpdateProject, false)
+  await backend.load()
+  assert.equal(backend.source?.path, source.path)
+  assert.equal(backend.source?.projectId, project.id)
+  assert.equal(backend.source?.selectionPath, `${source.path}/search/issues`)
+  assert.equal(fetch.mock.calls[1].arguments[0], `/test-api/workspace?source=${encodeURIComponent(source.path)}`)
+})
