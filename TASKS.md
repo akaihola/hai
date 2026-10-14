@@ -41,11 +41,11 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Completed / Accepted
 
-- [ ] [26] Deleting an issue leaves its description file and link behind
-  <!-- hai:{"id":"simple-723c1791-f392-475b-9518-2fd8673c4887","createdAt":"2026-10-11T10:29:45.032Z","updatedAt":"2026-10-11T14:10:21.579Z"} -->
+- [x] [26] Deleting an issue leaves its description file and link behind
+  <!-- hai:{"id":"simple-723c1791-f392-475b-9518-2fd8673c4887","createdAt":"2026-10-11T10:29:45.032Z","updatedAt":"2026-10-14T12:34:37.659Z"} -->
 
-- [ ] [23] Add a `hai-tasks` agent skill so agents stop editing trackers by hand.
-  <!-- hai:{"id":"simple-a61b1e2a-60b4-4bfe-b453-3d1ea87234c8","createdAt":"2026-10-10T11:06:37.830Z","updatedAt":"2026-10-14T13:17:34.348Z"} -->
+- [x] [23] Add a `hai-tasks` agent skill so agents stop editing trackers by hand.
+  <!-- hai:{"id":"simple-a61b1e2a-60b4-4bfe-b453-3d1ea87234c8","createdAt":"2026-10-10T11:06:37.830Z","updatedAt":"2026-10-14T13:24:29.922Z"} -->
 
 - [x] [19] Keyboard friendly project switching
   <!-- hai:{"id":"simple-0507ac21-7daa-4768-b786-19289aebd18e","priority":"none","labels":[],"createdAt":"2026-10-07T18:58:40.973Z","updatedAt":"2026-10-10T19:41:19.698Z"} -->
