@@ -104,6 +104,53 @@ class TrackerTests(unittest.TestCase):
         next_issue = self.store.mutate('create', self.store.read()['revision'], input={'title': 'Next', 'description': 'Body'})
         self.assertEqual(next_issue['issue']['sourceReference'], '[3]')
 
+    def test_dependencies_write_bullet_frontmatter_and_reject_invalid_graphs(self):
+        source = SOURCE.replace('## Scheduled', '- [2] Second task\n  <!-- hai:{"id":"second"} -->\n\n- [*] Simple task\n  <!-- hai:{"id":"simple"} -->\n\n## Scheduled').replace('## Rules', '[2]: docs/tasks/2-second.md\n\n## Rules')
+        (self.project / 'TASKS.md').write_text(source)
+        (self.project / 'docs/tasks/2-second.md').write_text('---\ntitle: Second\n---\n\n# Second\n')
+        saved = self.store.mutate('update', self.store.read()['revision'], 'second', {'dependencies': [1]})
+        self.assertEqual(saved['issue']['dependencies'], ['1'])
+        self.assertIn('- [2] Second task\n    - Depends on: [1]\n  <!-- hai:', self.store.export())
+        self.assertEqual((self.project / 'docs/tasks/2-second.md').read_text(), '---\ntitle: Second\ndepends-on: [1]\n---\n\n# Second\n')
+        for issue_id, patch, message in [('first', {'dependencies': ['2']}, 'cycle'), ('second', {'dependencies': [2]}, 'itself'), ('first', {'dependencies': [9]}, 'Unknown dependency'), ('first', {'dependencies': ['x']}, 'list of issue numbers'), ('simple', {'dependencies': [1, 2, 1]}, None)]:
+            with self.subTest(patch=patch):
+                if message is None:
+                    simple = self.store.mutate('update', self.store.read()['revision'], issue_id, patch)
+                    self.assertEqual(simple['issue']['dependencies'], ['1', '2'])
+                    self.assertIn('- [*] Simple task\n    - Depends on: [1], [2]\n', self.store.export())
+                else:
+                    with self.assertRaisesRegex(TasksError, message):
+                        self.store.mutate('update', self.store.read()['revision'], issue_id, patch)
+        # Dependencies on issues in other sections are allowed, but Ordered backlog order must hold.
+        moved = self.store.mutate('update', self.store.read()['revision'], 'first', {'sourceSection': 'Scheduled'})
+        scheduled = self.store.mutate('update', moved['revision'], 'second', {'dependencies': []})
+        self.assertNotIn('- [2] Second task\n    - Depends on', self.store.export())
+        self.assertEqual((self.project / 'docs/tasks/2-second.md').read_text(), '---\ntitle: Second\n---\n\n# Second\n')
+        again = self.store.mutate('update', scheduled['revision'], 'first', {'sourceSection': 'Ordered backlog'})
+        with self.assertRaisesRegex(TasksError, r'HAI-1 depends on \[2\], which must appear earlier in Ordered backlog'):
+            self.store.mutate('update', again['revision'], 'first', {'dependencies': [2]})
+        unchanged = self.store.read()
+        created = self.store.mutate('create', unchanged['revision'], input={'title': 'Third', 'description': 'Body', 'dependencies': [2, 1], 'sourceSection': 'Ordered backlog'})
+        self.assertEqual(created['issue']['dependencies'], ['2', '1'])
+        self.assertEqual((self.project / created['issue']['sourcePath']).read_text(), '---\ndepends-on: [2, 1]\n---\n\nBody')
+        self.assertEqual([i['sourceReference'] for i in created['workspace']['issues'] if i['sourceSection'] == 'Ordered backlog'], ['[1]', '[2]', '[*]', '[3]'])
+        # The HTTP API accepts the same field.
+        server = create_server(self.project / 'TASKS.md', self.root, port=0)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.shutdown)
+        base = f'http://127.0.0.1:{server.server_address[1]}'
+        revision = json.load(urlopen(f'{base}/api/workspace'))['revision']
+        request = Request(f'{base}/api/issues/first', data=b'{"dependencies":["2"]}', method='PATCH', headers={'Content-Type': 'application/json', 'If-Match': revision})
+        with self.assertRaises(HTTPError) as rejected:
+            urlopen(request)
+        self.assertEqual(rejected.exception.code, 400)
+        rejected.exception.close()
+        request = Request(f'{base}/api/issues/simple', data=b'{"dependencies":[]}', method='PATCH', headers={'Content-Type': 'application/json', 'If-Match': revision})
+        self.assertEqual(json.load(urlopen(request))['issue']['dependencies'], [])
+        removed = self.store.mutate('update', self.store.read()['revision'], 'simple', {'dependencies': ['2']})
+        self.assertIn('- [*] Simple task\n    - Depends on: [2]\n', self.store.export())
+        self.assertEqual(removed['issue']['dependencies'], ['2'])
+
     def test_delete_preserves_shared_descriptions_and_unrelated_references(self):
         for shared_reference in [False, True]:
             with self.subTest(shared_reference=shared_reference):

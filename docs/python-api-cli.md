@@ -91,6 +91,24 @@ Replace `REVISION` with the current revision and reload after every mutation.
 allocates a numbered file and reference. Deleting a task retains its description
 and reference and reserves its number. Deletion fails if other tasks depend on it.
 
+`dependencies` in a `create` or `update` patch lists the numbers of the issues
+a task depends on, as integers or digit strings, matching the `dependencies`
+strings in the read model:
+
+```bash
+python3 -m hai_tasks update . task-8 --revision REVISION --json '{"dependencies":[7]}'
+python3 -m hai_tasks update . task-8 --revision REVISION --json '{"dependencies":[]}'
+```
+
+The write records them as one indented `- Depends on: [7]` bullet under the
+summary and keeps the `depends-on:` frontmatter of a numbered task's description
+file consistent. An empty list removes the bullet and the frontmatter entry. The
+task block is left untouched when the dependencies do not change. Unknown
+numbers, self-dependencies and cycles are rejected. A write that would leave a
+dependent before its prerequisite in Ordered backlog fails with the `reorder`
+error; reorder first. Dependencies on issues in other sections are allowed. The
+HTTP API accepts the same field in `POST /api/issues` and `PATCH /api/issues/ID`.
+
 `reorder` requires every Ordered backlog ID exactly once, with prerequisites
 before dependents. Completion leaves the task unchecked. `accepted: true` is an
 explicit acceptance action, to be used only at the user's direction. Reopening
@@ -134,8 +152,8 @@ and readable message. `parse_tasks`, `mutate_tasks` and `workspace_of` are also
 available for in-memory use; `mutate_tasks` returns description writes for the
 caller to persist. Use a source store when editing actual files.
 
-The package supports issue CRUD, descriptions, priorities, labels, workflow
-sections and backlog ordering. It declares assignees, project/cycle entities and
+The package supports issue CRUD, descriptions, priorities, labels, dependencies,
+workflow sections and backlog ordering. It declares assignees, project/cycle entities and
 imports unsupported. Opening several project trackers does not create synthetic
 project entities in a workspace.
 

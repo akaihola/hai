@@ -11,7 +11,7 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
-from .markdown import TasksError, mutate_tasks, parse_tasks, validate_workspace, workspace_of
+from .markdown import TasksError, mutate_tasks, parse_tasks, validate_workspace, with_frontmatter_dependencies, workspace_of
 
 
 def regular_file(path, maximum=2 * 1024 * 1024):
@@ -156,6 +156,14 @@ class TasksStore:
             if operation != 'reorder' and isinstance(patch.get('description'), str) and patch['description'] and not current.get('sourcePath'):
                 allocation = self.allocate(before['parsed'], str(patch.get('title', current.get('title', 'task'))))
             result = mutate_tasks(before['parsed']['source'], operation, id, patch, allocation)
+            if 'dependencies' in result:
+                # Keep the description file's `depends-on:` frontmatter consistent with the bullet.
+                path = result.get('descriptionWrite', {}).get('path') or current.get('sourcePath')
+                if path:
+                    content = result['descriptionWrite']['content'] if 'descriptionWrite' in result else before['documents'][path]
+                    updated = with_frontmatter_dependencies(content, result['dependencies'])
+                    if updated != content:
+                        result['descriptionWrite'] = dict(path=path, content=updated)
             if allocation or (operation == 'delete' and current.get('sourcePath')):
                 pattern = r'<!-- hai:reserved-numbers:([\d,]*) -->'
                 previous = re.search(pattern, result['source'])

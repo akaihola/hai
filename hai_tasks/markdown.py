@@ -26,6 +26,49 @@ def text_length(value):
     return len(value.encode('utf-16-le', errors='surrogatepass')) // 2
 
 
+def summary_end(raw):
+    """Return the offset where a raw task block's summary lines end."""
+    first_line = re.split(r'\r?\n', raw)[0]
+    end = len(first_line)
+    for line in re.finditer(r'\r?\n([^\r\n]*)', raw[len(first_line):]):
+        if not line[1].strip() or re.match(r'^\s*(?:- |<!--)', line[1]):
+            break
+        end += len(line[0])
+    return end
+
+
+def check_backlog_order(ordered):
+    """Reject an Ordered backlog order placing a dependent before a prerequisite; items are (task, dependencies)."""
+    positions = {task['marker']: index for index, (task, _) in enumerate(ordered)}
+    for index, (task, dependencies) in enumerate(ordered):
+        for dependency in dependencies:
+            if positions.get(dependency, -1) >= index:
+                raise TasksError(f"{task['issue']['identifier']} depends on [{dependency}], which must appear earlier in Ordered backlog.")
+
+
+def with_frontmatter_dependencies(content, dependencies):
+    """Return description content whose YAML frontmatter `depends-on:` matches the dependencies."""
+    newline = '\r\n' if '\r\n' in content else '\n'
+    entry = 'depends-on: [' + ', '.join(dependencies) + ']' if dependencies else None
+    block = re.match(r'---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|$)', content, re.S)
+    if not block:
+        return content if not entry else f'---{newline}{entry}{newline}---{newline}{newline}{content}'
+    lines, found = [], False
+    for line in re.split(r'\r?\n', block[1]):
+        if re.match(r'depends-on\s*:', line):
+            if not found and entry:
+                lines.append(entry)
+            found = True
+        else:
+            lines.append(line)
+    if entry and not found:
+        lines.append(entry)
+    rest = content[block.end():]
+    if not any(line.strip() for line in lines):
+        return re.sub(r'^\r?\n', '', rest)
+    return '---' + newline + newline.join(lines) + newline + '---' + newline + rest
+
+
 def parse_tasks(source):
     if not isinstance(source, str) or len(source.encode()) > 2 * 1024 * 1024 or '\0' in source:
         raise TasksError('TASKS.md is invalid or exceeds 2 MB.', 422)
@@ -59,13 +102,8 @@ def parse_tasks(source):
             first_line = re.split(r'\r?\n', raw)[0]
             prefix = r'^- \[[^\]]+\](?:[ \t]+\[(?:\d+|\*)\])?[ \t]+' if checkbox else r'^- \[[^\]]+\][ \t]+'
             title_start = re.match(prefix, first_line).end()
-            summary, summary_end = [first_line[title_start:].strip()], len(first_line)
-            for line in re.finditer(r'\r?\n([^\r\n]*)', raw[len(first_line):]):
-                if not line[1].strip() or re.match(r'^\s*(?:- |<!--)', line[1]):
-                    break
-                summary.append(line[1].strip())
-                summary_end += len(line[0])
-            title = ' '.join(summary)
+            end = summary_end(raw)
+            title = ' '.join(line.strip() for line in re.split(r'\r?\n', raw[title_start:end]))
             if not title or text_length(title) > 50000:
                 raise TasksError('Task title must contain 1–50,000 characters.', 422)
             matches = list(META.finditer(raw))
@@ -85,14 +123,14 @@ def parse_tasks(source):
             if identity in ids:
                 raise TasksError('Tasks have duplicate identities; assign distinct Hai metadata IDs.', 422)
             ids.add(identity)
-            description = re.sub(r'^\r?\n', '', META.sub('', raw[summary_end:]))
+            description = re.sub(r'^\r?\n', '', META.sub('', raw[end:]))
             description = '\n'.join(re.sub(r'^ {2}', '', line) for line in re.split(r'\r?\n', description) if not re.match(r'^\s*- Depends on:', line))
             issue = dict(id=identity, sourceReference=f'[{marker}]', identifier=f'HAI-SIMPLE-{identity[-16:].upper()}' if marker == '*' else f'HAI-{marker}', title=title, description=description, status=status_for(section), priority=metadata.get('priority', 'none'), labels=metadata.get('labels', []), assigneeId=None, projectId=None, cycleId=None, createdAt=metadata.get('createdAt', EPOCH), updatedAt=metadata.get('updatedAt', EPOCH), sourceSection=section, accepted=section == 'Completed / Accepted' and checkbox in ['x', 'X'], dependencies=[number for line in re.findall(r'^\s*- Depends on:[^\r\n]*', raw, re.M) for number in re.findall(r'\[(\d+)\]', line)])
             if marker != '*':
                 if marker not in references:
                     raise TasksError(f'Task [{marker}] has no description reference.', 422)
                 issue['sourcePath'] = references[marker]
-            tasks.append(dict(start=start + m.start(), end=start + m.start() + len(raw), raw=raw, marker=marker, checkbox=checkbox, titleStart=title_start, summaryEnd=summary_end, metadata=metadata, issue=issue))
+            tasks.append(dict(start=start + m.start(), end=start + m.start() + len(raw), raw=raw, marker=marker, checkbox=checkbox, titleStart=title_start, summaryEnd=end, metadata=metadata, issue=issue))
         remainder = content
         for task in reversed([t for t in tasks if t['issue']['sourceSection'] == section]):
             remainder = remainder[:task['start'] - start] + remainder[task['end'] - start:]
@@ -147,8 +185,10 @@ def remove_task(source, task):
 def validate_patch(patch):
     if not isinstance(patch, dict):
         raise TasksError('Expected an issue object.')
-    if set(patch) - {'title', 'description', 'status', 'sourceSection', 'accepted', 'priority', 'labels', 'assigneeId', 'projectId', 'cycleId'}:
+    if set(patch) - {'title', 'description', 'status', 'sourceSection', 'accepted', 'priority', 'labels', 'dependencies', 'assigneeId', 'projectId', 'cycleId'}:
         raise TasksError('Unknown or read-only issue field.')
+    if 'dependencies' in patch and (not isinstance(patch['dependencies'], list) or len(patch['dependencies']) > 50 or any(not (type(number) is int and number > 0 or isinstance(number, str) and re.fullmatch(r'[1-9]\d*', number)) for number in patch['dependencies'])):
+        raise TasksError('Dependencies must be a list of issue numbers.')
     if 'title' in patch and (not isinstance(patch['title'], str) or not patch['title'].strip() or text_length(patch['title']) > 50000 or re.search(r'[\r\n\x00-\x1f]', patch['title'])):
         raise TasksError('Title must contain 1–50,000 characters on one line.')
     if 'description' in patch and (not isinstance(patch['description'], str) or text_length(patch['description']) > 50000 or '\0' in patch['description']):
@@ -181,11 +221,7 @@ def mutate_tasks(source, operation, id=None, input=None, new_reference=None):
         if len(ids) != len(backlog) or len(set(ids)) != len(ids) or set(ids) != set(by_id):
             raise TasksError('Include every Ordered backlog issue exactly once.')
         ordered = [by_id[i] for i in ids]
-        positions = {t['marker']: i for i, t in enumerate(ordered)}
-        for index, task in enumerate(ordered):
-            for dependency in task['issue']['dependencies']:
-                if positions.get(dependency, -1) >= index:
-                    raise TasksError(f"{task['issue']['identifier']} depends on [{dependency}], which must appear earlier in Ordered backlog.")
+        check_backlog_order([(t, t['issue']['dependencies']) for t in ordered])
         output, cursor = '', 0
         for slot, task in zip(backlog, ordered):
             output += source[cursor:slot['start']] + task['raw']
@@ -229,6 +265,35 @@ def mutate_tasks(source, operation, id=None, input=None, new_reference=None):
         raw = '- ' + (f'[{checkbox}] ' if checkbox else '') + f'[{marker}] {summary}'
     if 'description' in patch and patch['description'] != issue.get('description') and task and task['marker'] == '*' and issue['description']:
         raw = parsed['newline'].join(line for i, line in enumerate(re.split(r'\r?\n', raw)) if i == 0 or re.match(r'^\s*- Depends on:', line) or '<!-- hai:' in line)
+    dependencies = issue.get('dependencies', [])
+    dependencies_changed = False
+    if 'dependencies' in patch:
+        dependencies = list(dict.fromkeys(str(number) for number in patch['dependencies']))
+        numbered = {t['marker']: t for t in parsed['tasks'] if t['marker'] != '*'}
+        for number in dependencies:
+            if number == marker:
+                raise TasksError('An issue cannot depend on itself.')
+            if number not in numbered:
+                raise TasksError(f'Unknown dependency [{number}].')
+        graph = {number: t['issue']['dependencies'] for number, t in numbered.items()}
+        graph[marker] = dependencies
+        pending, visited = list(dependencies), set()
+        while pending:
+            number = pending.pop()
+            if number == marker:
+                raise TasksError('Dependencies must not form a cycle.')
+            if number not in visited:
+                visited.add(number)
+                pending.extend(graph.get(number, []))
+        if task and section == issue['sourceSection'] == 'Ordered backlog':
+            backlog = [t for t in parsed['tasks'] if t['issue']['sourceSection'] == 'Ordered backlog']
+            check_backlog_order([(t, dependencies if t is task else t['issue']['dependencies']) for t in backlog])
+        dependencies_changed = dependencies != issue.get('dependencies', [])
+        if dependencies_changed:
+            raw = parsed['newline'].join(line for line in re.split(r'\r?\n', raw) if not re.match(r'^\s*- Depends on:', line))
+            if dependencies:
+                end = summary_end(raw)
+                raw = raw[:end] + parsed['newline'] + '    - Depends on: ' + ', '.join(f'[{number}]' for number in dependencies) + raw[end:]
     metadata = dict(task['metadata']) if task else {}
     if marker == '*' or not task or task['marker'] == '*':
         metadata['id'] = next_id
@@ -247,8 +312,8 @@ def mutate_tasks(source, operation, id=None, input=None, new_reference=None):
     if not task or section != issue['sourceSection']:
         remaining = parse_tasks(output)
         ordered = [t for t in remaining['tasks'] if t['issue']['sourceSection'] == section] if section == 'Ordered backlog' else []
-        dependencies = [t for t in ordered if t['marker'] in issue.get('dependencies', [])]
-        anchor = dependencies[-1] if dependencies else ordered[-1] if ordered and not task else None
+        prerequisites = [t for t in ordered if t['marker'] in dependencies]
+        anchor = ordered[-1] if ordered and not task else prerequisites[-1] if prerequisites else None
         destination = anchor['end'] if anchor else remaining['sections'][section]['start']
         output = output[:destination] + parsed['newline'] * 2 + raw + output[destination:]
     if path and marker not in parsed['references']:
@@ -257,4 +322,6 @@ def mutate_tasks(source, operation, id=None, input=None, new_reference=None):
     result = dict(source=normalize_spacing(output), id=next_id)
     if description_write:
         result['descriptionWrite'] = description_write
+    if dependencies_changed:
+        result['dependencies'] = dependencies
     return result

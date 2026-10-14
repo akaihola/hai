@@ -84,6 +84,18 @@ Replace these example IDs with the IDs from that read:
 hai-tasks reorder "$SOURCE" --revision "$REVISION" --json '{"issueIds":["NEW_ISSUE_ID","OTHER_BACKLOG_ID"]}'
 ```
 
+## Dependencies
+
+`dependencies` lists the numbers of the issues a task depends on. It writes
+one `- Depends on: [N], [M]` bullet under the summary and keeps `depends-on:`
+frontmatter in the description file consistent. An empty list removes them.
+Unknown numbers, self-dependencies and cycles are rejected, as is an Ordered
+backlog order that leaves a dependent before its prerequisite; reorder first.
+
+```bash
+hai-tasks update "$SOURCE" "$ISSUE_ID" --revision "$REVISION" --json '{"dependencies":[1]}'
+```
+
 ## Local issue and backlog directories
 
 `.scratch/<feature>` tickets and `docs/backlog/`-style repositories (`docs/issues`,

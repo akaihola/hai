@@ -25,9 +25,13 @@ TRACKER = '''# Tasks
 
 ## Scheduled
 
+- [1] Numbered prerequisite
+
 ## In Progress
 
 ## Completed / Accepted
+
+[1]: docs/tasks/1-numbered-prerequisite.md
 
 ## Rules
 
@@ -43,6 +47,8 @@ class SkillTests(unittest.TestCase):
             project = Path(temporary)
             tracker = project / 'TASKS.md'
             tracker.write_text(TRACKER)
+            (project / 'docs/tasks').mkdir(parents=True)
+            (project / 'docs/tasks/1-numbered-prerequisite.md').write_text('# Prerequisite\n')
             subprocess.run(['git', 'init', '-q', str(project)], check=True)
             # Exercise the published console entry point with the documented name.
             entry = tomllib.loads((ROOT / 'pyproject.toml').read_text())['project']['scripts']['hai-tasks']
@@ -81,10 +87,14 @@ class SkillTests(unittest.TestCase):
                     if command in ['update', 'create']:
                         patch = json.loads(arguments[arguments.index('--json') + 1])
                         issue = next(item for item in issues if item['id'] == result['issue']['id'])
-                        self.assertEqual(issue['sourceSection'], patch['sourceSection'])
-                        self.assertEqual(issue['status'], patch['status'])
                         self.assertFalse(issue['accepted'])
-                        statuses.append(issue['status'])
+                        if 'dependencies' in patch:
+                            self.assertEqual(issue['dependencies'], [str(number) for number in patch['dependencies']])
+                            self.assertIn('\n    - Depends on: [1]\n', tracker.read_text())
+                        else:
+                            self.assertEqual(issue['sourceSection'], patch['sourceSection'])
+                            self.assertEqual(issue['status'], patch['status'])
+                            statuses.append(issue['status'])
                         if command == 'create':
                             values['NEW_ISSUE_ID'] = issue['id']
                             self.assertEqual([item['id'] for item in issues if item['sourceSection'] == 'Ordered backlog'],
