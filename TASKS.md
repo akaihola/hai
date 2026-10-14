@@ -33,10 +33,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [28] Open a repository's `.scratch/` features as one workspace
-  <!-- hai:{"id":"simple-f026711e-c707-42cf-a19e-f309584f14eb","createdAt":"2026-10-11T18:49:30.186Z","updatedAt":"2026-10-14T14:28:40.570Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [28] Open a repository's `.scratch/` features as one workspace
+  <!-- hai:{"id":"simple-f026711e-c707-42cf-a19e-f309584f14eb","createdAt":"2026-10-11T18:49:30.186Z","updatedAt":"2026-10-14T14:31:40.488Z"} -->
 
 - [ ] [27] Support `docs/backlog/`
   <!-- hai:{"id":"simple-302a01b2-71b6-4e82-9887-1ffc7b92629e","priority":"none","labels":[],"createdAt":"2026-10-11T14:24:07.802Z","updatedAt":"2026-10-14T13:41:27.894Z"} -->

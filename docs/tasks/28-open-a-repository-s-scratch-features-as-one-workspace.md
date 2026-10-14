@@ -47,3 +47,47 @@ Sources: `~/.claude/plugins/marketplaces/mattpocock/CONTEXT.md`,
 `skills/engineering/triage/SKILL.md`, `skills/engineering/to-tickets/SKILL.md` and
 `skills/engineering/wayfinder/SKILL.md` in the same marketplace checkout (84fdeff,
 2026-08-06).
+
+## Completion and validation, 2026-10-14
+
+Implemented and merged repository-wide scratch workspaces. Each feature directory
+is a read-only Hai project, including spec-only features. Tickets have qualified
+identifiers and IDs derived from their feature and filename. Creation requires a
+feature, numbering and deletion protection stay within it, and moving tickets
+between features is rejected. Revisions and advisory locks cover the repository's
+features, tickets and triage-label mapping. Python and CLI reads return all
+features, with feature names in their issue rows.
+
+HTTP discovery lists one scratch source per repository. Legacy feature and issues
+paths select that feature in the browser, including an issues directory that does
+not exist yet. The selection survives reload. List and board project filters,
+feature creation defaults, read-only projects and All projects are covered by the
+expanded browser workflow. Backend and Python API/CLI documentation were updated.
+
+Validation:
+
+- `npm run check`: 52 Python tests, 91 TypeScript unit/API tests, TypeScript checks
+  and the production build passed. The full browser run passed 61 of 63 tests.
+- The board sorting workflow's reload was interrupted during the rebase and passed
+  on an isolated rerun. All new scratch workflows passed, including feature
+  filters, spec-only creation, saved legacy paths and aggregate discovery.
+- The remaining browser failure is the pre-existing date-dependent assertion in
+  `tests/e2e/workspace.spec.ts:225`: it expects Cycle 12, which ended 2026-10-11;
+  Cycle 13 is current on 2026-10-14. Its expectation and the seed dates are
+  unchanged from main. No unrelated tests or seed data were edited.
+- The rebased main build passed and the enabled user service restarted. Loopback,
+  private HTTP and private HTTPS passed health and exact HTML/asset checks.
+  Production HTTP tests against a temporary repository verified discovery,
+  canonical feature aliases, unique IDs, required-feature creation, first-ticket
+  creation in a spec-only feature and feature-scoped deletion protection. The
+  temporary repository was removed; existing repositories were not modified.
+
+The main tracker conflict was resolved by retaining main's current tracker and
+reapplying only this issue's In Progress transition through revision-checked
+`hai-tasks`. Issue 29's scheduling and all unrelated acceptance flags survived.
+This issue is completed and unchecked, pending user acceptance. Tailscale routes
+were unchanged.
+
+Backup: `/tmp/hai28-before/live.tgz`. Logs: `/tmp/hai28-check-final.log`,
+`/tmp/hai28-board-rerun.log`, `/tmp/hai28-main-build.log`,
+`/tmp/hai28-deploy.log`, and `/tmp/hai28-production-smoke.log`.
