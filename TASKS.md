@@ -26,6 +26,12 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
+- [27] Support `docs/backlog/`
+  <!-- hai:{"id":"simple-302a01b2-71b6-4e82-9887-1ffc7b92629e","priority":"none","labels":[],"createdAt":"2026-10-11T14:24:07.802Z","updatedAt":"2026-10-11T14:24:07.802Z"} -->
+
+- [28] Open a repository's `.scratch/` features as one workspace
+  <!-- hai:{"id":"simple-f026711e-c707-42cf-a19e-f309584f14eb","createdAt":"2026-10-11T18:49:30.186Z","updatedAt":"2026-10-11T18:49:30.186Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -143,7 +149,7 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 [11]: docs/tasks/11-allow-dragging-issues-from-a-group-to-another.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28 -->
 
 [12]: docs/tasks/12-eliminate-runs-of-blank-lines-in-tasks-md.md
 [13]: docs/tasks/13-separate-groups-completed-and-accepted.md
@@ -168,6 +174,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 [25]: docs/tasks/25-test-issue.md
 
 [26]: docs/tasks/26-deleting-an-issue-leaves-its-description-file-and-link-behind.md
+
+[27]: docs/tasks/27-support-docs-backlog.md
+
+[28]: docs/tasks/28-open-a-repository-s-scratch-features-as-one-workspace.md
 
 ## Rules
 

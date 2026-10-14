@@ -1,0 +1,1 @@
+Support a backlog structure like the one used in `~/repos/nixos-config/`. Hai should function similarly to with `TASKS.md` so callers of `hai-tasks` (like kandev-pacer) can easily operate on tasks/issues.u
