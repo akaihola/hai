@@ -28,10 +28,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Scheduled
 
-- [29] Write `Depends on:` dependencies through the API and CLI
-  <!-- hai:{"id":"simple-478f2d40-e219-4f8e-8ff9-b29f0698e32f","createdAt":"2026-10-14T12:32:36.205Z","updatedAt":"2026-10-14T14:18:16.716Z"} -->
-
 ## In Progress
+
+- [~] [29] Write `Depends on:` dependencies through the API and CLI
+  <!-- hai:{"id":"simple-478f2d40-e219-4f8e-8ff9-b29f0698e32f","createdAt":"2026-10-14T12:32:36.205Z","updatedAt":"2026-10-14T14:20:06.950Z"} -->
 
 ## Completed / Accepted
 
