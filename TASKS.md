@@ -32,11 +32,11 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Completed / Accepted
 
-- [ ] [29] Write `Depends on:` dependencies through the API and CLI
-  <!-- hai:{"id":"simple-478f2d40-e219-4f8e-8ff9-b29f0698e32f","createdAt":"2026-10-14T12:32:36.205Z","updatedAt":"2026-10-14T14:31:44.473Z"} -->
+- [x] [29] Write `Depends on:` dependencies through the API and CLI
+  <!-- hai:{"id":"simple-478f2d40-e219-4f8e-8ff9-b29f0698e32f","createdAt":"2026-10-14T12:32:36.205Z","updatedAt":"2026-10-14T20:21:12.782Z"} -->
 
-- [ ] [28] Open a repository's `.scratch/` features as one workspace
-  <!-- hai:{"id":"simple-f026711e-c707-42cf-a19e-f309584f14eb","createdAt":"2026-10-11T18:49:30.186Z","updatedAt":"2026-10-14T14:31:40.488Z"} -->
+- [x] [28] Open a repository's `.scratch/` features as one workspace
+  <!-- hai:{"id":"simple-f026711e-c707-42cf-a19e-f309584f14eb","createdAt":"2026-10-11T18:49:30.186Z","updatedAt":"2026-10-14T20:20:38.601Z"} -->
 
 - [ ] [27] Support `docs/backlog/`
   <!-- hai:{"id":"simple-302a01b2-71b6-4e82-9887-1ffc7b92629e","priority":"none","labels":[],"createdAt":"2026-10-11T14:24:07.802Z","updatedAt":"2026-10-14T13:41:27.894Z"} -->
