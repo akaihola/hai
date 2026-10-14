@@ -45,7 +45,7 @@ Rules for TASKS.md usage are at the bottom of the file.
   <!-- hai:{"id":"simple-723c1791-f392-475b-9518-2fd8673c4887","createdAt":"2026-10-11T10:29:45.032Z","updatedAt":"2026-10-11T14:10:21.579Z"} -->
 
 - [ ] [23] Add a `hai-tasks` agent skill so agents stop editing trackers by hand.
-  <!-- hai:{"id":"simple-a61b1e2a-60b4-4bfe-b453-3d1ea87234c8","createdAt":"2026-10-10T11:06:37.830Z","updatedAt":"2026-10-10T12:51:27.672Z"} -->
+  <!-- hai:{"id":"simple-a61b1e2a-60b4-4bfe-b453-3d1ea87234c8","createdAt":"2026-10-10T11:06:37.830Z","updatedAt":"2026-10-14T13:17:34.348Z"} -->
 
 - [x] [19] Keyboard friendly project switching
   <!-- hai:{"id":"simple-0507ac21-7daa-4768-b786-19289aebd18e","priority":"none","labels":[],"createdAt":"2026-10-07T18:58:40.973Z","updatedAt":"2026-10-10T19:41:19.698Z"} -->

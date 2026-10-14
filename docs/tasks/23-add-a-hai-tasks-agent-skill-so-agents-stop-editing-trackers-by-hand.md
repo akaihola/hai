@@ -84,3 +84,64 @@ temporary Python environment with PyYAML.
 
 Merged into main. Issue [23] is completed and remains unchecked for user
 acceptance.
+
+## Deployment and agent verification, 2026-10-14
+
+This update supersedes the earlier note that skill installation and the
+cross-repository Claude Code check were pending. The user reported completion
+of the nixos-config deployment thread `9ccb4cca-cfdf-400f-bb7d-e58ec7b8c7c3`
+and rebuilds of atom and gogo. On agent@gogo, the installed `hai-tasks` command
+resolves, and the Claude Code, Codex and Pi skill links expose the canonical
+Hai skill. The related deployment document separately records a pending fleet
+audit; this behavior test did not verify that audit or run agents on atom.
+
+Independent review on 2026-10-11 found no actionable findings or proposed
+fixes at `4c5667f058f6afc6d41ef98613ebdb93e2c57416`. The reviewer passed the
+executable-example test, six focused CLI/storage tests and diff checks. It did
+not independently rerun the full application/build/browser suite.
+
+Nine fresh agent sessions ran on gogo against disposable Git trackers on
+2026-10-14. Initial prompts asked agents to start a scheduled dummy issue
+without naming the skill or command. Completion turns explicitly withheld
+user acceptance. Separate sessions tested a real concurrent CLI mutation
+between an agent's read and update, producing stale-revision status 412.
+
+| Agent / prompt | Start and completion | Stale-revision recovery |
+| --- | --- | --- |
+| Claude Code, default configuration | Passed | Passed |
+| Codex CLI, default configuration | Passed | Passed |
+| Fresh T3 Codex thread in a T3-managed worktree | Passed | Not tested |
+| Pi, default configuration, unprompted | Failed | Not reached |
+| Pi with the current explicit pacer instructions | Passed | Passed |
+
+Passing runs loaded the skill, used stable issue IDs and revision-checked CLI
+updates, retained the numbered description reference, wrote `[~]` on start
+and `[ ]` on completion, and preserved the other issue and prior acceptance.
+Successful stale-revision runs re-read and retried with a fresh revision while
+retaining the competitor's priority change.
+
+Pi used its configured `openai-codex/gpt-5.6-luna` model with minimal thinking.
+Its system skill catalog contained `hai-tasks`, but it ignored the skill in
+two unprompted fresh sessions and edited Markdown directly. It lost the `[1]`
+reference; the first session also left the issue in Scheduled despite marking
+it `[~]`, and its completion turn left the issue there. The second unprompted
+session moved the issue to In Progress but still lost its reference and used
+no revision check. This is a remaining agent-selection limitation, not a
+failure of CLI discovery or installation.
+
+With the current pacer wording naming the package, CLI, revision flags and
+skill, Pi loaded the skill and passed start, completion and stale-revision
+recovery. Keep that explicit guidance. Automatic skill selection in Pi still
+needs investigation before claiming that all agents reliably avoid hand edits.
+
+Evidence is retained at
+`/home/agent/.local/state/hai-agent-tests/2026-10-14-d2ff0c37/results.json`,
+with transcripts, tool-call summaries, prompts, tracker snapshots and conflict
+injection records in the same directory. T3 test thread:
+`91c22648-b70d-4c54-9df0-a03ee44b5ccb`.
+
+These smoke tests do not guarantee future behavior. They did not exercise
+agents on atom, an existing repository with stale hand-editing memory, or the
+actual pacer scheduling daemon. Only disposable trackers were mutated; no
+real tracker acceptance was changed. Issue [23] remains completed and
+unchecked pending explicit user acceptance.
