@@ -43,6 +43,7 @@ def main(argv=None):
         command.add_argument('sources', nargs='+')
         command.add_argument('--text', default='')
         command.add_argument('--section', choices=SECTIONS)
+        command.add_argument('--state', help='Source state of local issue or backlog sources, such as backlog or in-progress')
         command.add_argument('--status', choices=['backlog', 'todo', 'in_progress', 'done', 'canceled'])
         command.add_argument('--priority', choices=['none', 'low', 'medium', 'high', 'urgent'])
         command.add_argument('--label')
@@ -67,7 +68,7 @@ def main(argv=None):
             content = sys.stdin.buffer.read(2 * 1024 * 1024 + 1) if args.file == '-' else Path(args.file).read_bytes()
             result = parse_tasks(content.decode('utf-8'))
         elif args.command in ['query', 'report']:
-            filters = {key: getattr(args, key) for key in ['text', 'section', 'status', 'priority', 'label', 'accepted']}
+            filters = {key: getattr(args, key) for key in ['text', 'section', 'state', 'status', 'priority', 'label', 'accepted']}
             result = (query if args.command == 'query' else report)(args.sources, **filters)
         else:
             store = open_source(args.source)

@@ -13,6 +13,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 from .markdown import SECTIONS, TasksError
 from .store import TasksStore, export_snapshot, run_git
 from .scratch import ScratchStore
+from .backlog import BacklogStore, backlog_root
 
 
 class SSHSource:
@@ -152,11 +153,14 @@ def open_source(source):
     if path.is_dir():
         if path.parent.name == '.scratch' or (path.name == 'issues' and path.parent.parent.name == '.scratch'):
             return ScratchStore(path)
+        root = backlog_root(path)
+        if root is not None:
+            return BacklogStore(root)
         path /= 'TASKS.md'
     return TasksStore(path)
 
 
-def query(sources, *, text='', section=None, status=None, accepted=None, priority=None, label=None):
+def query(sources, *, text='', section=None, state=None, status=None, accepted=None, priority=None, label=None):
     """Return project-tagged issues and revisions; a failed project fails the query."""
     if section is not None and section not in SECTIONS:
         raise TasksError('Unsupported source section.')
@@ -166,7 +170,7 @@ def query(sources, *, text='', section=None, status=None, accepted=None, priorit
         for issue in snapshot['workspace']['issues']:
             if text.casefold() not in (issue['title'] + '\n' + issue['description']).casefold():
                 continue
-            if any(value is not None and issue.get(key) != value for key, value in [('sourceSection', section), ('status', status), ('accepted', accepted), ('priority', priority)]):
+            if any(value is not None and issue.get(key) != value for key, value in [('sourceSection', section), ('sourceState', state), ('status', status), ('accepted', accepted), ('priority', priority)]):
                 continue
             if label is not None and label not in issue['labels']:
                 continue

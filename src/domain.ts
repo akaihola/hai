@@ -89,7 +89,7 @@ export interface BackendCapabilities {
   workspaceScope?: 'all'
   persistence: 'browser' | 'filesystem' | 'remote'
   sourceStates?: { id: string; status: IssueStatus }[]
-  workflow?: 'tasks' | 'scratch'
+  workflow?: 'tasks' | 'scratch' | 'backlog'
   fields?: { assignee: boolean; project: boolean; cycle: boolean; description: boolean; priority?: boolean; labels?: boolean }
 }
 export interface WorkspaceBackend {

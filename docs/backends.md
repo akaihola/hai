@@ -1,6 +1,6 @@
 # Backends and portable data
 
-Hai uses the repository TASKS.md through its Python service by default. The browser-storage demo is available explicitly with `?backend=local`. GitHub, Beans, taskmd, and Markdown Ticket remain planned integrations.
+Hai uses the repository TASKS.md through its Python service by default. The same service opens Matt Pocock `.scratch/` feature tickets and `docs/backlog/`-style workflow directories. The browser-storage demo is available explicitly with `?backend=local`. GitHub, Beans, taskmd, and Markdown Ticket remain planned integrations.
 
 ## Adapter contract
 
@@ -202,3 +202,56 @@ export and JSON snapshots. It has no user-acceptance checkbox, priority, arbitra
 labels, assignments, projects, cycles, backlog reordering or import. `resolved`
 records resolution, without inventing TASKS.md acceptance. Local paths and SSH
 sources work; the GitHub TASKS.md source does not support scratch directories.
+
+## Markdown backlog directories
+
+Some repositories keep one Markdown document per work item under `docs/` and use
+the directory as the status, following the nixos-config conventions: `issues/` is
+the inbox, `ideas/` holds rough proposals, `backlog/` holds well-defined tasks,
+`in-progress/` holds active work, `completed/` holds finished work and `rejected/`
+holds declined proposals. Hai opens that layout as one workspace from `<repo>/docs`,
+any of those six directories, or a project directory that has `docs/backlog/` and
+no `TASKS.md`. Project discovery lists it as `<repo> / docs` next to any TASKS.md
+tracker in the same repository.
+
+Every `*.md` file directly inside the six directories is an issue, except
+`README.md`. Other files, `.gitkeep` and sibling directories such as
+`contributing/` or `research/` are ignored. The file name is the identity: the
+visible identifier is the file name without `.md`, and the stable ID is derived
+from it, so moving a document between directories keeps its ID. When the same file
+name exists in several directories, later copies in the workflow order are
+identified as `<state>/<name>` instead.
+
+The title is the first `# ` heading anywhere in the file, or the file name when a
+document has none, which the issues inbox allows. The description is the rest of
+the file. Hai does not read the `**Status:**`, `**Completed:**` or acceptance
+criteria lines; they stay in the description.
+
+| Directory | Hai status |
+| --- | --- |
+| `issues`, `ideas` | Backlog |
+| `backlog` | Todo |
+| `in-progress` | In Progress |
+| `completed` | Done |
+| `rejected` | Canceled |
+
+Changing the source state moves the file to that directory without renaming it,
+creating the directory when needed, and fails if the target already has a file
+with the same name. Hai does not run the repository's `/move-doc` checks, so the
+agent or user remains responsible for the template sections each directory
+expects. Title edits rewrite the heading, or insert one at the top of a document
+without a heading. Explicitly editing the description replaces the body below the
+heading. Other edits preserve the file byte for byte, including line endings.
+
+Creating an issue writes `# Title` and the description to `<state>/<slug>.md`;
+the default state is `issues`. Deleting removes the file. Revisions cover every
+document in the six directories; stale saves fail rather than overwrite external
+changes. Writes use the shared advisory directory lock on `docs/`, atomic staging,
+publication without overwriting an unexpected file, and the same regular-file and
+symlink restrictions as the other local backends. This backend supports create,
+update, delete, automatic refresh, combined Markdown export and JSON snapshots.
+It has no acceptance checkbox, priority, labels, assignments, projects, cycles,
+dependencies, backlog reordering or import. JSON export fails above the 2 MB
+snapshot limit, which large repositories can reach; the Markdown files remain the
+backup. Local paths and SSH sources work; the GitHub TASKS.md source does not
+support backlog directories.

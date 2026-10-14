@@ -18,7 +18,7 @@ For frontend development, run `npm run dev:server` and `npm run dev` in separate
 
 The deployed app is available at http://gogo.tailnet.example:5173/ and https://gogo.tailnet.example:8443/ through Tailscale. Both addresses use the persistent production service. Vite binds only to loopback so development and tests can share port 5173 with the separate Tailscale address.
 
-The standalone [Python API and CLI](docs/python-api-cli.md) parses, queries, edits and reports on local, SSH and GitHub TASKS.md projects. Run `python3 -m hai_tasks --help`. Configured remote projects can also be opened in the browser by alias.
+The standalone [Python API and CLI](docs/python-api-cli.md) parses, queries, edits and reports on local, SSH and GitHub TASKS.md projects, `.scratch/` feature tickets and `docs/backlog/`-style directories. Run `python3 -m hai_tasks --help`. Configured remote projects can also be opened in the browser by alias.
 
 The independent browser-storage demo remains available at `/?backend=local`. Its sample data and backups stay in that browser and origin.
 
@@ -26,7 +26,7 @@ The independent browser-storage demo remains available at `/?backend=local`. Its
 
 - Create, edit, and delete tasks with their source section, priority, labels, and description.
 - Local trackers and linked descriptions refresh automatically every five seconds while the tab is visible, and when returning to the tab. Refresh pauses during editing, saving and dragging so stale drafts still receive revision conflicts. Source errors keep the last workspace visible and retry on the next poll. SSH and GitHub aliases use **Refresh source** to avoid repeated remote reads.
-- Open another server project from **Open project** in the sidebar. Enter a folder such as `~/prg/my-project/` or its `TASKS.md` path. Recent projects and the last selection are saved in this browser.
+- Open another server project from **Open project** in the sidebar. Enter a folder such as `~/prg/my-project/`, its `TASKS.md` path, a `.scratch/<feature>` directory, or a repository's `docs/` workflow directories such as `~/repos/nixos-config/docs/backlog/`. Recent projects and the last selection are saved in this browser.
 - Browse grouped lists or a board. Move tasks between source sections on the board or with the issue editor.
 - Search and filter issues. Backends that supply them also expose projects, cycles, assigned work, and recent activity.
 - Use `C` to create an issue, `Ctrl+K` or `⌘K` to search, and `Escape` to close a dialog.

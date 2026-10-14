@@ -84,6 +84,18 @@ Replace these example IDs with the IDs from that read:
 hai-tasks reorder "$SOURCE" --revision "$REVISION" --json '{"issueIds":["NEW_ISSUE_ID","OTHER_BACKLOG_ID"]}'
 ```
 
+## Local issue and backlog directories
+
+`.scratch/<feature>` tickets and `docs/backlog/`-style repositories (`docs/issues`,
+`ideas`, `backlog`, `in-progress`, `completed`, `rejected`) use `sourceState`
+instead of `sourceSection`. `read` lists the states with their statuses under
+`capabilities.sourceStates`. Move a document by patching `sourceState` with the
+matching `status`, for example `{"sourceState":"in-progress","status":"in_progress"}`,
+and filter with `query "$SOURCE" --state backlog`. Read the repository's
+`docs/README.md` and the directory READMEs for the sections each state expects;
+Hai moves the file but does not fill in the template. See
+[Markdown backlog directories](../../docs/python-api-cli.md#markdown-backlog-directories).
+
 ## Failed writes
 
 On a stale revision error, re-read and check whether the intended change is

@@ -63,7 +63,7 @@ python3 -m hai_tasks export . --format json
 `parse` reads the tracker text without opening descriptions and accepts `-` for
 standard input. `read` returns the workspace, revision and capabilities. Queries
 return rows containing `source`, `revision` and `issue`. Filters include text,
-section, status, priority, label and acceptance. Reports count matching tasks by
+section, source state, status, priority, label and acceptance. Reports count matching tasks by
 source, section and acceptance. If any project fails, a multi-project command
 fails instead of presenting an incomplete report as complete.
 
@@ -171,3 +171,26 @@ python3 -m hai_tasks query /path/to/project/.scratch/search --status canceled
 
 JSON export is a workspace snapshot. Markdown export combines the original tickets
 for reading, rather than creating a TASKS.md tracker. See [backend conventions](backends.md#matt-pocock-local-markdown-issues).
+
+## Markdown backlog directories
+
+The API and CLI also open repositories that keep one document per work item under
+`docs/issues`, `docs/ideas`, `docs/backlog`, `docs/in-progress`, `docs/completed`
+and `docs/rejected`. Open `<repo>/docs`, one of those directories, or a project
+directory that has `docs/backlog/` and no `TASKS.md`. `read` returns
+`workflow: backlog` and the six directories as `sourceStates`. Moving an issue
+means changing `sourceState`; `status` must match the state. `--state` filters
+`query` and `report` by directory:
+
+```bash
+python3 -m hai_tasks read ~/repos/nixos-config
+python3 -m hai_tasks query ~/repos/nixos-config --state backlog
+python3 -m hai_tasks report ~/repos/nixos-config/docs
+python3 -m hai_tasks update ~/repos/nixos-config ISSUE_ID --revision REVISION --json '{"sourceState":"in-progress","status":"in_progress"}'
+python3 -m hai_tasks create ~/repos/nixos-config --revision REVISION --json '{"title":"Install UI fonts","sourceState":"backlog","status":"todo","description":"## Context\n\nWhy."}'
+```
+
+Issue IDs stay stable across moves because they derive from the file name.
+Creation writes `<state>/<slug>.md`; a title whose slug already exists in any
+directory is rejected. See [backend conventions](backends.md#markdown-backlog-directories)
+for the status mapping, parsing rules and limits.

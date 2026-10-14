@@ -9,7 +9,17 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
 from hai_tasks import TasksError, TasksStore, open_source
+from hai_tasks.backlog import BacklogStore, backlog_root
 from hai_tasks.scratch import ScratchStore
+
+
+def source_name(path):
+    path = Path(path)
+    if path.parent.name == '.scratch':
+        return f'{path.parents[1].name} / {path.name}'
+    if path.name == 'docs':
+        return f'{path.parent.name} / docs'
+    return path.parent.name
 
 CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
 
@@ -39,7 +49,7 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
             path = Path(source).expanduser()
             if not path.is_absolute():
                 raise TasksError('Use an absolute server path or a path starting with ~/.')
-            file = path if path.name == 'TASKS.md' or path == tasks_file or str(path) in stores or (path.parent.name == '.scratch' or (path.name == 'issues' and path.parent.parent.name == '.scratch')) else path / 'TASKS.md'
+            file = path if path.name == 'TASKS.md' or path == tasks_file or str(path) in stores or (path.parent.name == '.scratch' or (path.name == 'issues' and path.parent.parent.name == '.scratch')) else backlog_root(path) or path / 'TASKS.md'
             # Lexically normalize without resolving symlinks before the root check.
             file = Path(os.path.abspath(file))
         with selection_lock:
@@ -53,22 +63,24 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
                 raise TasksError('Project is outside the allowed project roots. Check HAI_PROJECT_ROOTS.', 403)
             try:
                 scratch = file.parent.name == '.scratch' or (file.name == 'issues' and file.parent.parent.name == '.scratch')
-                if file.is_symlink() or (file.exists() and not (file.is_dir() if scratch else file.is_file())):
-                    kind = 'Local issue source' if scratch else 'TASKS.md'
-                    reason = ('a directory' if scratch else 'a regular file') + (', not a symbolic link' if file.is_symlink() else '')
-                    raise TasksError(f'{kind} must be {reason}: {file}', 422)
+                backlog = not scratch and backlog_root(file) is not None
+                kind = 'local issue source' if scratch else 'backlog source' if backlog else 'TASKS.md'
+                if file.is_symlink() or (file.exists() and not (file.is_dir() if scratch or backlog else file.is_file())):
+                    reason = ('a directory' if scratch or backlog else 'a regular file') + (', not a symbolic link' if file.is_symlink() else '')
+                    raise TasksError(f'{kind[0].upper() + kind[1:]} must be {reason}: {file}', 422)
                 canonical = file.resolve(strict=True)
                 if scratch and canonical.name == 'issues' and canonical.parent.parent.name == '.scratch':
                     canonical = canonical.parent
+                if backlog:
+                    canonical = backlog_root(canonical) or canonical
             except OSError as error:
-                kind = 'local issue source' if scratch else 'TASKS.md'
                 raise TasksError(f'Cannot open {kind} at {file}: {error}', 404) from error
             if not any(canonical.is_relative_to(root) for root in canonical_roots.values()):
                 raise TasksError('Project links must stay inside the allowed project roots.', 403)
             key = str(canonical)
             if key not in stores:
-                stores[key] = ScratchStore(canonical) if scratch else TasksStore(canonical)
-            return stores[key], dict(name=f'{canonical.parents[1].name} / {canonical.name}' if scratch else canonical.parent.name, path=key)
+                stores[key] = ScratchStore(canonical) if scratch else BacklogStore(canonical) if backlog else TasksStore(canonical)
+            return stores[key], dict(name=source_name(canonical), path=key)
 
     class Handler(BaseHTTPRequestHandler):
         def setup(self):
@@ -173,6 +185,9 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
                                     for feature in scratch_root.iterdir():
                                         if feature.is_dir() and not feature.is_symlink():
                                             candidates.add(str(feature))
+                                docs = project / 'docs'
+                                if not docs.is_symlink() and (docs / 'backlog').is_dir() and not (docs / 'backlog').is_symlink():
+                                    candidates.add(str(docs))
                         with selection_lock:
                             candidates.update(stores)
                         selected = query.get('source', [None])[0]
@@ -184,9 +199,9 @@ def create_server(tasks_file, dist_dir, *, host='127.0.0.1', port=4173, allowed_
                                     raise
                                 # Keep an unavailable allowed selection in the partial-view diagnostics.
                                 path = Path(selected).expanduser()
-                                file = path if path.name == 'TASKS.md' or path == tasks_file or path.parent.name == '.scratch' else path.parent if path.name == 'issues' and path.parent.parent.name == '.scratch' else path / 'TASKS.md'
+                                file = path if path.name == 'TASKS.md' or path == tasks_file or path.parent.name == '.scratch' else path.parent if path.name == 'issues' and path.parent.parent.name == '.scratch' else backlog_root(path) or path / 'TASKS.md'
                                 candidates.add(os.path.abspath(file))
-                        sources = [{'name': path[2:] if path in remotes else (f'{Path(path).parents[1].name} / {Path(path).name}' if Path(path).parent.name == '.scratch' else Path(path).parent.name), 'path': path} for path in sorted(candidates)]
+                        sources = [{'name': path[2:] if path in remotes else source_name(path), 'path': path} for path in sorted(candidates)]
                         return self.json(200, {'sources': sources})
                     store, source = select_source(query.get('source', [None])[0])
                     if method == 'GET' and url.path == '/api/workspace':
