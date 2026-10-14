@@ -34,10 +34,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Scheduled
 
-- [27] Support `docs/backlog/`
-  <!-- hai:{"id":"simple-302a01b2-71b6-4e82-9887-1ffc7b92629e","priority":"none","labels":[],"createdAt":"2026-10-11T14:24:07.802Z","updatedAt":"2026-10-14T13:25:16.717Z"} -->
-
 ## In Progress
+
+- [~] [27] Support `docs/backlog/`
+  <!-- hai:{"id":"simple-302a01b2-71b6-4e82-9887-1ffc7b92629e","priority":"none","labels":[],"createdAt":"2026-10-11T14:24:07.802Z","updatedAt":"2026-10-14T13:29:04.223Z"} -->
 
 ## Completed / Accepted
 
