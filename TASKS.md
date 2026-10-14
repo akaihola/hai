@@ -36,10 +36,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [27] Support `docs/backlog/`
-  <!-- hai:{"id":"simple-302a01b2-71b6-4e82-9887-1ffc7b92629e","priority":"none","labels":[],"createdAt":"2026-10-11T14:24:07.802Z","updatedAt":"2026-10-14T13:29:04.223Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [27] Support `docs/backlog/`
+  <!-- hai:{"id":"simple-302a01b2-71b6-4e82-9887-1ffc7b92629e","priority":"none","labels":[],"createdAt":"2026-10-11T14:24:07.802Z","updatedAt":"2026-10-14T13:41:27.894Z"} -->
 
 - [x] [26] Deleting an issue leaves its description file and link behind
   <!-- hai:{"id":"simple-723c1791-f392-475b-9518-2fd8673c4887","createdAt":"2026-10-11T10:29:45.032Z","updatedAt":"2026-10-14T12:34:37.659Z"} -->

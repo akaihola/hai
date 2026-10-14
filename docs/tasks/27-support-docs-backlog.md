@@ -26,3 +26,27 @@ no IDs, status fields or Hai metadata comments inside the files.
 - Add `--state` filters to `query` and `report`, reuse the browser's source-state
   UI, and document the backend in `docs/backends.md`, `docs/python-api-cli.md` and
   the `hai-tasks` skill.
+
+## Completion and validation, 2026-10-14
+
+Implemented `hai_tasks/backlog.py` (`BacklogStore`), source detection in
+`open_source` and the HTTP service, `<repo> / docs` entries in project discovery,
+a `--state` filter for `query` and `report`, and browser support through the
+existing source-state UI. Reading `~/repos/nixos-config` returns 276 documents
+across the six directories; a file name that exists in two directories (one real
+case in that repository) is identified as `<state>/<name>` instead of failing.
+
+Validation in the feature worktree:
+
+- Python: 49 tests passed, including 11 new backlog tests covering moves,
+  retitling, body rewrites, creation, deletion, duplicate names, stale revisions,
+  concurrent writers, invalid fields, symlinks, rollback, the CLI filter and HTTP.
+- TypeScript: `tsc --noEmit` and the Node unit tests passed; the known flaky
+  large-request test failed once and passed on rerun.
+- Build and Playwright: 62 of 63 browser tests passed, including the new
+  `backlog-backend.spec.ts`. The failing `workspace.spec.ts` cycle assertion is
+  pre-existing and date-dependent: the demo seed's Cycle 12 ended 2026-10-11, so
+  Cycle 13 is current now. It is unrelated to this issue and was left unchanged.
+
+Out of scope: kandev-pacer still selects work by `sourceSection`; backlog sources
+expose `sourceState` instead, so the pacer needs its own follow-up to pace them.
