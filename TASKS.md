@@ -32,6 +32,9 @@ Rules for TASKS.md usage are at the bottom of the file.
 - [28] Open a repository's `.scratch/` features as one workspace
   <!-- hai:{"id":"simple-f026711e-c707-42cf-a19e-f309584f14eb","createdAt":"2026-10-11T18:49:30.186Z","updatedAt":"2026-10-11T18:49:30.186Z"} -->
 
+- [29] Write `Depends on:` dependencies through the API and CLI
+  <!-- hai:{"id":"simple-478f2d40-e219-4f8e-8ff9-b29f0698e32f","createdAt":"2026-10-14T12:32:36.205Z","updatedAt":"2026-10-14T12:32:36.205Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -149,7 +152,7 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 [11]: docs/tasks/11-allow-dragging-issues-from-a-group-to-another.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29 -->
 
 [12]: docs/tasks/12-eliminate-runs-of-blank-lines-in-tasks-md.md
 [13]: docs/tasks/13-separate-groups-completed-and-accepted.md
@@ -178,6 +181,8 @@ Rules for TASKS.md usage are at the bottom of the file.
 [27]: docs/tasks/27-support-docs-backlog.md
 
 [28]: docs/tasks/28-open-a-repository-s-scratch-features-as-one-workspace.md
+
+[29]: docs/tasks/29-write-depends-on-dependencies-through-the-api-and-cli.md
 
 ## Rules
 
