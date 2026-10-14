@@ -26,13 +26,13 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
-- [28] Open a repository's `.scratch/` features as one workspace
-  <!-- hai:{"id":"simple-f026711e-c707-42cf-a19e-f309584f14eb","createdAt":"2026-10-11T18:49:30.186Z","updatedAt":"2026-10-11T18:49:30.186Z"} -->
-
 - [29] Write `Depends on:` dependencies through the API and CLI
   <!-- hai:{"id":"simple-478f2d40-e219-4f8e-8ff9-b29f0698e32f","createdAt":"2026-10-14T12:32:36.205Z","updatedAt":"2026-10-14T12:32:36.205Z"} -->
 
 ## Scheduled
+
+- [28] Open a repository's `.scratch/` features as one workspace
+  <!-- hai:{"id":"simple-f026711e-c707-42cf-a19e-f309584f14eb","createdAt":"2026-10-11T18:49:30.186Z","updatedAt":"2026-10-14T14:15:40.381Z"} -->
 
 ## In Progress
 
