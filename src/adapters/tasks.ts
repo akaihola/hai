@@ -164,7 +164,7 @@ export function createAllTasksBackend(baseUrl = '/api', sourcePath?: string): Wo
       const results = await Promise.allSettled(listed.map(async source => {
         const backend = createTasksBackend(baseUrl, source.path)
         const workspace = await backend.load()
-        return { source: backend.source!, issues: workspace.issues, states: backend.capabilities.sourceStates }
+        return { source: backend.source!, issues: workspace.issues, states: backend.capabilities.sourceStates, acceptance: backend.capabilities.fields?.acceptance }
       }))
       const states = new Map<string, SourceState>()
       const issues: Issue[] = [], nextSources: WorkspaceSource[] = [], errors: typeof sourceErrors = []
@@ -176,15 +176,15 @@ export function createAllTasksBackend(baseUrl = '/api', sourcePath?: string): Wo
         }
         const { source, issues: projectIssues } = result.value
         if (nextSources.some(item => item.path === source.path)) continue
-        for (const state of result.value.states) states.set(state.id, state)
+        for (const state of result.value.states) states.set(state.stage, { id: state.stage, stage: state.stage })
         nextSources.push(source)
         for (const issue of projectIssues) {
           const id = JSON.stringify([source.path, issue.id])
           nextOwners.set(id, { path: source.path, id: issue.id })
-          issues.push({ ...issue, id, projectId: null, workspaceSource: source })
+          issues.push({ ...issue, id, projectId: null, workspaceSource: source, accepted: result.value.acceptance ? issue.accepted : undefined, workspaceStage: result.value.states.find(state => state.id === issue.sourceState)!.stage })
         }
       }
-      catalog = [...states.values()]; sources = nextSources; sourceErrors = errors; owners = nextOwners
+      catalog = STAGES.flatMap(stage => states.has(stage) ? [states.get(stage)!] : []); sources = nextSources; sourceErrors = errors; owners = nextOwners
       return { issues, projects: [], cycles: [], members: [], currentMemberId: null }
     },
     createIssue: unavailable, updateIssue: unavailable, deleteIssue: unavailable,

@@ -308,3 +308,35 @@ test('an unavailable remembered tracker does not hide other projects in the aggr
     assert.match(all.sourceErrors![0]!.error, /Cannot open TASKS.md/)
   } finally { await app.close() }
 })
+
+test('aggregate catalogs share stage columns across all file workflows', async () => {
+  const app = await setup()
+  try {
+    const feature = join(app.first, '.scratch/example/issues')
+    await mkdir(feature, { recursive: true })
+    await writeFile(join(feature, '01-example.md'), '# Scratch ready\nStatus: ready-for-agent\n')
+    await mkdir(join(app.first, 'docs/agents'), { recursive: true })
+    await writeFile(join(app.first, 'docs/agents/triage-labels.md'), '| `needs-triage` | `backlog` | Triage |\n')
+    await writeFile(join(feature, '02-triage.md'), '# Scratch triage\nStatus: backlog\n')
+    await mkdir(join(app.second, 'docs/backlog'), { recursive: true })
+    await writeFile(join(app.second, 'docs/backlog/example.md'), '# Directory ready\n')
+    const backend = createAllTasksBackend(app.url)
+    const workspace = await backend.load()
+    const { issueGroups, issueGroupId } = await import('../src/data/issue-groups.ts')
+    const groups = issueGroups(backend.capabilities)
+    assert.equal(backend.sourceErrors!.length, 0)
+    assert.deepEqual(groups.map(group => group.id), ['triage', 'waiting', 'ready', 'scheduled', 'active', 'done', 'dropped'])
+    for (const state of ['Ordered backlog', 'ready-for-agent', 'backlog']) {
+      const issue = workspace.issues.find(issue => issue.sourceState === state && issue.workspaceStage === 'ready')!
+      assert.ok(issue, state)
+      assert.equal(issue.workspaceStage, 'ready')
+      assert.equal(issueGroupId(issue, groups), 'ready')
+      const opened = await backend.openIssue!(issue.id)
+      assert.equal(opened.issue.sourceState, state)
+      assert.equal(opened.backend.capabilities.sourceStates.find(entry => entry.id === state)?.stage, 'ready')
+    }
+    const collision = workspace.issues.filter(issue => issue.sourceState === 'backlog')
+    assert.deepEqual(collision.map(issue => issue.workspaceStage).sort(), ['ready', 'triage'])
+    assert.deepEqual(collision.map(issue => issueGroupId(issue, groups)).sort(), ['ready', 'triage'])
+  } finally { await app.close() }
+})

@@ -63,6 +63,7 @@ export interface Issue {
   sourcePath?: string
   sourceReference?: string
   dependencies?: string[]
+  workspaceStage?: Stage
   workspaceSource?: WorkspaceSource
 }
 export interface Project {

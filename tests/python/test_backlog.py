@@ -89,7 +89,7 @@ class BacklogTests(unittest.TestCase):
         self.assertEqual((self.docs / "ideas/rough-idea.md").read_text(), "# Rough idea\n")
         self.assertEqual(len(query([self.project], status="backlog")), 2)
         self.assertEqual([r["issue"]["identifier"] for r in query([self.docs], state="issues")], ["filed-problem"])
-        self.assertEqual(report([self.docs / "backlog"])["bySection"], {"issues": 1, "ideas": 1, "backlog": 1, "completed": 1})
+        self.assertEqual(report([self.docs / "backlog"])["byState"], {"issues": 1, "ideas": 1, "backlog": 1, "completed": 1})
         self.assertEqual(len(json.loads(self.store.export("json"))["workspace"]["issues"]), 4)
         self.assertIn("# Rough idea", self.store.export())
         with self.assertRaises(TasksError) as error:
@@ -220,7 +220,7 @@ class BacklogTests(unittest.TestCase):
         self.assertEqual(rows[0]["source"], str(self.project))
         result = run("update", str(self.docs), rows[0]["issue"]["id"], "--revision", rows[0]["revision"], "--json", '{"sourceState":"in-progress","status":"in_progress"}')
         self.assertEqual(result["issue"]["sourceState"], "in-progress")
-        self.assertEqual(run("report", str(self.docs))["bySection"], {"in-progress": 1, "completed": 1})
+        self.assertEqual(run("report", str(self.docs))["byState"], {"in-progress": 1, "completed": 1})
 
     def test_http_discovery_reads_and_revision_checked_writes(self):
         from test_tasks import SOURCE

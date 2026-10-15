@@ -8,112 +8,95 @@ description: >-
 # Hai tracker commands
 
 Use `hai-tasks` for tracker mutations instead of editing Markdown by hand.
-Hai trackers have workflow sections and `<!-- hai:` metadata comments.
-Read the target tracker's `## Rules` before changing it. Those rules govern
-the workflow; this skill only explains the commands.
+Read the source's tracker rules and directory READMEs before changing it.
+Those rules govern workflow; the catalog does not grant transition permission.
 
 If the CLI is missing from PATH, use `python3 -m hai_tasks` from a Hai checkout
-or an environment where the package is installed. If neither works, report
-the missing installation and stop tracker writes.
+or an environment where the package is installed. If neither works, report the
+missing installation and stop tracker writes.
 
-## Revision loop
+## Read and filter
 
-Set `SOURCE` to the intended tracker path or project directory. In a feature
-worktree, use its tracker for worktree changes. Run either command:
+Set `SOURCE` to the intended project, tracker, `.scratch/` feature or repository,
+or `docs/backlog/` source. In a feature worktree, use its source for worktree
+changes. The same commands below work for all three file workflows.
 
 ```bash
 hai-tasks read "$SOURCE"
-hai-tasks query "$SOURCE" --no-accepted
+hai-tasks query "$SOURCE" --stage ready --no-accepted
+hai-tasks report "$SOURCE" --stage done
 ```
 
-Read `revision` and the issue's stable `id` from the result. Query rows include
-their own source and revision. Set `REVISION` and `ISSUE_ID` to those values,
-not the display number such as `[23]`. Make one mutation with `--revision`,
-then run `read` again before the next mutation, even if the write returned a
-revision. The commands below are separate examples, each requiring a fresh read.
+`read` returns a `revision`, issues with stable `id` values, and an ordered
+`capabilities.sourceStates` catalog of `{id, stage}`. Use the stable issue ID,
+not its display number. `--state` filters by native state name; `--section` is
+its deprecated alias. `--stage` filters by the shared vocabulary: `triage`,
+`waiting`, `ready`, `scheduled`, `active`, `review`, `done`, `dropped`.
+Reports count native states under `byState`. Stages can contain several states,
+and not every source has every stage. Select the intended native state from
+`read`; the helper below chooses the first state in the requested stage.
 
-## Common moves
+## Revision loop and moves
 
-`sourceSection` selects the tracker section; `status` must agree with it.
-Ordered backlog maps to `todo` and Unverified proposals to `backlog`, so use
-`sourceSection` to distinguish them. These patches show the full mapping.
-
-Return an unaccepted issue to Ordered backlog:
+Define this Bash helper once. Each call reads a fresh snapshot, then selects a
+state by stage. A state-only patch derives the display status automatically.
+If a stage is absent the helper fails before any write.
 
 ```bash
-hai-tasks update "$SOURCE" "$ISSUE_ID" --revision "$REVISION" --json '{"sourceSection":"Ordered backlog","status":"todo"}'
+select_stage() {
+  SNAPSHOT=$(hai-tasks read "$SOURCE") || return
+  REVISION=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["revision"])' "$SNAPSHOT") || return
+  PATCH=$(python3 -c 'import json,sys; d=json.loads(sys.argv[1]); print(json.dumps({"sourceState": next(s["id"] for s in d["capabilities"]["sourceStates"] if s["stage"] == sys.argv[2])}))' "$SNAPSHOT" "$1")
+}
 ```
 
-Schedule it:
+Set `ISSUE_ID` from the read output. Start work:
 
 ```bash
-hai-tasks update "$SOURCE" "$ISSUE_ID" --revision "$REVISION" --json '{"sourceSection":"Scheduled","status":"todo"}'
+select_stage active && hai-tasks update "$SOURCE" "$ISSUE_ID" --revision "$REVISION" --json "$PATCH"
 ```
 
-Start it. The CLI writes the `[~]` marker:
+Complete it, pending user acceptance:
 
 ```bash
-hai-tasks update "$SOURCE" "$ISSUE_ID" --revision "$REVISION" --json '{"sourceSection":"In Progress","status":"in_progress"}'
+select_stage done && hai-tasks update "$SOURCE" "$ISSUE_ID" --revision "$REVISION" --json "$PATCH"
 ```
 
-Complete it. The CLI writes `[ ]`, pending user acceptance:
+Return unaccepted work to a ready state:
 
 ```bash
-hai-tasks update "$SOURCE" "$ISSUE_ID" --revision "$REVISION" --json '{"sourceSection":"Completed / Accepted","status":"done"}'
+select_stage ready && hai-tasks update "$SOURCE" "$ISSUE_ID" --revision "$REVISION" --json "$PATCH"
 ```
 
 Never send `accepted: true` unless the user explicitly accepts the work.
-Reopening an accepted issue requires explicitly clearing acceptance; follow
-the tracker rules and user instructions before doing so.
+Reopening accepted work requires explicitly clearing acceptance, following
+source rules and user instructions. TASKS.md completion writes `[ ]`.
 
-## Create and position
+## Create
 
-Specify a section; without one, creation defaults to Unverified proposals.
-
-```bash
-hai-tasks create "$SOURCE" --revision "$REVISION" --json '{"title":"New task","sourceSection":"Ordered backlog","status":"todo"}'
-```
-
-New issues append to Ordered backlog, as implemented by [20]. In other sections,
-creation inserts at the top. Moves into Ordered backlog insert at the top,
-after any prerequisites. When backlog position matters, read again and reorder.
-Include every Ordered backlog ID exactly once, with prerequisites first.
-Replace these example IDs with the IDs from that read:
+Creation uses the same catalog selection. Scratch requires a feature project;
+this example selects the first project from `read`. Choose the intended project
+when there are several. Other workflows omit that field.
 
 ```bash
-hai-tasks reorder "$SOURCE" --revision "$REVISION" --json '{"issueIds":["NEW_ISSUE_ID","OTHER_BACKLOG_ID"]}'
+select_stage ready && CREATE_PATCH=$(python3 -c 'import json,sys; p=json.loads(sys.argv[1]); d=json.loads(sys.argv[2]); p["title"]="New task"; p.update({"projectId": d["workspace"]["projects"][0]["id"]} if d["capabilities"].get("projectAssignment") == "required-on-create" else {}); print(json.dumps(p))' "$PATCH" "$SNAPSHOT") && hai-tasks create "$SOURCE" --revision "$REVISION" --json "$CREATE_PATCH"
 ```
 
-## Dependencies
+Read again before every subsequent mutation, even if the previous write returned
+a revision. TASKS.md creation appends to Ordered backlog; moves into that state
+insert at the top after prerequisites. `reorder` is TASKS.md-specific and requires
+every Ordered backlog ID exactly once, with prerequisites first. Check
+capabilities before using source-specific operations or fields.
 
-`dependencies` lists the numbers of the issues a task depends on. It writes
-one `- Depends on: [N], [M]` bullet under the summary and keeps `depends-on:`
-frontmatter in the description file consistent. An empty list removes them.
-Unknown numbers, self-dependencies and cycles are rejected, as is an Ordered
-backlog order that leaves a dependent before its prerequisite; reorder first.
-
-```bash
-hai-tasks update "$SOURCE" "$ISSUE_ID" --revision "$REVISION" --json '{"dependencies":[1]}'
-```
-
-## Local issue and backlog directories
-
-`.scratch/<feature>` tickets and `docs/backlog/`-style repositories (`docs/issues`,
-`ideas`, `backlog`, `in-progress`, `completed`, `rejected`) use `sourceState`
-instead of `sourceSection`. `read` lists the states with their statuses under
-`capabilities.sourceStates`. Move a document by patching `sourceState` with the
-matching `status`, for example `{"sourceState":"in-progress","status":"in_progress"}`,
-and filter with `query "$SOURCE" --state backlog`. Read the repository's
-`docs/README.md` and the directory READMEs for the sections each state expects;
-Hai moves the file but does not fill in the template. See
-[Markdown backlog directories](../../docs/python-api-cli.md#markdown-backlog-directories).
+`dependencies` accepts prerequisite numbers on TASKS.md and ticket IDs on scratch.
+Unsupported dependency writes fail. Directory sources move files but do not fill
+in the destination's required template sections; follow repository READMEs.
 
 ## Failed writes
 
-On a stale revision error, re-read and check whether the intended change is
-already present. If it is, do not repeat it. Otherwise, reapply the change with
-the new revision. After connection loss during a remote write, inspect a fresh
-read before retrying because the write may have succeeded.
+On a stale revision error, re-read and check whether the intended change already
+exists. If so, do not repeat it. Otherwise reapply with the new revision. After
+connection loss during a remote write, inspect a fresh read before retrying.
 
 After a partial save, stop and report the error and affected files. Do not retry
 or repair the tracker by hand.

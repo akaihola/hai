@@ -49,3 +49,58 @@ class WorkflowTests(unittest.TestCase):
                     self.assertEqual(result['issue']['status'], 'todo')
                     with self.assertRaises(TasksError):
                         store.mutate('update', result['revision'], result['issue']['id'], {'sourceState': 'Scheduled', 'sourceSection': 'In Progress'})
+
+    def test_cli_state_and_stage_filters_across_workflows(self):
+        import contextlib
+        import io
+        import json
+        from hai_tasks.cli import main
+        from hai_tasks import query, report
+
+        def cli(*arguments):
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(main(list(map(str, arguments))), 0)
+            return json.loads(output.getvalue())
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            tracker = root / 'TASKS.md'
+            tracker.write_text('# Tasks\n\n' + ''.join(f'## {state}\n\n' for state in TASK_STATES) + '## Rules\n\nKeep rules.\n')
+            (root / 'docs/backlog').mkdir(parents=True)
+            (root / '.scratch/feature/issues').mkdir(parents=True)
+            sources = [tracker, root / 'docs', root / '.scratch']
+            stores = [TasksStore(tracker), BacklogStore(root / 'docs'), ScratchStore(root / '.scratch')]
+            for source, store in zip(sources, stores):
+                catalog = store.read()['capabilities']['sourceStates']
+                for state in catalog:
+                    patch = {'title': state['id'], 'sourceState': state['id']}
+                    if isinstance(store, ScratchStore):
+                        patch['projectId'] = store.project_id('feature')
+                    store.mutate('create', store.read()['revision'], input=patch)
+                for state in catalog:
+                    with self.subTest(source=str(source), state=state['id']):
+                        rows = cli('query', source, '--state', state['id'])
+                        self.assertEqual([row['issue']['sourceState'] for row in rows], [state['id']])
+                        self.assertEqual(cli('query', source, '--section', state['id']), rows)
+                        expected = [s['id'] for s in catalog if s['stage'] == state['stage']]
+                        rows = cli('query', source, '--stage', state['stage'])
+                        self.assertCountEqual([r['issue']['sourceState'] for r in rows], expected)
+                        summary = cli('report', source, '--stage', state['stage'])
+                        self.assertEqual(summary['byState'], dict.fromkeys(expected, 1))
+                        self.assertEqual(cli('report', source, '--section', state['id'])['byState'], {state['id']: 1})
+                        self.assertEqual(cli('report', source, '--state', state['id'])['total'], 1)
+                self.assertEqual(cli('query', source, '--state', 'missing'), [])
+                self.assertEqual(cli('query', source, '--state', catalog[0]['id'], '--stage', 'done'), [])
+            self.assertEqual(len(cli('query', *sources, '--stage', 'active')), 3)
+            self.assertEqual(cli('report', *sources, '--stage', 'done')['awaitingAcceptance'], 1)
+            self.assertEqual(len(query(sources, stage='ready')), 4)
+            with self.assertRaises(TasksError):
+                report(sources, stage='unknown')
+            with self.assertRaises(TasksError):
+                query(sources, section='one', state='two')
+            for command in ['query', 'report']:
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output), self.assertRaises(SystemExit):
+                    main([command, '--help'])
+                self.assertIn('Deprecated alias of --state', output.getvalue())

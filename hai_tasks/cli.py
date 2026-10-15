@@ -4,8 +4,9 @@ import json
 import sys
 from pathlib import Path
 
-from .markdown import SECTIONS, TasksError, parse_tasks
+from .markdown import TasksError, parse_tasks
 from .sources import open_source, query, report
+from .workflow import STAGES
 
 
 def rpc(payload):
@@ -34,7 +35,7 @@ def read_json(value):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='Parse, query and edit local, SSH and GitHub TASKS.md projects.')
+    parser = argparse.ArgumentParser(description='Query and edit TASKS.md, scratch tickets and Markdown backlog sources.')
     commands = parser.add_subparsers(dest='command', required=True)
     parse = commands.add_parser('parse', help='Parse a tracker without loading description files.')
     parse.add_argument('file', help='TASKS.md path, or - for standard input')
@@ -42,8 +43,9 @@ def main(argv=None):
         command = commands.add_parser(name)
         command.add_argument('sources', nargs='+')
         command.add_argument('--text', default='')
-        command.add_argument('--section', choices=SECTIONS)
-        command.add_argument('--state', help='Source state of local issue or backlog sources, such as backlog or in-progress')
+        command.add_argument('--section', help='Deprecated alias of --state')
+        command.add_argument('--state', help='Native source state name')
+        command.add_argument('--stage', choices=STAGES)
         command.add_argument('--status', choices=['backlog', 'todo', 'in_progress', 'done', 'canceled'])
         command.add_argument('--priority', choices=['none', 'low', 'medium', 'high', 'urgent'])
         command.add_argument('--label')
@@ -68,7 +70,7 @@ def main(argv=None):
             content = sys.stdin.buffer.read(2 * 1024 * 1024 + 1) if args.file == '-' else Path(args.file).read_bytes()
             result = parse_tasks(content.decode('utf-8'))
         elif args.command in ['query', 'report']:
-            filters = {key: getattr(args, key) for key in ['text', 'section', 'state', 'status', 'priority', 'label', 'accepted']}
+            filters = {key: getattr(args, key) for key in ['text', 'section', 'state', 'stage', 'status', 'priority', 'label', 'accepted']}
             result = (query if args.command == 'query' else report)(args.sources, **filters)
         else:
             store = open_source(args.source)

@@ -60,7 +60,7 @@ test('docs/ workflow directories support state moves, edits, creation, deletion 
     await page.reload()
     await expect(page.getByRole('region', { name: 'completed column', exact: true })).toContainText('Install UI fonts')
     await page.getByRole('button', { name: 'All projects', exact: true }).click()
-    await expect(page.getByRole('region', { name: 'completed column', exact: true })).toContainText('Install UI fonts')
+    await expect(page.getByRole('region', { name: 'done column', exact: true })).toContainText('Install UI fonts')
     await page.getByRole('button', { name: /install-fonts.*Install UI fonts/ }).click()
     await expect(editor.getByRole('combobox', { name: 'Status', exact: true })).toHaveValue('completed')
   } finally {

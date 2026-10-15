@@ -313,3 +313,16 @@ retains Todo as its default for new issues and migrates older status-only backup
 Catalogs describe states, not transition permissions. Repository move checklists
 and tracker rules remain policy; picking order belongs to pacer. Acceptance and
 dependencies remain separate facets declared by `capabilities.fields`.
+
+The list, board, editor and drag destinations use this catalog for every backend.
+Backends with acceptance split their done state into Completed and Accepted using
+the issue's acceptance flag. All projects instead groups by shared stage in stage
+order, retaining native state names on issues. Its adapter records the derived
+`workspaceStage` on each issue, so identical native names in different providers
+cannot collide. Opening an issue restores its provider's native state editor.
+
+CLI `query` and `report` accept `--state` for the native name and `--stage` for
+any shared stage. Filters intersect; an absent native name matches nothing.
+`--section` is a deprecated alias of `--state` for all sources. Reports expose
+native-state counts as `byState`. The [hai-tasks skill](../skills/hai-tasks/SKILL.md)
+selects state-only mutation patches by stage from a fresh `read` catalog.

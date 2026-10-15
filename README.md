@@ -22,6 +22,11 @@ The standalone [Python API and CLI](docs/python-api-cli.md) parses, queries, edi
 
 The independent browser-storage demo remains available at `/?backend=local`. Its sample data and backups stay in that browser and origin.
 
+All backends share an ordered native-state catalog with stages such as `ready`,
+`active` and `done`. Lists, boards and editors use each source's catalog; All
+projects shares stage columns across providers. CLI `--state` and `--stage`
+filters use the same model. See the [catalog mapping](docs/backends.md#workflow-state-catalogs).
+
 ## Workflows
 
 - Create, edit, and delete tasks with their source section, priority, labels, and description.

@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { LoaderCircle, Trash2, X } from 'lucide-react'
-import { ISSUE_TITLE_MAX_LENGTH, statusForStage, STATUSES, PRIORITIES, TASK_SECTIONS, type TaskSection, type Issue, type IssueInput, type Workspace, type WorkspaceBackend } from '../domain'
+import { ISSUE_TITLE_MAX_LENGTH, statusForStage, PRIORITIES, type Issue, type IssueInput, type Workspace, type WorkspaceBackend } from '../domain'
+import { stateLabel } from '../data/issue-groups'
 import { Dialog } from './Dialog'
 
 export function IssueEditor({ issue, initial, workspace, backend, onClose, onSaved }: { issue?: Issue; initial?: Partial<IssueInput>; workspace: Workspace; backend: WorkspaceBackend; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
   const titleRef = useRef<HTMLInputElement>(null)
   const tasks = backend.capabilities.workflow === 'tasks'
-  const states = (backend.capabilities.workflow === 'scratch' || backend.capabilities.workflow === 'backlog') ? backend.capabilities.sourceStates : undefined
+  const states = backend.capabilities.sourceStates
   const featureRequired = backend.capabilities.projectAssignment === 'required-on-create'
   const fields = backend.capabilities.fields
-  const [draft, setDraft] = useState<IssueInput>({ title: '', description: '', status: tasks ? 'backlog' : 'todo', ...(tasks ? { sourceSection: 'Unverified proposals' } : {}), priority: 'none', assigneeId: null, projectId: null, cycleId: null, labels: [], ...(states ? { sourceState: states[0].id, status: statusForStage(states[0].stage) } : {}), ...initial, ...issue })
+  const [draft, setDraft] = useState<IssueInput>({ title: '', description: '', priority: 'none', assigneeId: null, projectId: null, cycleId: null, labels: [], sourceState: states[0].id, status: statusForStage(states[0].stage), ...initial, ...issue })
   const [labels, setLabels] = useState<string[]>(issue?.labels ?? initial?.labels ?? [])
   const [labelDraft, setLabelDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -31,10 +32,10 @@ export function IssueEditor({ issue, initial, workspace, backend, onClose, onSav
     if (!title) { setError('Give this issue a title.'); return }
     setBusy(true); setError('')
     try {
-      const { description, status, priority, assigneeId, projectId, cycleId, sourceSection, sourceState } = draft
-      const input = { title, ...(fields?.description !== false ? { description } : {}), status, ...(fields?.priority !== false ? { priority } : {}), ...(states ? { sourceState } : {}), ...(fields?.assignee !== false ? { assigneeId } : {}), ...(fields?.project !== false ? { projectId } : {}), ...(fields?.cycle !== false ? { cycleId } : {}), ...(tasks ? { sourceSection } : {}), ...(fields?.labels !== false ? { labels: labelDraft.trim() ? [...new Set([...labels, labelDraft.trim()])] : labels } : {}) }
+      const { description, status, priority, assigneeId, projectId, cycleId, sourceState } = draft
+      const input = { title, ...(fields?.description !== false ? { description } : {}), status, ...(fields?.priority !== false ? { priority } : {}), sourceState, ...(fields?.assignee !== false ? { assigneeId } : {}), ...(fields?.project !== false ? { projectId } : {}), ...(fields?.cycle !== false ? { cycleId } : {}), ...(fields?.labels !== false ? { labels: labelDraft.trim() ? [...new Set([...labels, labelDraft.trim()])] : labels } : {}) }
       if (issue) {
-        const patch = tasks || states ? Object.fromEntries(Object.entries(input).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(issue[key as keyof Issue]))) : input
+        const patch = Object.fromEntries(Object.entries(input).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(issue[key as keyof Issue])))
         if (Object.keys(patch).length) await backend.updateIssue(issue.id, patch)
       }
       else await backend.createIssue(input)
@@ -59,7 +60,7 @@ export function IssueEditor({ issue, initial, workspace, backend, onClose, onSav
   return <Dialog title={deleting ? 'Delete issue' : issue ? `Edit ${issue.sourceReference ?? issue.identifier}` : 'New issue'} onClose={() => { if (!busy) onClose() }} className="issue-dialog">
     {deleting ? <><div className="modal-body"><p>Delete <strong>{issue?.identifier}: {issue?.title}</strong>?</p><p className="muted">This issue will be permanently removed from this workspace.</p>{error && <p className="form-error" role="alert">{error}</p>}</div><div className="modal-footer"><button className="button" disabled={busy} onClick={() => { setDeleting(false); setError('') }}>Cancel</button><button className="button danger" disabled={busy} onClick={remove}>{busy && <LoaderCircle size={14} className="spin" />}Confirm delete</button></div></> : <form onSubmit={save}>
       <div className="modal-body">
-        {(tasks || states) && <div className="source-details"><span>{issue?.sourceReference ?? issue?.identifier ?? ''} · {issue?.sourcePath ?? (states ? backend.source?.path ?? '.scratch' : 'TASKS.md')}</span>{issue?.dependencies?.length ? <span>{states ? 'Blocked by' : 'Depends on'}: {issue.dependencies.join(', ')}</span> : null}</div>}
+        {backend.source && <div className="source-details"><span>{issue?.sourceReference ?? issue?.identifier ?? ''} · {issue?.sourcePath ?? (backend.source?.path ?? 'TASKS.md')}</span>{issue?.dependencies?.length ? <span>{tasks ? 'Depends on' : 'Blocked by'}: {issue.dependencies.join(', ')}</span> : null}</div>}
         <label className="field title-field">Title<input ref={titleRef} required maxLength={ISSUE_TITLE_MAX_LENGTH} placeholder="Issue title" value={draft.title} disabled={!canSave || busy} onChange={event => change('title', event.target.value)} /></label>
         <label className="field">Description<textarea rows={5} maxLength={50000} placeholder="Add a description…" value={draft.description ?? ''} disabled={!canSave || busy || fields?.description === false} onChange={event => change('description', event.target.value)} onKeyDown={event => {
           if (event.key !== 'Enter' || !(event.ctrlKey || event.metaKey) || event.nativeEvent.isComposing) return
@@ -67,7 +68,7 @@ export function IssueEditor({ issue, initial, workspace, backend, onClose, onSav
           if (!event.repeat && canSave && !busy) event.currentTarget.form?.requestSubmit()
         }} /></label>
         <div className="field-row">
-          {states ? <label className="field">Status<select value={draft.sourceState} disabled={!canSave || busy} onChange={event => { const state = states.find(item => item.id === event.target.value)!; setDraft(previous => ({ ...previous, sourceState: state.id, status: statusForStage(state.stage) })) }}>{states.map(state => <option key={state.id}>{state.id}</option>)}</select></label> : tasks ? <label className="field">Section<select value={draft.sourceSection} disabled={!canSave || busy || issue?.accepted} onChange={event => { const sourceSection = event.target.value as TaskSection; setDraft(previous => ({ ...previous, sourceSection, status: statusForStage(TASK_SECTIONS.find(section => section.id === sourceSection)!.stage) })) }}>{TASK_SECTIONS.map(section => <option key={section.id}>{section.id}</option>)}</select></label> : <label className="field">Status<select value={draft.status} disabled={!canSave || busy} onChange={event => change('status', event.target.value as IssueInput['status'])}>{STATUSES.map(status => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label>}
+          <label className="field">{tasks ? 'Section' : 'Status'}<select value={draft.sourceState} disabled={!canSave || busy || issue?.accepted} onChange={event => { const state = states.find(item => item.id === event.target.value)!; setDraft(previous => ({ ...previous, sourceState: state.id, status: statusForStage(state.stage) })) }}>{states.map(state => <option key={state.id} value={state.id}>{stateLabel(state, backend.capabilities)}</option>)}</select></label>
           {fields?.priority !== false && <label className="field">Priority<select value={draft.priority} disabled={!canSave || busy} onChange={event => change('priority', event.target.value as IssueInput['priority'])}>{PRIORITIES.map(priority => <option key={priority.id} value={priority.id}>{priority.label}</option>)}</select></label>}
         </div>
         {(fields?.assignee !== false || fields?.project !== false) && <div className="field-row">
@@ -78,7 +79,7 @@ export function IssueEditor({ issue, initial, workspace, backend, onClose, onSav
           {fields?.cycle !== false && <label className="field">Cycle<select value={draft.cycleId ?? ''} disabled={!canSave || busy} onChange={event => change('cycleId', event.target.value || null)}><option value="">No cycle</option>{workspace.cycles.map(cycle => <option key={cycle.id} value={cycle.id}>{cycle.name}</option>)}</select></label>}
           {fields?.labels !== false && <div className="field"><label htmlFor="issue-label-input">Labels</label><div className="label-editor">{labels.length > 0 && <div className="label-tokens">{labels.map((label, index) => <span className="chip editable-label" key={`${label}-${index}`}>{label}<button type="button" aria-label={`Remove label ${label}`} disabled={!canSave || busy} onClick={() => setLabels(previous => previous.filter((_, position) => position !== index))}><X size={11} /></button></span>)}</div>}<div className="label-input-row"><input id="issue-label-input" placeholder="Add a label…" maxLength={100} value={labelDraft} disabled={!canSave || busy} onChange={event => setLabelDraft(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addLabel() } }} /><button type="button" className="button subtle" disabled={!labelDraft.trim() || !canSave || busy} onClick={addLabel}>Add</button></div></div></div>}
         </div>
-        {tasks && draft.sourceSection === 'Completed / Accepted' && <div className="acceptance-note"><p>{issue?.accepted ? 'Accepted by the user.' : 'Completed work awaits your acceptance. Moving here leaves its checkbox unchecked.'}</p>{issue?.status === 'done' && !issue.accepted && <><button type="button" className="button" disabled={!canSave || busy || hasChanges} onClick={accept}>Accept completed work</button>{hasChanges && <p className="muted">Save your changes before accepting this work.</p>}</>}</div>}
+        {fields?.acceptance && states.find(state => state.id === draft.sourceState)?.stage === 'done' && <div className="acceptance-note"><p>{issue?.accepted ? 'Accepted by the user.' : 'Completed work awaits your acceptance. Moving here leaves its checkbox unchecked.'}</p>{issue?.status === 'done' && !issue.accepted && <><button type="button" className="button" disabled={!canSave || busy || hasChanges} onClick={accept}>Accept completed work</button>{hasChanges && <p className="muted">Save your changes before accepting this work.</p>}</>}</div>}
         {error && <p className="form-error" role="alert">{error}</p>}
         {!canSave && <p className="muted">This backend does not support editing issues.</p>}
       </div>

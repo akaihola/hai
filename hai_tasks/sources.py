@@ -10,7 +10,8 @@ from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from .markdown import SECTIONS, TasksError
+from .workflow import STAGES
+from .markdown import TasksError
 from .store import TasksStore, export_snapshot, run_git
 from .scratch import ScratchStore
 from .backlog import BacklogStore, backlog_root
@@ -160,25 +161,37 @@ def open_source(source):
     return TasksStore(path)
 
 
-def query(sources, *, text='', section=None, state=None, status=None, accepted=None, priority=None, label=None):
+def _query(sources, *, text='', section=None, state=None, stage=None, status=None, accepted=None, priority=None, label=None):
     """Return project-tagged issues and revisions; a failed project fails the query."""
-    if section is not None and section not in SECTIONS:
-        raise TasksError('Unsupported source section.')
-    result = []
+    if section is not None:
+        if state is not None and state != section:
+            raise TasksError('--section and --state must agree.')
+        state = section
+    if stage is not None and stage not in STAGES:
+        raise TasksError('Unsupported stage.')
     for source in sources:
         snapshot = open_source(source).read()
+        states = {state['id']: state['stage'] for state in snapshot['capabilities']['sourceStates']}
         for issue in snapshot['workspace']['issues']:
+            if stage is not None and states.get(issue['sourceState']) != stage:
+                continue
             if text.casefold() not in (issue['title'] + '\n' + issue['description']).casefold():
                 continue
-            if any(value is not None and issue.get(key) != value for key, value in [('sourceSection', section), ('sourceState', state), ('status', status), ('accepted', accepted), ('priority', priority)]):
+            if any(value is not None and issue.get(key) != value for key, value in [('sourceState', state), ('status', status), ('accepted', accepted), ('priority', priority)]):
                 continue
             if label is not None and label not in issue['labels']:
                 continue
-            result.append(dict(source=str(source), revision=snapshot['revision'], issue=issue))
-    return result
+            yield dict(source=str(source), revision=snapshot['revision'], issue=issue), snapshot['capabilities']
+
+
+def query(sources, **filters):
+    """Return project-tagged issues and revisions; a failed project fails the query."""
+    return [row for row, _ in _query(sources, **filters)]
 
 
 def report(sources, **filters):
-    """Count query results by source, workflow section and acceptance."""
-    rows = query(sources, **filters)
-    return dict(total=len(rows), accepted=sum(row['issue']['accepted'] for row in rows), awaitingAcceptance=sum(row['issue'].get('sourceSection') == 'Completed / Accepted' and not row['issue']['accepted'] for row in rows), bySource=dict(Counter(row['source'] for row in rows)), bySection=dict(Counter(row['issue'].get('sourceState', row['issue'].get('sourceSection')) for row in rows)))
+    """Count query results by source, native state and acceptance."""
+    matches = list(_query(sources, **filters))
+    rows = [row for row, _ in matches]
+    awaiting = sum(bool(capabilities.get('fields', {}).get('acceptance')) and row['issue']['status'] == 'done' and not row['issue']['accepted'] for row, capabilities in matches)
+    return dict(total=len(rows), accepted=sum(bool(row['issue']['accepted']) for row in rows), awaitingAcceptance=awaiting, bySource=dict(Counter(row['source'] for row in rows)), byState=dict(Counter(row['issue']['sourceState'] for row in rows)))

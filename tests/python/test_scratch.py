@@ -76,7 +76,7 @@ class ScratchTests(unittest.TestCase):
         )
         self.assertEqual(result["issue"]["description"], "## Details\n\nChanged")
         self.assertEqual(len(query([self.feature], status="canceled")), 1)
-        self.assertEqual(report([self.feature])["bySection"]["wontfix"], 1)
+        self.assertEqual(report([self.feature])["byState"]["wontfix"], 1)
         self.assertEqual(
             len(json.loads(self.store.export("json"))["workspace"]["issues"]), 2
         )

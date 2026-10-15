@@ -53,7 +53,7 @@ separate planned provider.
 ```bash
 python3 -m hai_tasks parse TASKS.md
 python3 -m hai_tasks read .
-python3 -m hai_tasks query . /path/to/another/project --status in_progress
+python3 -m hai_tasks query . /path/to/another/project --stage active
 python3 -m hai_tasks query . --text backend --label urgent --no-accepted
 python3 -m hai_tasks report . 'ssh://user@host/home/user/project/TASKS.md'
 python3 -m hai_tasks export . --format tasks
@@ -62,10 +62,21 @@ python3 -m hai_tasks export . --format json
 
 `parse` reads the tracker text without opening descriptions and accepts `-` for
 standard input. `read` returns the workspace, revision and capabilities. Queries
-return rows containing `source`, `revision` and `issue`. Filters include text,
-section, source state, status, priority, label and acceptance. Reports count matching tasks by
-source, section and acceptance. If any project fails, a multi-project command
-fails instead of presenting an incomplete report as complete.
+return rows containing `source`, `revision` and `issue`. Both `query` and
+`report` accept `--state` for an exact native state name and `--stage` for a
+shared stage. `--section` is a deprecated alias of `--state`, including on
+scratch and directory sources. Combining filters intersects them. Other filters
+include text, derived status, priority, label and acceptance. Reports return
+`byState` native-state counts, `bySource`, total, accepted and awaitingAcceptance.
+The latter counts unaccepted done issues only where acceptance is supported.
+
+Every `read` response includes an ordered `capabilities.sourceStates` catalog of
+`{id, stage}`. Issues carry the native `sourceState`; `status` is derived display
+data. Stages are `triage`, `waiting`, `ready`, `scheduled`, `active`, `review`,
+`done`, `dropped`. Providers may have several states per stage or omit stages.
+Select a native state by stage from this catalog before writing `sourceState`.
+TASKS.md still accepts `sourceSection` as an alias. See the
+[workflow catalog mapping](backends.md#workflow-state-catalogs).
 
 Commands emit JSON except `export`, which emits the requested file contents.
 Errors are JSON on standard error with a message and HTTP-style status; the
@@ -79,8 +90,8 @@ are the stable `id` values in that response, such as `task-7` or a metadata UUID
 ```bash
 python3 -m hai_tasks read .
 python3 -m hai_tasks create . --revision REVISION --json '{"title":"New task"}'
-python3 -m hai_tasks update . task-7 --revision REVISION --json '{"sourceSection":"In Progress"}'
-python3 -m hai_tasks update . task-7 --revision REVISION --json '{"sourceSection":"Completed / Accepted"}'
+python3 -m hai_tasks update . task-7 --revision REVISION --json '{"sourceState":"In Progress"}'
+python3 -m hai_tasks update . task-7 --revision REVISION --json '{"sourceState":"Completed / Accepted"}'
 python3 -m hai_tasks reorder . --revision REVISION --json '{"issueIds":["task-7","task-8"]}'
 python3 -m hai_tasks delete . task-7 --revision REVISION
 ```
@@ -215,7 +226,7 @@ The API and CLI also open repositories that keep one document per work item unde
 and `docs/rejected`. Open `<repo>/docs`, one of those directories, or a project
 directory that has `docs/backlog/` and no `TASKS.md`. `read` returns
 `workflow: backlog` and the six directories as `sourceStates`. Moving an issue
-means changing `sourceState`; `status` must match the state. `--state` filters
+means changing `sourceState`; a supplied `status` must match the state. `--state` filters
 `query` and `report` by directory:
 
 ```bash

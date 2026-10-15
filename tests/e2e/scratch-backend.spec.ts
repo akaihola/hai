@@ -99,7 +99,7 @@ test('repository scratch features support filters, edits, creation, saved paths 
     await page.reload()
     await expect(page.getByRole('region', { name: 'wontfix column', exact: true })).toContainText('Edited search ticket')
     await page.getByRole('button', { name: 'All projects', exact: true }).click()
-    await expect(page.getByRole('region', { name: 'wontfix column', exact: true })).toContainText('Edited search ticket')
+    await expect(page.getByRole('region', { name: 'dropped column', exact: true })).toContainText('Edited search ticket')
     await expect(page.getByRole('combobox', { name: 'Filter by project', exact: true }).getByRole('option')).toHaveCount(3)
     await expect(page.getByText('Other ticket', { exact: true })).toBeVisible()
     await page.getByRole('button', { name: /search\/01.*Edited search ticket/ }).click()
