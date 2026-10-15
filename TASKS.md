@@ -39,12 +39,8 @@ Rules for TASKS.md usage are at the bottom of the file.
   <!-- hai:{"id":"simple-acf7869b-ef34-4b55-b1ff-9aefe8ff6821","createdAt":"2026-10-15T15:36:54.442Z","updatedAt":"2026-10-15T15:37:59.083Z"} -->
 
 - [ ] [33] Remove the sourceSection alias
-    - Depends on: [31], [32]
-  <!-- hai:{"id":"simple-428c74bf-7398-433b-b232-f4d477a2d4ba","createdAt":"2026-10-15T08:15:10.172Z","updatedAt":"2026-10-15T08:59:10.351Z"} -->
-
-- [ ] [32] Switch kandev-pacer to workflow stages
-    - Depends on: [30]
-  <!-- hai:{"id":"simple-f35db4fa-9229-46e2-8842-0bbd314dbc38","createdAt":"2026-10-15T08:15:09.724Z","updatedAt":"2026-10-15T08:51:34.484Z"} -->
+    - Depends on: [31]
+  <!-- hai:{"id":"simple-428c74bf-7398-433b-b232-f4d477a2d4ba","createdAt":"2026-10-15T08:15:10.172Z","updatedAt":"2026-10-15T16:27:19.242Z"} -->
 
 - [ ] [31] Move Hai's CLI, UI, skill and docs to the state catalog
     - Depends on: [30]
@@ -209,7 +205,6 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 [31]: docs/tasks/31-move-hai-s-cli-ui-skill-and-docs-to-the-state-catalog.md
 
-[32]: docs/tasks/32-switch-kandev-pacer-to-workflow-stages.md
 
 [33]: docs/tasks/33-remove-the-sourcesection-alias.md
 
