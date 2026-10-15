@@ -34,3 +34,15 @@ fixed to 2026-10-03; no unrelated test changes were retained.
 Logs: `/tmp/hai33-check.log`, `/tmp/hai33-browser-rerun.log`,
 `/tmp/hai33-fixed-cycle.log`. Predeployment backup:
 `/tmp/hai33-before/source.tgz`.
+
+## Completion and deployment, 2026-10-15
+
+Rebased and fast-forward merged into main. Reinstalled Node dependencies, rebuilt
+the main checkout and restarted `hai.service`. Loopback, private HTTP and private
+HTTPS passed health checks, exact built HTML checks, catalog checks and alias-free
+workspace reads. The canonical tracker was updated through the CLI to Completed /
+Accepted with `[ ]`. A structured comparison confirmed every unrelated issue and
+acceptance flag was preserved.
+
+Deployment logs: `/tmp/hai33-main-install.log`, `/tmp/hai33-main-build.log`,
+`/tmp/hai33-deploy.log`, `/tmp/hai33-smoke.log`.
