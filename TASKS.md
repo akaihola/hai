@@ -42,10 +42,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [30] Declare workflow state catalogs with stages and derive status
-  <!-- hai:{"id":"simple-dd2ef7be-a12b-411c-91ad-2d147ac158ff","createdAt":"2026-10-15T08:15:08.980Z","updatedAt":"2026-10-15T08:24:02.781Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [30] Declare workflow state catalogs with stages and derive status
+  <!-- hai:{"id":"simple-dd2ef7be-a12b-411c-91ad-2d147ac158ff","createdAt":"2026-10-15T08:15:08.980Z","updatedAt":"2026-10-15T08:35:37.221Z"} -->
 
 - [x] [29] Write `Depends on:` dependencies through the API and CLI
   <!-- hai:{"id":"simple-478f2d40-e219-4f8e-8ff9-b29f0698e32f","createdAt":"2026-10-14T12:32:36.205Z","updatedAt":"2026-10-14T20:21:12.782Z"} -->
