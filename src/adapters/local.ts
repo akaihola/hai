@@ -1,3 +1,4 @@
+import { DEMO_STATES, selectState, statusForStage } from '../domain'
 import type { Issue, IssueInput, IssuePatch, Project, Cycle, WorkspaceBackend } from '../domain'
 import { createSeedWorkspace } from '../data/seed'
 import { exportTasks } from '../data/export'
@@ -5,11 +6,20 @@ import { nextIssueNumber, parseBackup, serializeBackup, type WorkspaceBackup } f
 
 export const STORAGE_KEY = 'hai.workspace.v1'
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>
-const mutableFields = new Set(['title', 'description', 'status', 'priority', 'assigneeId', 'projectId', 'cycleId', 'labels'])
+const mutableFields = new Set(['title', 'description', 'sourceState', 'status', 'priority', 'assigneeId', 'projectId', 'cycleId', 'labels'])
 
 function validateInput(input: IssuePatch): void {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Issue details must be an object.')
   if (Object.keys(input).some(key => !mutableFields.has(key))) throw new Error('Issue IDs, identifiers, and timestamps cannot be edited.')
+}
+
+function readBackup(content: string): WorkspaceBackup {
+  const backup = parseBackup(content)
+  for (const issue of backup.workspace.issues) {
+    const state = selectState(DEMO_STATES, issue.sourceState === undefined ? { status: issue.status } : { sourceState: issue.sourceState, status: issue.status })
+    Object.assign(issue, { sourceState: state.id, status: statusForStage(state.stage) })
+  }
+  return backup
 }
 
 export function createLocalBackend(storage?: StorageLike): WorkspaceBackend {
@@ -31,7 +41,7 @@ export function createLocalBackend(storage?: StorageLike): WorkspaceBackend {
     try { raw = store().getItem(STORAGE_KEY) }
     catch { throw new Error('Could not read this workspace. Allow browser storage and try again.') }
     if (raw !== null) {
-      try { return parseBackup(raw) }
+      try { return readBackup(raw) }
       catch (error) { throw new Error(`The saved workspace could not be loaded. Your stored data has been preserved. ${error instanceof Error ? error.message : ''}`) }
     }
     const workspace = createSeedWorkspace()
@@ -55,6 +65,7 @@ export function createLocalBackend(storage?: StorageLike): WorkspaceBackend {
   }
   return {
     capabilities: {
+      sourceStates: DEMO_STATES, fields: { description: true, assignee: true, project: true, cycle: true, acceptance: false, dependencies: false },
       id: 'local', name: 'Local workspace', description: 'Saved in this browser. Back up your workspace to keep a portable copy.',
       canCreate: true, canUpdate: true, canDelete: true, canImport: true, canExport: true, persistence: 'browser',
       canCreateProject: true, canUpdateProject: true, canDeleteProject: true, canCreateCycle: true, canUpdateCycle: true, canDeleteCycle: true,
@@ -66,9 +77,10 @@ export function createLocalBackend(storage?: StorageLike): WorkspaceBackend {
       let number = backup.nextIssueNumber
       while (backup.workspace.issues.some(issue => issue.id === `issue-${number}`)) number++
       const timestamp = new Date().toISOString()
+      const state = selectState(DEMO_STATES, input, 'todo')
       const issue: Issue = {
-        description: '', status: 'todo', priority: 'none', assigneeId: null, projectId: null, cycleId: null, labels: [],
-        ...input, title: typeof input.title === 'string' ? input.title.trim() : input.title,
+        description: '', priority: 'none', assigneeId: null, projectId: null, cycleId: null, labels: [],
+        ...input, sourceState: state.id, status: statusForStage(state.stage), title: typeof input.title === 'string' ? input.title.trim() : input.title,
         id: `issue-${number}`, identifier: `HAI-${number}`, createdAt: timestamp, updatedAt: timestamp,
       }
       backup.workspace.issues.unshift(issue)
@@ -81,7 +93,8 @@ export function createLocalBackend(storage?: StorageLike): WorkspaceBackend {
       const backup = read()
       const index = backup.workspace.issues.findIndex(issue => issue.id === id)
       if (index === -1) throw new Error('This issue no longer exists. Refresh the workspace and try again.')
-      const issue = { ...backup.workspace.issues[index], ...patch, updatedAt: new Date().toISOString() }
+      const state = selectState(DEMO_STATES, patch, backup.workspace.issues[index].sourceState)
+      const issue = { ...backup.workspace.issues[index], ...patch, sourceState: state.id, status: statusForStage(state.stage), updatedAt: new Date().toISOString() }
       if (typeof issue.title === 'string') issue.title = issue.title.trim()
       backup.workspace.issues[index] = issue
       save(backup)
@@ -140,7 +153,7 @@ export function createLocalBackend(storage?: StorageLike): WorkspaceBackend {
     },
     async importData(content, format) {
       if (format !== 'json') throw new Error('TASKS.md is a readable export only. Import a Hai JSON backup to restore a workspace.')
-      const backup = parseBackup(content)
+      const backup = readBackup(content)
       read()
       save(backup)
       return structuredClone(backup.workspace)

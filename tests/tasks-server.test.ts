@@ -158,3 +158,22 @@ test('HTTP backlog ordering rejects malformed, incomplete, dependent, and cross-
     assert.equal(valid.status, 200)
   } finally { await app.close() }
 })
+
+test('HTTP workflow catalogs and alias reads survive both patch forms', async () => {
+  const app = await setup()
+  try {
+    const { TASK_SECTIONS, statusForStage } = await import('../src/domain.ts')
+    let snapshot = await (await fetch(`${app.url}/api/workspace`)).json()
+    assert.deepEqual(snapshot.capabilities.sourceStates, TASK_SECTIONS)
+    for (const patch of [{ sourceState: 'Scheduled' }, { status: 'todo' }, { sourceSection: 'In Progress' }]) {
+      const response = await fetch(`${app.url}/api/issues/task-7`, { method: 'PATCH', headers: { 'content-type': 'application/json', 'if-match': `"${snapshot.revision}"` }, body: JSON.stringify(patch) })
+      assert.equal(response.status, 200)
+      snapshot = await response.json()
+      assert.deepEqual(snapshot.capabilities.sourceStates, TASK_SECTIONS)
+      assert.equal(snapshot.issue.sourceState, snapshot.issue.sourceSection)
+      const state = TASK_SECTIONS.find(state => state.id === snapshot.issue.sourceState)!
+      assert.equal(snapshot.issue.status, statusForStage(state.stage))
+      if ('status' in patch) assert.equal(snapshot.issue.sourceState, 'Ordered backlog')
+    }
+  } finally { await app.close() }
+})

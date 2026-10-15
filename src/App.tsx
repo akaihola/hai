@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUpFromLine, Blocks, CalendarDays, Check, CheckCheck, CheckCircle2, ChevronDown, ChevronRight, Circle, CircleDashed, CircleDot, CircleHelp, Code2, Database, FileText, Folder, GitBranch, GripVertical, Inbox, LayoutGrid, List, Rows3 as LayersIcon, LoaderCircle, Menu, MoreHorizontal, Plus, RefreshCw, Search, Settings2, SignalHigh, SignalLow, SignalMedium, SlidersHorizontal, Sparkles, SquarePen, TriangleAlert, UserRound, X, XCircle, type LucideIcon } from 'lucide-react'
-import { STATUSES, PRIORITIES, TASK_SECTIONS, type TaskSection, type Issue, type IssueInput, type IssueStatus, type Workspace, type WorkspaceBackend, type Member, type Cycle, type Project } from './domain'
+import { statusForStage, STATUSES, PRIORITIES, TASK_SECTIONS, type TaskSection, type Issue, type IssueInput, type IssueStatus, type Workspace, type WorkspaceBackend, type Member, type Cycle, type Project } from './domain'
 import { tasksBackend } from './adapters/tasks'
 import { BACKENDS } from './adapters/catalog'
 import { Dialog } from './components/Dialog'
@@ -44,16 +44,16 @@ export default function App({ backend = tasksBackend }: { backend?: WorkspaceBac
 
 function WorkspaceView({ backend, onOpened, initialIssueId }: { backend: WorkspaceBackend; onOpened: (backend: WorkspaceBackend, issueId?: string) => void; initialIssueId?: string }) {
   const allProjects = backend.capabilities.workspaceScope === 'all'
-  const states = backend.capabilities.sourceStates
+  const states = (backend.capabilities.workflow === 'scratch' || backend.capabilities.workflow === 'backlog') ? backend.capabilities.sourceStates : undefined
   const tasks = backend.capabilities.workflow === 'tasks'
   const fields = backend.capabilities.fields
   const [workspace, setWorkspace] = useState<Workspace>(emptyWorkspace)
-  const groups: IssueGroup[] = states ? states.map(state => ({ id: state.id, label: state.id, status: state.status, sourceState: state.id })) : tasks ? TASK_SECTIONS.flatMap(section => (section.id === 'Completed / Accepted' ? ['Completed', 'Accepted'] : [section.id]).map(id => ({ id, label: id, status: section.status, sourceSection: section.id }))) : statusOrder.map(status => ({ id: status, label: STATUSES.find(item => item.id === status)!.label, status }))
+  const groups: IssueGroup[] = states ? states.map(state => ({ id: state.id, label: state.id, status: statusForStage(state.stage), sourceState: state.id })) : tasks ? TASK_SECTIONS.flatMap(section => (section.id === 'Completed / Accepted' ? ['Completed', 'Accepted'] : [section.id]).map(id => ({ id, label: id, status: statusForStage(section.stage), sourceSection: section.id }))) : statusOrder.map(status => ({ id: status, label: STATUSES.find(item => item.id === status)!.label, status }))
   if (allProjects) for (const issue of workspace.issues) {
-    if (issue.sourceState && !groups.some(group => group.id === `scratch:${issue.sourceState}`)) groups.push({ id: `scratch:${issue.sourceState}`, label: issue.sourceState, status: issue.status })
+    if (!issue.sourceSection && issue.sourceState && !groups.some(group => group.id === `scratch:${issue.sourceState}`)) groups.push({ id: `scratch:${issue.sourceState}`, label: issue.sourceState, status: issue.status })
   }
   const boardGroups: IssueGroup[] = tasks || states ? groups : STATUSES.map(status => ({ id: status.id, label: status.label, status: status.id }))
-  const groupId = (issue: Issue) => states ? issue.sourceState : allProjects && issue.sourceState ? `scratch:${issue.sourceState}` : tasks ? issue.sourceSection === 'Completed / Accepted' ? issue.accepted ? 'Accepted' : 'Completed' : issue.sourceSection : issue.status
+  const groupId = (issue: Issue) => states ? issue.sourceState : allProjects && !issue.sourceSection && issue.sourceState ? `scratch:${issue.sourceState}` : tasks ? issue.sourceSection === 'Completed / Accepted' ? issue.accepted ? 'Accepted' : 'Completed' : issue.sourceSection : issue.status
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [refreshError, setRefreshError] = useState('')
@@ -145,7 +145,7 @@ function WorkspaceView({ backend, onOpened, initialIssueId }: { backend: Workspa
     document.addEventListener('keydown', trapFocus)
     return () => { document.removeEventListener('keydown', trapFocus); previous?.focus() }
   }, [mobileOpen])
-  function newIssue(status: IssueStatus = tasks ? 'backlog' : 'todo', sourceSection?: TaskSection, sourceState?: string) { if (!canCreate || loading || loadError) return; setMobileOpen(false); setEditor({ initial: { status, ...(states ? { sourceState: sourceState ?? states[0].id, status: sourceState ? status : states[0].status } : {}), ...(tasks ? { sourceSection: sourceSection ?? 'Unverified proposals' } : {}), ...(selectedProject || filters.project ? { projectId: selectedProject || filters.project } : {}), ...(route === 'cycles' && cycle ? { cycleId: cycle.id } : {}), ...(route === 'my' && currentMember ? { assigneeId: currentMember.id } : {}) } }) }
+  function newIssue(status: IssueStatus = tasks ? 'backlog' : 'todo', sourceSection?: TaskSection, sourceState?: string) { if (!canCreate || loading || loadError) return; setMobileOpen(false); setEditor({ initial: { status, ...(states ? { sourceState: sourceState ?? states[0].id, status: sourceState ? status : statusForStage(states[0].stage) } : {}), ...(tasks ? { sourceSection: sourceSection ?? 'Unverified proposals' } : {}), ...(selectedProject || filters.project ? { projectId: selectedProject || filters.project } : {}), ...(route === 'cycles' && cycle ? { cycleId: cycle.id } : {}), ...(route === 'my' && currentMember ? { assigneeId: currentMember.id } : {}) } }) }
   useEffect(() => {
     function keydown(event: KeyboardEvent) {
       const target = event.target as HTMLElement

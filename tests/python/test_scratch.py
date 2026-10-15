@@ -38,7 +38,7 @@ class ScratchTests(unittest.TestCase):
             "update",
             before["revision"],
             issue["id"],
-            {"sourceState": "ready-for-human", "status": "todo", "title": "Renamed"},
+            {"sourceState": "ready-for-human", "status": "backlog", "title": "Renamed"},
         )
         self.assertEqual(
             self.file.read_bytes().decode(),
@@ -109,7 +109,7 @@ class ScratchTests(unittest.TestCase):
         mapping.parent.mkdir(parents=True)
         mapping.write_text("| `needs-triage` | `evaluate` | Triage |\n")
         before = self.store.read()
-        self.assertEqual(before["capabilities"]["sourceStates"][0]["id"], "evaluate")
+        self.assertEqual(before["capabilities"]["sourceStates"][0], {"id": "evaluate", "stage": "triage"})
         result = self.store.mutate(
             "create",
             before["revision"],

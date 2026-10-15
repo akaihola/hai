@@ -6,17 +6,18 @@ import re
 import stat
 from pathlib import Path
 
+from .workflow import select_state, status_for_stage
 from .markdown import EPOCH, TasksError, text_length, validate_patch, validate_workspace
 from .store import TasksStore, export_snapshot, regular_file
 
 STATES = {
-    "needs-triage": "backlog",
-    "needs-info": "backlog",
-    "ready-for-agent": "todo",
-    "ready-for-human": "todo",
-    "wontfix": "canceled",
-    "open": "backlog",
-    "claimed": "in_progress",
+    "needs-triage": "triage",
+    "needs-info": "triage",
+    "ready-for-agent": "ready",
+    "ready-for-human": "waiting",
+    "wontfix": "dropped",
+    "open": "ready",
+    "claimed": "active",
     "resolved": "done",
 }
 TICKET = re.compile(r"(\d+)-[A-Za-z0-9][A-Za-z0-9._-]*\.md")
@@ -41,6 +42,8 @@ class ScratchStore(TasksStore):
                 "cycle": False,
                 "priority": False,
                 "labels": False,
+                "acceptance": False,
+                "dependencies": True,
             },
         }
         path = Path(os.path.abspath(Path(directory).expanduser()))
@@ -70,7 +73,7 @@ class ScratchStore(TasksStore):
             for role, label in re.findall(
                 r"^\|\s*`([^`]+)`\s*\|\s*`([^`]+)`\s*\|", content, re.MULTILINE
             ):
-                if role in list(STATES)[:5]:
+                if role in {"needs-triage", "needs-info", "ready-for-agent", "ready-for-human", "wontfix"}:
                     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 _-]{0,99}", label):
                         raise TasksError("Invalid local triage label.", 422)
                     labels[role] = label
@@ -94,7 +97,7 @@ class ScratchStore(TasksStore):
         state = (
             statuses[0][1].strip()
             if statuses
-            else next(s for s, value in states.items() if value == "backlog")
+            else next(s for s, value in states.items() if value == "triage")
         )
         if state not in states:
             raise TasksError(
@@ -118,7 +121,7 @@ class ScratchStore(TasksStore):
             "feature": feature,
             "title": title[1],
             "description": body.strip("\r\n"),
-            "status": states[state],
+            "status": status_for_stage(states[state]),
             "sourceState": state,
             "sourcePath": feature + "/issues/" + path.name,
             "priority": "none",
@@ -190,7 +193,7 @@ class ScratchStore(TasksStore):
             "capabilities": dict(
                 self.capabilities,
                 workflow="scratch",
-                sourceStates=[{"id": k, "status": v} for k, v in states.items()],
+                sourceStates=[{"id": k, "stage": v} for k, v in states.items()],
             ),
             "parsed": {"source": "\n\n".join(documents.values())},
         }
@@ -233,19 +236,9 @@ class ScratchStore(TasksStore):
             if operation != "create" and issue is None:
                 raise TasksError("Issue not found.", 404)
             states = {
-                s["id"]: s["status"] for s in before["capabilities"]["sourceStates"]
+                s["id"]: s["stage"] for s in before["capabilities"]["sourceStates"]
             }
-            state = patch.get(
-                "sourceState", issue["sourceState"] if issue else next(iter(states))
-            )
-            if (
-                not isinstance(state, str)
-                or state not in states
-                or ("status" in patch and patch["status"] != states[state])
-            ):
-                raise TasksError(
-                    "Choose a source state matching the issue status.", 422
-                )
+            state = select_state(states, patch, issue["sourceState"] if issue else None)
             project_id = patch.get("projectId", issue["projectId"] if issue else None)
             project = next((p for p in before["workspace"]["projects"] if p["id"] == project_id), None)
             if project is None:
@@ -305,7 +298,7 @@ class ScratchStore(TasksStore):
                             count=1,
                             flags=re.MULTILINE,
                         )
-                    if "sourceState" in patch:
+                    if "sourceState" in patch or "status" in patch:
                         header = re.split(
                             r"^## ", content, maxsplit=1, flags=re.MULTILINE
                         )[0]

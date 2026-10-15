@@ -154,7 +154,7 @@ test('list dragging updates status through the selected backend without requirin
   await issue.dragTo(destination.locator('.group-heading'))
   await expect(destination.getByText('alpha workspace issue', { exact: true })).toBeVisible()
   const saved = await page.evaluate(async () => (await window.haiFixture.snapshot('alpha')).issues.find(item => item.id === 'issue-101'))
-  expect(saved).toMatchObject({ ...original, status: 'todo', updatedAt: expect.any(String) })
+  expect(saved).toMatchObject({ ...original, sourceState: 'todo', status: 'todo', updatedAt: expect.any(String) })
   expect(await page.evaluate(() => window.haiFixture.calls('alpha'))).toEqual({ ...noCalls, update: 1 })
   await issue.dragTo(destination.locator('.group-heading'))
   expect(await page.evaluate(() => window.haiFixture.calls('alpha'))).toEqual({ ...noCalls, update: 1 })

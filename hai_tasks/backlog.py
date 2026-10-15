@@ -6,16 +6,17 @@ import re
 import stat
 from pathlib import Path
 
+from .workflow import select_state, status_for_stage
 from .markdown import EPOCH, TasksError, text_length, validate_patch, validate_workspace
 from .store import TasksStore, export_snapshot, regular_file
 
 STATES = {
-    "issues": "backlog",
-    "ideas": "backlog",
-    "backlog": "todo",
-    "in-progress": "in_progress",
+    "issues": "triage",
+    "ideas": "triage",
+    "backlog": "ready",
+    "in-progress": "active",
     "completed": "done",
-    "rejected": "canceled",
+    "rejected": "dropped",
 }
 DOCUMENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\.md")
 SKIPPED = {"README.md"}
@@ -59,6 +60,8 @@ class BacklogStore(TasksStore):
                 "cycle": False,
                 "priority": False,
                 "labels": False,
+                "acceptance": False,
+                "dependencies": False,
             },
         }
         root = backlog_root(Path(os.path.abspath(Path(directory).expanduser())))
@@ -86,7 +89,7 @@ class BacklogStore(TasksStore):
             "identifier": identity[:-3],
             "title": title[1] if title else name[:-3],
             "description": body.strip("\r\n"),
-            "status": STATES[state],
+            "status": status_for_stage(STATES[state]),
             "sourceState": state,
             "sourcePath": relative,
             "priority": "none",
@@ -160,7 +163,7 @@ class BacklogStore(TasksStore):
             "capabilities": dict(
                 self.capabilities,
                 workflow="backlog",
-                sourceStates=[{"id": k, "status": v} for k, v in STATES.items()],
+                sourceStates=[{"id": k, "stage": v} for k, v in STATES.items()],
             ),
             "parsed": {"source": "\n\n".join(documents.values())},
         }
@@ -192,17 +195,7 @@ class BacklogStore(TasksStore):
             )
             if operation != "create" and issue is None:
                 raise TasksError("Issue not found.", 404)
-            state = patch.get(
-                "sourceState", issue["sourceState"] if issue else next(iter(STATES))
-            )
-            if (
-                not isinstance(state, str)
-                or state not in STATES
-                or ("status" in patch and patch["status"] != STATES[state])
-            ):
-                raise TasksError(
-                    "Choose a source state matching the issue status.", 422
-                )
+            state = select_state(STATES, patch, issue["sourceState"] if issue else None)
             if operation == "create":
                 if len(before["workspace"]["issues"]) >= 10000:
                     raise TasksError("A workspace supports at most 10,000 issues.", 422)

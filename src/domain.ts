@@ -17,12 +17,30 @@ export const PRIORITIES = [
 
 export type IssueStatus = typeof STATUSES[number]['id']
 export type IssuePriority = typeof PRIORITIES[number]['id']
+export const STAGES = ['triage', 'waiting', 'ready', 'scheduled', 'active', 'review', 'done', 'dropped'] as const
+export type Stage = typeof STAGES[number]
+export interface SourceState { id: string; stage: Stage }
+export function statusForStage(stage: Stage): IssueStatus {
+  return ({ triage: 'backlog', waiting: 'backlog', ready: 'todo', scheduled: 'todo', active: 'in_progress', review: 'in_review', done: 'done', dropped: 'canceled' } as const)[stage]
+}
+export const DEMO_STATES: SourceState[] = [
+  { id: 'backlog', stage: 'triage' }, { id: 'todo', stage: 'ready' },
+  { id: 'in_progress', stage: 'active' }, { id: 'in_review', stage: 'review' },
+  { id: 'done', stage: 'done' }, { id: 'canceled', stage: 'dropped' },
+]
+export function selectState(states: readonly SourceState[], patch: IssuePatch, current?: string): SourceState {
+  const state = 'sourceState' in patch ? states.find(state => state.id === patch.sourceState)
+    : 'status' in patch ? states.find(state => statusForStage(state.stage) === patch.status)
+    : states.find(state => state.id === current) ?? states[0]
+  if (!state || 'status' in patch && patch.status !== statusForStage(state.stage)) throw new Error('Invalid workspace: choose a source state matching the issue status.')
+  return state
+}
 export const TASK_SECTIONS = [
-  { id: 'Unverified proposals', status: 'backlog' },
-  { id: 'Ordered backlog', status: 'backlog' },
-  { id: 'Scheduled', status: 'todo' },
-  { id: 'In Progress', status: 'in_progress' },
-  { id: 'Completed / Accepted', status: 'done' },
+  { id: 'Unverified proposals', stage: 'triage' },
+  { id: 'Ordered backlog', stage: 'ready' },
+  { id: 'Scheduled', stage: 'scheduled' },
+  { id: 'In Progress', stage: 'active' },
+  { id: 'Completed / Accepted', stage: 'done' },
 ] as const
 export type TaskSection = typeof TASK_SECTIONS[number]['id']
 export interface Issue {
@@ -30,7 +48,7 @@ export interface Issue {
   identifier: string
   title: string
   description: string
-  status: IssueStatus
+  readonly status: IssueStatus
   priority: IssuePriority
   assigneeId: string | null
   projectId: string | null
@@ -39,7 +57,7 @@ export interface Issue {
   createdAt: string
   updatedAt: string
   feature?: string
-  sourceState?: string
+  sourceState: string
   sourceSection?: TaskSection
   accepted?: boolean
   sourcePath?: string
@@ -90,9 +108,9 @@ export interface BackendCapabilities {
   workspaceScope?: 'all'
   persistence: 'browser' | 'filesystem' | 'remote'
   projectAssignment?: 'required-on-create'
-  sourceStates?: { id: string; status: IssueStatus }[]
+  sourceStates: readonly SourceState[]
   workflow?: 'tasks' | 'scratch' | 'backlog'
-  fields?: { assignee: boolean; project: boolean; cycle: boolean; description: boolean; priority?: boolean; labels?: boolean }
+  fields?: { assignee: boolean; project: boolean; cycle: boolean; description: boolean; priority?: boolean; labels?: boolean; acceptance?: boolean; dependencies?: boolean }
 }
 export interface WorkspaceBackend {
   readonly capabilities: BackendCapabilities

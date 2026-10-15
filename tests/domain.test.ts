@@ -136,3 +136,27 @@ test('TASKS.md export is readable and explicitly cannot be imported as a backup'
   await assert.rejects(backend.importData(markdown, 'tasks'), /readable export only/)
   assert.equal(storage.getItem(STORAGE_KEY), before)
 })
+
+test('browser catalog derives status, accepts either move form and migrates old backups', async () => {
+  const { backend, storage } = setup()
+  const { statusForStage, STAGES } = await import('../src/domain.ts')
+  assert.deepEqual(STAGES.map(statusForStage), ['backlog', 'backlog', 'todo', 'todo', 'in_progress', 'in_review', 'done', 'canceled'])
+  const issue = await backend.createIssue({ title: 'Native state' })
+  assert.equal(issue.sourceState, 'todo')
+  for (const state of backend.capabilities.sourceStates) {
+    assert.deepEqual(Object.keys(state), ['id', 'stage'])
+    const moved = await backend.updateIssue(issue.id, { sourceState: state.id })
+    assert.equal(moved.status, statusForStage(state.stage))
+    const compatible = await backend.updateIssue(issue.id, { status: moved.status })
+    assert.equal(compatible.sourceState, state.id)
+  }
+  const before = storage.getItem(STORAGE_KEY)
+  await assert.rejects(backend.updateIssue(issue.id, { sourceState: 'todo', status: 'done' }), /source state/)
+  await assert.rejects(backend.updateIssue(issue.id, { sourceState: 'unknown' }), /source state/)
+  assert.equal(storage.getItem(STORAGE_KEY), before)
+  const legacy = JSON.parse(before!)
+  for (const item of legacy.workspace.issues) delete item.sourceState
+  storage.setItem(STORAGE_KEY, JSON.stringify(legacy))
+  const migrated = await backend.load()
+  assert.ok(migrated.issues.every(item => item.sourceState === item.status))
+})

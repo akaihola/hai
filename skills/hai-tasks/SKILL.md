@@ -35,13 +35,13 @@ revision. The commands below are separate examples, each requiring a fresh read.
 ## Common moves
 
 `sourceSection` selects the tracker section; `status` must agree with it.
-Ordered backlog and Unverified proposals both map to `backlog`, so use
+Ordered backlog maps to `todo` and Unverified proposals to `backlog`, so use
 `sourceSection` to distinguish them. These patches show the full mapping.
 
 Return an unaccepted issue to Ordered backlog:
 
 ```bash
-hai-tasks update "$SOURCE" "$ISSUE_ID" --revision "$REVISION" --json '{"sourceSection":"Ordered backlog","status":"backlog"}'
+hai-tasks update "$SOURCE" "$ISSUE_ID" --revision "$REVISION" --json '{"sourceSection":"Ordered backlog","status":"todo"}'
 ```
 
 Schedule it:
@@ -71,7 +71,7 @@ the tracker rules and user instructions before doing so.
 Specify a section; without one, creation defaults to Unverified proposals.
 
 ```bash
-hai-tasks create "$SOURCE" --revision "$REVISION" --json '{"title":"New task","sourceSection":"Ordered backlog","status":"backlog"}'
+hai-tasks create "$SOURCE" --revision "$REVISION" --json '{"title":"New task","sourceSection":"Ordered backlog","status":"todo"}'
 ```
 
 New issues append to Ordered backlog, as implemented by [20]. In other sections,

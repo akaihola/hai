@@ -72,3 +72,19 @@ browser adapters and `src/domain.ts` types, with tests for the catalog,
 derived statuses, alias reads and both patch forms. Update
 `docs/backends.md` with the matrix. Consumers move in [31] and [32]; the
 alias is removed in [33].
+
+## Implementation and validation, 2026-10-15
+
+Implemented ordered native-state catalogs with stages for TASKS.md, scratch,
+docs backlog and the browser demo. Shared runtime functions derive display
+statuses and resolve native-state or compatibility status patches. TASKS.md
+returns both state names and rejects conflicting aliases. Browser backups with
+only status migrate on read. Acceptance and dependency capabilities remain
+separate. Existing native catalog display order is preserved.
+
+`npm run check` passed 54 Python tests, 93 client/API tests, TypeScript and the
+production build. Chromium passed 62 of 63 workflows. The remaining failure is
+the previously documented date-dependent assertion in
+`tests/e2e/workspace.spec.ts:225`, which expects Cycle 12 while 2026-10-15 falls
+in Cycle 13. All workflow, adapter, project, acceptance and persistence checks
+passed. Work remains unchecked pending user acceptance.

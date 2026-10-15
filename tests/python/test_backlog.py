@@ -140,7 +140,7 @@ class BacklogTests(unittest.TestCase):
             {"sourceState": []},
             {"sourceState": "scheduled"},
             {"sourceState": "completed", "status": "todo"},
-            {"status": "done"},
+            {"status": "in_review"},
             {"description": "a" * 50001},
             {"title": ""},
         ]:

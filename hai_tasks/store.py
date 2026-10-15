@@ -1,4 +1,6 @@
 """Local tracker storage with revisions, advisory locking and atomic file replacement."""
+from .workflow import TASK_STATES
+
 import errno
 import fcntl
 import hashlib
@@ -45,7 +47,8 @@ def run_git(root, *args, timeout=30):
 
 class TasksStore:
     capabilities = dict(canCreate=True, canUpdate=True, canDelete=True, canReorderBacklog=True, canImport=False,
-                        fields=dict(description=True, assignee=False, project=False, cycle=False))
+                        workflow='tasks', sourceStates=[dict(id=k, stage=v) for k, v in TASK_STATES.items()],
+                        fields=dict(description=True, assignee=False, project=False, cycle=False, acceptance=True, dependencies=True))
 
     def __init__(self, tasks_file, *, revision_key=None):
         self.tasks_file = Path(os.path.abspath(Path(tasks_file).expanduser()))
@@ -105,7 +108,7 @@ class TasksStore:
         digest = hashlib.sha256((self.revision_key + '\0' + source).encode())
         for path, content in sorted(documents.items()):
             digest.update(('\0' + path + '\0' + content).encode())
-        return dict(parsed=parsed, workspace=workspace, documents=documents, revision=digest.hexdigest())
+        return dict(parsed=parsed, workspace=workspace, documents=documents, revision=digest.hexdigest(), capabilities=self.capabilities)
 
     def read(self):
         with self.locked():
@@ -217,7 +220,7 @@ class TasksStore:
                         os.replace(temporary, change['path'])
                     committed.append(change)
                 after = self._snapshot()
-                output = dict(workspace=after['workspace'], revision=after['revision'])
+                output = dict(workspace=after['workspace'], revision=after['revision'], capabilities=after['capabilities'])
                 if result.get('id') and operation != 'delete':
                     output['issue'] = next(i for i in after['workspace']['issues'] if i['id'] == result['id'])
                 return output

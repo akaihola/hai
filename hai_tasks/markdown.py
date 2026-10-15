@@ -5,20 +5,16 @@ import re
 import uuid
 from datetime import datetime, timezone
 
-SECTIONS = ['Unverified proposals', 'Ordered backlog', 'Scheduled', 'In Progress', 'Completed / Accepted']
+from .workflow import TASK_STATES, TasksError, select_state, status_for_stage
+
+SECTIONS = list(TASK_STATES)
 META = re.compile(r'(?:\r?\n)[ \t]*<!-- hai:(\{[^\r\n]*\}) -->')
 EPOCH = '1970-01-01T00:00:00.000Z'
 PRIORITIES = ['none', 'low', 'medium', 'high', 'urgent']
 
 
-class TasksError(Exception):
-    def __init__(self, message, status=400):
-        super().__init__(message)
-        self.status = status
-
-
 def status_for(section):
-    return {'In Progress': 'in_progress', 'Scheduled': 'todo', 'Completed / Accepted': 'done'}.get(section, 'backlog')
+    return status_for_stage(TASK_STATES[section])
 
 
 def text_length(value):
@@ -125,7 +121,7 @@ def parse_tasks(source):
             ids.add(identity)
             description = re.sub(r'^\r?\n', '', META.sub('', raw[end:]))
             description = '\n'.join(re.sub(r'^ {2}', '', line) for line in re.split(r'\r?\n', description) if not re.match(r'^\s*- Depends on:', line))
-            issue = dict(id=identity, sourceReference=f'[{marker}]', identifier=f'HAI-SIMPLE-{identity[-16:].upper()}' if marker == '*' else f'HAI-{marker}', title=title, description=description, status=status_for(section), priority=metadata.get('priority', 'none'), labels=metadata.get('labels', []), assigneeId=None, projectId=None, cycleId=None, createdAt=metadata.get('createdAt', EPOCH), updatedAt=metadata.get('updatedAt', EPOCH), sourceSection=section, accepted=section == 'Completed / Accepted' and checkbox in ['x', 'X'], dependencies=[number for line in re.findall(r'^\s*- Depends on:[^\r\n]*', raw, re.M) for number in re.findall(r'\[(\d+)\]', line)])
+            issue = dict(id=identity, sourceReference=f'[{marker}]', identifier=f'HAI-SIMPLE-{identity[-16:].upper()}' if marker == '*' else f'HAI-{marker}', title=title, description=description, status=status_for(section), priority=metadata.get('priority', 'none'), labels=metadata.get('labels', []), assigneeId=None, projectId=None, cycleId=None, createdAt=metadata.get('createdAt', EPOCH), updatedAt=metadata.get('updatedAt', EPOCH), sourceState=section, sourceSection=section, accepted=section == 'Completed / Accepted' and checkbox in ['x', 'X'], dependencies=[number for line in re.findall(r'^\s*- Depends on:[^\r\n]*', raw, re.M) for number in re.findall(r'\[(\d+)\]', line)])
             if marker != '*':
                 if marker not in references:
                     raise TasksError(f'Task [{marker}] has no description reference.', 422)
@@ -185,7 +181,7 @@ def remove_task(source, task):
 def validate_patch(patch):
     if not isinstance(patch, dict):
         raise TasksError('Expected an issue object.')
-    if set(patch) - {'title', 'description', 'status', 'sourceSection', 'accepted', 'priority', 'labels', 'dependencies', 'assigneeId', 'projectId', 'cycleId'}:
+    if set(patch) - {'title', 'description', 'status', 'sourceState', 'sourceSection', 'accepted', 'priority', 'labels', 'dependencies', 'assigneeId', 'projectId', 'cycleId'}:
         raise TasksError('Unknown or read-only issue field.')
     if 'dependencies' in patch and (not isinstance(patch['dependencies'], list) or len(patch['dependencies']) > 50 or any(not (type(number) is int and number > 0 or isinstance(number, str) and re.fullmatch(r'[1-9]\d*', number)) for number in patch['dependencies'])):
         raise TasksError('Dependencies must be a list of issue numbers.')
@@ -193,12 +189,9 @@ def validate_patch(patch):
         raise TasksError('Title must contain 1–50,000 characters on one line.')
     if 'description' in patch and (not isinstance(patch['description'], str) or text_length(patch['description']) > 50000 or '\0' in patch['description']):
         raise TasksError('Description exceeds 50,000 characters or is invalid.')
-    if 'sourceSection' in patch and patch['sourceSection'] not in SECTIONS:
-        raise TasksError('Unsupported source section.')
-    if 'status' in patch and patch['status'] not in ['backlog', 'todo', 'in_progress', 'done']:
-        raise TasksError('Unsupported TASKS.md status.')
-    if 'sourceSection' in patch and 'status' in patch and status_for(patch['sourceSection']) != patch['status']:
-        raise TasksError('Status does not match the source section.')
+    if 'sourceSection' in patch and 'sourceState' in patch and patch['sourceSection'] != patch['sourceState']:
+        raise TasksError('Source section and source state must agree.')
+    select_state(TASK_STATES, {**patch, **({'sourceState': patch['sourceSection']} if 'sourceSection' in patch else {})})
     if 'accepted' in patch and type(patch['accepted']) is not bool:
         raise TasksError('Acceptance must be a boolean.')
     if 'priority' in patch and patch['priority'] not in PRIORITIES:
@@ -244,7 +237,7 @@ def mutate_tasks(source, operation, id=None, input=None, new_reference=None):
         raise TasksError('A title is required.')
     issue = task['issue'] if task else {}
     next_id = issue.get('id', f'simple-{uuid.uuid4()}')
-    section = patch.get('sourceSection', {'backlog': issue.get('sourceSection') if issue.get('status') == 'backlog' else 'Ordered backlog', 'todo': 'Scheduled', 'in_progress': 'In Progress', 'done': 'Completed / Accepted'}.get(patch.get('status'), issue.get('sourceSection', 'Unverified proposals')))
+    section = select_state(TASK_STATES, {**patch, **({'sourceState': patch['sourceSection']} if 'sourceSection' in patch else {})}, issue.get('sourceState'))
     accepted = patch.get('accepted', issue.get('accepted', False))
     if accepted and section != 'Completed / Accepted':
         raise TasksError('An accepted issue must remain completed. Clear acceptance explicitly before reopening it.')

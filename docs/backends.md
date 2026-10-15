@@ -264,3 +264,52 @@ dependencies, backlog reordering or import. JSON export fails above the 2 MB
 snapshot limit, which large repositories can reach; the Markdown files remain the
 backup. Local paths and SSH sources work; the GitHub TASKS.md source does not
 support backlog directories.
+
+## Workflow state catalogs
+
+Every backend declares an ordered `capabilities.sourceStates` catalog of
+`{ id, stage }`. Every issue carries its native `sourceState`; TASKS.md also
+returns the identical `sourceSection` alias until issue 33 removes it.
+
+| Backend | Native state | Stage | Derived status |
+| --- | --- | --- | --- |
+| TASKS.md | Unverified proposals | triage | backlog |
+| TASKS.md | Ordered backlog | ready | todo |
+| TASKS.md | Scheduled | scheduled | todo |
+| TASKS.md | In Progress | active | in_progress |
+| TASKS.md | Completed / Accepted | done | done |
+| scratch | needs-triage, needs-info | triage | backlog |
+| scratch | ready-for-human | waiting | backlog |
+| scratch | ready-for-agent, open | ready | todo |
+| scratch | claimed | active | in_progress |
+| scratch | resolved | done | done |
+| scratch | wontfix | dropped | canceled |
+| docs | issues, ideas | triage | backlog |
+| docs | backlog | ready | todo |
+| docs | in-progress | active | in_progress |
+| docs | completed | done | done |
+| docs | rejected | dropped | canceled |
+| Browser demo | backlog | triage | backlog |
+| Browser demo | todo | ready | todo |
+| Browser demo | in_progress | active | in_progress |
+| Browser demo | in_review | review | in_review |
+| Browser demo | done | done | done |
+| Browser demo | canceled | dropped | canceled |
+
+The fixed stage order is `triage`, `waiting`, `ready`, `scheduled`, `active`,
+`review`, `done`, with `dropped` as an off-line terminal. Waiting requires a
+person. Scratch triage-label overrides change catalog IDs while retaining stages.
+Status is read-only derived display data, using one shared stage mapping in each
+runtime; providers declare stages rather than statuses.
+
+A `sourceState` patch alone moves an issue. TASKS.md also accepts `sourceSection`;
+if both names are supplied they must agree. A supplied `status` must match the
+selected state's derived status. A status-only patch selects the first matching
+catalog entry, even if the issue already has that display status. Unknown states
+and unsupported statuses reject the write. Omitted workflow fields preserve the
+current state, or use the first catalog entry on creation. The browser demo
+retains Todo as its default for new issues and migrates older status-only backups.
+
+Catalogs describe states, not transition permissions. Repository move checklists
+and tracker rules remain policy; picking order belongs to pacer. Acceptance and
+dependencies remain separate facets declared by `capabilities.fields`.

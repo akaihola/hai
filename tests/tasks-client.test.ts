@@ -98,12 +98,12 @@ test('opening a source requires a valid identified snapshot', async context => {
 
 const retryWorkspace = workspaceOf(parseTasks(backlogFixture))
 const retrySource = { name: 'Project', path: '/projects/project/TASKS.md' }
-const draft = { title: 'Original draft', description: 'Original description\nwith details.', priority: 'high' as const, status: 'backlog' as const, sourceSection: 'Ordered backlog' as const, labels: ['keep'], assigneeId: null, projectId: null, cycleId: null }
+const draft = { title: 'Original draft', description: 'Original description\nwith details.', priority: 'high' as const, status: 'todo' as const, sourceSection: 'Ordered backlog' as const, labels: ['keep'], assigneeId: null, projectId: null, cycleId: null }
 const loadedResponse = (revision: string, extra = {}) => new Response(JSON.stringify({ workspace: retryWorkspace, revision, source: retrySource, ...extra }))
 const staleResponse = () => new Response(JSON.stringify({ error: 'TASKS.md or a description changed. Reload before saving.' }), { status: 412 })
 
 test('creation refreshes the same source and retries once with fresh revision and unchanged input', async context => {
-  const issue = { ...retryWorkspace.issues[0], ...draft, id: 'created', identifier: 'TASK-99' }
+  const issue = { ...retryWorkspace.issues[0], ...draft, sourceState: 'Ordered backlog', id: 'created', identifier: 'TASK-99' }
   const input = structuredClone(draft)
   const responses = [loadedResponse('original'), staleResponse(), loadedResponse('fresh'), loadedResponse('saved', { workspace: { ...retryWorkspace, issues: [...retryWorkspace.issues, issue] }, issue })]
   const fetch = context.mock.method(globalThis, 'fetch', async () => {
@@ -246,9 +246,9 @@ test('project discovery rejects malformed catalogs', async context => {
 test('scratch aliases bind one repository source and retain the initial feature selection', async context => {
   const original = workspaceOf(parseTasks(backlogFixture))
   const project = { id: 'feature-search', name: 'search', description: '', color: '#6e86d9', status: 'planned' as const }
-  const workspace = { ...original, projects: [project], issues: original.issues.map((issue, index) => ({ ...issue, projectId: project.id, identifier: `search/${index + 1}`, feature: 'search', sourceState: 'open', status: 'backlog' as const, sourcePath: `search/issues/${index + 1}-ticket.md` })) }
+  const workspace = { ...original, projects: [project], issues: original.issues.map((issue, index) => ({ ...issue, projectId: project.id, identifier: `search/${index + 1}`, feature: 'search', sourceState: 'open', status: 'todo' as const, sourcePath: `search/issues/${index + 1}-ticket.md` })) }
   const source = { name: 'repo / .scratch', path: '/projects/repo/.scratch' }
-  const capabilities = { workflow: 'scratch', sourceStates: [{ id: 'open', status: 'backlog' }], projectAssignment: 'required-on-create' }
+  const capabilities = { workflow: 'scratch', sourceStates: [{ id: 'open', stage: 'ready' }], projectAssignment: 'required-on-create' }
   const responses = [
     new Response(JSON.stringify({ revision: 'first', workspace, capabilities, source: { ...source, projectId: project.id, selectionPath: `${source.path}/search/issues` } })),
     new Response(JSON.stringify({ revision: 'second', workspace, capabilities, source })),

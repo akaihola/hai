@@ -113,4 +113,4 @@ class SkillTests(unittest.TestCase):
                         self.assertEqual(result['revision'], snapshot['revision'])
                     self.assertIn('Only the user accepts work.', tracker.read_text())
             self.assertEqual(set(seen), {'read', 'query', 'update', 'create', 'reorder'})
-            self.assertEqual(set(statuses), {'backlog', 'todo', 'in_progress', 'done'})
+            self.assertEqual(set(statuses), {'todo', 'in_progress', 'done'})

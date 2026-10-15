@@ -62,7 +62,7 @@ export function createSeedWorkspace(): Workspace {
       return {
         id: `issue-${number}`, identifier: `HAI-${number}`, title,
         description: descriptions[number] ?? `${title}.\n\nPart of the ${projectId === 'core' ? 'core product experience' : projectId === 'adapters' ? 'backend integration work' : 'public launch'}. Keep the scope focused and document the behavior for the team.`,
-        status, priority, assigneeId, projectId, labels: [...labels],
+        status, sourceState: status, priority, assigneeId, projectId, labels: [...labels],
         cycleId: status === 'backlog' || status === 'canceled' ? null : 'cycle-12',
         createdAt: `2026-09-${String(15 + index % 13).padStart(2, '0')}T09:00:00.000Z`,
         updatedAt: `2026-10-${String(1 + index % 3).padStart(2, '0')}T10:30:00.000Z`,

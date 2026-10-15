@@ -203,7 +203,7 @@ for (const changed of ['tracker', 'description'] as const) {
       const externalDescription = changed === 'description' ? '# Human changes\nKeep these.\n' : '# Example\n'
       await writeFile(tracker, externalTracker)
       await writeFile(description, externalDescription)
-      const input = { title: 'Retry original draft', description: '# New description\n', priority: 'high' as const, labels: ['original'], sourceSection: 'Ordered backlog' as const, status: 'backlog' as const }
+      const input = { title: 'Retry original draft', description: '# New description\n', priority: 'high' as const, labels: ['original'], sourceSection: 'Ordered backlog' as const, status: 'todo' as const }
       const created = await backend.createIssue(input)
       const after = await backend.load()
       assert.equal(after.issues.length, original.issues.length + 1)

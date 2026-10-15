@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { LoaderCircle, Trash2, X } from 'lucide-react'
-import { ISSUE_TITLE_MAX_LENGTH, STATUSES, PRIORITIES, TASK_SECTIONS, type TaskSection, type Issue, type IssueInput, type Workspace, type WorkspaceBackend } from '../domain'
+import { ISSUE_TITLE_MAX_LENGTH, statusForStage, STATUSES, PRIORITIES, TASK_SECTIONS, type TaskSection, type Issue, type IssueInput, type Workspace, type WorkspaceBackend } from '../domain'
 import { Dialog } from './Dialog'
 
 export function IssueEditor({ issue, initial, workspace, backend, onClose, onSaved }: { issue?: Issue; initial?: Partial<IssueInput>; workspace: Workspace; backend: WorkspaceBackend; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
   const titleRef = useRef<HTMLInputElement>(null)
   const tasks = backend.capabilities.workflow === 'tasks'
-  const states = backend.capabilities.sourceStates
+  const states = (backend.capabilities.workflow === 'scratch' || backend.capabilities.workflow === 'backlog') ? backend.capabilities.sourceStates : undefined
   const featureRequired = backend.capabilities.projectAssignment === 'required-on-create'
   const fields = backend.capabilities.fields
-  const [draft, setDraft] = useState<IssueInput>({ title: '', description: '', status: tasks ? 'backlog' : 'todo', ...(tasks ? { sourceSection: 'Unverified proposals' } : {}), priority: 'none', assigneeId: null, projectId: null, cycleId: null, labels: [], ...(states ? { sourceState: states[0].id, status: states[0].status } : {}), ...initial, ...issue })
+  const [draft, setDraft] = useState<IssueInput>({ title: '', description: '', status: tasks ? 'backlog' : 'todo', ...(tasks ? { sourceSection: 'Unverified proposals' } : {}), priority: 'none', assigneeId: null, projectId: null, cycleId: null, labels: [], ...(states ? { sourceState: states[0].id, status: statusForStage(states[0].stage) } : {}), ...initial, ...issue })
   const [labels, setLabels] = useState<string[]>(issue?.labels ?? initial?.labels ?? [])
   const [labelDraft, setLabelDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -67,7 +67,7 @@ export function IssueEditor({ issue, initial, workspace, backend, onClose, onSav
           if (!event.repeat && canSave && !busy) event.currentTarget.form?.requestSubmit()
         }} /></label>
         <div className="field-row">
-          {states ? <label className="field">Status<select value={draft.sourceState} disabled={!canSave || busy} onChange={event => { const state = states.find(item => item.id === event.target.value)!; setDraft(previous => ({ ...previous, sourceState: state.id, status: state.status })) }}>{states.map(state => <option key={state.id}>{state.id}</option>)}</select></label> : tasks ? <label className="field">Section<select value={draft.sourceSection} disabled={!canSave || busy || issue?.accepted} onChange={event => { const sourceSection = event.target.value as TaskSection; setDraft(previous => ({ ...previous, sourceSection, status: TASK_SECTIONS.find(section => section.id === sourceSection)!.status })) }}>{TASK_SECTIONS.map(section => <option key={section.id}>{section.id}</option>)}</select></label> : <label className="field">Status<select value={draft.status} disabled={!canSave || busy} onChange={event => change('status', event.target.value as IssueInput['status'])}>{STATUSES.map(status => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label>}
+          {states ? <label className="field">Status<select value={draft.sourceState} disabled={!canSave || busy} onChange={event => { const state = states.find(item => item.id === event.target.value)!; setDraft(previous => ({ ...previous, sourceState: state.id, status: statusForStage(state.stage) })) }}>{states.map(state => <option key={state.id}>{state.id}</option>)}</select></label> : tasks ? <label className="field">Section<select value={draft.sourceSection} disabled={!canSave || busy || issue?.accepted} onChange={event => { const sourceSection = event.target.value as TaskSection; setDraft(previous => ({ ...previous, sourceSection, status: statusForStage(TASK_SECTIONS.find(section => section.id === sourceSection)!.stage) })) }}>{TASK_SECTIONS.map(section => <option key={section.id}>{section.id}</option>)}</select></label> : <label className="field">Status<select value={draft.status} disabled={!canSave || busy} onChange={event => change('status', event.target.value as IssueInput['status'])}>{STATUSES.map(status => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label>}
           {fields?.priority !== false && <label className="field">Priority<select value={draft.priority} disabled={!canSave || busy} onChange={event => change('priority', event.target.value as IssueInput['priority'])}>{PRIORITIES.map(priority => <option key={priority.id} value={priority.id}>{priority.label}</option>)}</select></label>}
         </div>
         {(fields?.assignee !== false || fields?.project !== false) && <div className="field-row">
