@@ -43,7 +43,6 @@ def main(argv=None):
         command = commands.add_parser(name)
         command.add_argument('sources', nargs='+')
         command.add_argument('--text', default='')
-        command.add_argument('--section', help='Deprecated alias of --state')
         command.add_argument('--state', help='Native source state name')
         command.add_argument('--stage', choices=STAGES)
         command.add_argument('--status', choices=['backlog', 'todo', 'in_progress', 'done', 'canceled'])
@@ -70,7 +69,7 @@ def main(argv=None):
             content = sys.stdin.buffer.read(2 * 1024 * 1024 + 1) if args.file == '-' else Path(args.file).read_bytes()
             result = parse_tasks(content.decode('utf-8'))
         elif args.command in ['query', 'report']:
-            filters = {key: getattr(args, key) for key in ['text', 'section', 'state', 'stage', 'status', 'priority', 'label', 'accepted']}
+            filters = {key: getattr(args, key) for key in ['text', 'state', 'stage', 'status', 'priority', 'label', 'accepted']}
             result = (query if args.command == 'query' else report)(args.sources, **filters)
         else:
             store = open_source(args.source)

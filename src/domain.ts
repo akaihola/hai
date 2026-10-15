@@ -42,7 +42,6 @@ export const TASK_SECTIONS = [
   { id: 'In Progress', stage: 'active' },
   { id: 'Completed / Accepted', stage: 'done' },
 ] as const
-export type TaskSection = typeof TASK_SECTIONS[number]['id']
 export interface Issue {
   id: string
   identifier: string
@@ -58,7 +57,6 @@ export interface Issue {
   updatedAt: string
   feature?: string
   sourceState: string
-  sourceSection?: TaskSection
   accepted?: boolean
   sourcePath?: string
   sourceReference?: string

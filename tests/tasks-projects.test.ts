@@ -41,9 +41,9 @@ test('opening a project isolates all adapter operations and preserves the previo
     assert.notEqual(selected, original)
     assert.deepEqual(selected.source, { name: 'drum-transcribe', path: join(app.second, 'TASKS.md') })
     const loaded = await selected.load()
-    const ids = loaded.issues.filter(issue => issue.sourceSection === 'Ordered backlog').map(issue => issue.id)
+    const ids = loaded.issues.filter(issue => issue.sourceState === 'Ordered backlog').map(issue => issue.id)
     const reordered = await selected.reorderBacklog!([...ids].reverse())
-    assert.deepEqual(reordered.issues.filter(issue => issue.sourceSection === 'Ordered backlog').map(issue => issue.id), [...ids].reverse())
+    assert.deepEqual(reordered.issues.filter(issue => issue.sourceState === 'Ordered backlog').map(issue => issue.id), [...ids].reverse())
     await selected.updateIssue('task-7', { title: 'Second project title', description: '# Second project description\n' })
     const created = await selected.createIssue({ title: 'Only in second project', description: 'New project description.' })
     assert.equal(await readFile(join(app.second, created.sourcePath!), 'utf8'), 'New project description.')
@@ -203,7 +203,7 @@ for (const changed of ['tracker', 'description'] as const) {
       const externalDescription = changed === 'description' ? '# Human changes\nKeep these.\n' : '# Example\n'
       await writeFile(tracker, externalTracker)
       await writeFile(description, externalDescription)
-      const input = { title: 'Retry original draft', description: '# New description\n', priority: 'high' as const, labels: ['original'], sourceSection: 'Ordered backlog' as const, status: 'todo' as const }
+      const input = { title: 'Retry original draft', description: '# New description\n', priority: 'high' as const, labels: ['original'], sourceState: 'Ordered backlog' as const, status: 'todo' as const }
       const created = await backend.createIssue(input)
       const after = await backend.load()
       assert.equal(after.issues.length, original.issues.length + 1)

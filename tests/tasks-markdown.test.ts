@@ -8,7 +8,7 @@ import { backlogFixture, fixture, longWrappedTitle } from './fixtures/tasks-mark
 test('sections, active markers, acceptance and dependencies remain distinct', () => {
   const parsed = parseTasks(fixture)
   assert.equal(parsed.tasks.length, 5)
-  assert.equal(parsed.tasks[1].issue.sourceSection, 'Ordered backlog')
+  assert.equal(parsed.tasks[1].issue.sourceState, 'Ordered backlog')
   assert.deepEqual(parsed.tasks[1].issue.dependencies, ['4'])
   assert.equal(parsed.tasks[2].issue.status, 'in_progress')
   assert.equal(parsed.tasks[3].issue.accepted, false)
@@ -16,20 +16,20 @@ test('sections, active markers, acceptance and dependencies remain distinct', ()
 })
 
 test('moving preserves wrapping, dependency bullets, references and rules', () => {
-  const output = mutateTasks(fixture, 'update', 'task-7', { sourceSection: 'In Progress' }).source
+  const output = mutateTasks(fixture, 'update', 'task-7', { sourceState: 'In Progress' }).source
   assert.ok(output.includes('- [~] [7] Keep a wrapped\n  summary intact.\n  - Depends on: [4]'))
   assert.equal(output.slice(output.indexOf('[7]:')), fixture.slice(fixture.indexOf('[7]:')))
-  const completed = mutateTasks(output, 'update', 'task-7', { sourceSection: 'Completed / Accepted' }).source
+  const completed = mutateTasks(output, 'update', 'task-7', { sourceState: 'Completed / Accepted' }).source
   assert.ok(completed.includes('- [ ] [7] Keep a wrapped'))
   assert.equal(parseTasks(completed).tasks.find(task => task.issue.id === 'task-7')?.issue.accepted, false)
 })
 
 test('only explicit acceptance checks a completed item', () => {
-  const output = mutateTasks(fixture, 'update', 'task-4', { sourceSection: 'Completed / Accepted' }).source
+  const output = mutateTasks(fixture, 'update', 'task-4', { sourceState: 'Completed / Accepted' }).source
   assert.match(output, /- \[ \] \[4\] Build backend/)
   const accepted = mutateTasks(output, 'update', 'task-4', { accepted: true }).source
   assert.match(accepted, /- \[x\] \[4\] Build backend/)
-  assert.throws(() => mutateTasks(accepted, 'update', 'task-4', { sourceSection: 'Scheduled' }), /accepted/i)
+  assert.throws(() => mutateTasks(accepted, 'update', 'task-4', { sourceState: 'Scheduled' }), /accepted/i)
 })
 
 test('refuses malformed sections, injected titles and unsupported statuses', () => {
@@ -53,7 +53,7 @@ test('long summaries load in full and keep wrapping through metadata and section
     const title = longWrappedTitle.replaceAll('\n  ', ' ')
     assert.ok(title.length > 300)
     assert.equal(parseTasks(source).tasks[1].issue.title, title)
-    const output = mutateTasks(source, 'update', 'task-7', { sourceSection: 'In Progress', priority: 'high' }).source
+    const output = mutateTasks(source, 'update', 'task-7', { sourceState: 'In Progress', priority: 'high' }).source
     assert.ok(output.includes(longWrappedTitle.replaceAll('\n', newline)))
     assert.equal(parseTasks(output).tasks.find(task => task.issue.id === 'task-7')!.issue.title, title)
     assert.ok(output.includes(`  - Depends on: [4]`))
@@ -71,21 +71,21 @@ test('title size stays bounded consistently for source reads and writes', () => 
 })
 
 test('moving a dependent task into backlog keeps its prerequisite first', () => {
-  const parentInBacklog = mutateTasks(fixture, 'update', 'task-4', { sourceSection: 'Ordered backlog' }).source
-  const childScheduled = mutateTasks(parentInBacklog, 'update', 'task-7', { sourceSection: 'Scheduled' }).source
-  const childBacklog = mutateTasks(childScheduled, 'update', 'task-7', { sourceSection: 'Ordered backlog' }).source
-  assert.deepEqual(parseTasks(childBacklog).tasks.filter(task => task.issue.sourceSection === 'Ordered backlog').map(task => task.marker), ['4', '7'])
+  const parentInBacklog = mutateTasks(fixture, 'update', 'task-4', { sourceState: 'Ordered backlog' }).source
+  const childScheduled = mutateTasks(parentInBacklog, 'update', 'task-7', { sourceState: 'Scheduled' }).source
+  const childBacklog = mutateTasks(childScheduled, 'update', 'task-7', { sourceState: 'Ordered backlog' }).source
+  assert.deepEqual(parseTasks(childBacklog).tasks.filter(task => task.issue.sourceState === 'Ordered backlog').map(task => task.marker), ['4', '7'])
 })
 
 test('a new issue joins the end of the ordered backlog while moves keep the top', () => {
-  const backlogIds = (source: string) => parseTasks(source).tasks.filter(task => task.issue.sourceSection === 'Ordered backlog').map(task => task.issue.id)
-  const created = mutateTasks(backlogFixture, 'create', undefined, { title: 'Newest idea', sourceSection: 'Ordered backlog' })
+  const backlogIds = (source: string) => parseTasks(source).tasks.filter(task => task.issue.sourceState === 'Ordered backlog').map(task => task.issue.id)
+  const created = mutateTasks(backlogFixture, 'create', undefined, { title: 'Newest idea', sourceState: 'Ordered backlog' })
   assert.deepEqual(backlogIds(created.source), [...backlogIds(backlogFixture), created.id])
   assert.ok(created.source.includes('  - Keep these inline notes.\n\n- [*] Newest idea\n  <!-- hai:'))
   assert.ok(created.source.includes('Keep this unrelated paragraph between the last two slots.'))
   const proposal = mutateTasks(backlogFixture, 'create', undefined, { title: 'Newest proposal' })
-  assert.equal(parseTasks(proposal.source).tasks.filter(task => task.issue.sourceSection === 'Unverified proposals')[0].issue.id, proposal.id)
-  const moved = mutateTasks(backlogFixture, 'update', 'task-4', { sourceSection: 'Ordered backlog' }).source
+  assert.equal(parseTasks(proposal.source).tasks.filter(task => task.issue.sourceState === 'Unverified proposals')[0].issue.id, proposal.id)
+  const moved = mutateTasks(backlogFixture, 'update', 'task-4', { sourceState: 'Ordered backlog' }).source
   assert.deepEqual(backlogIds(moved), ['task-4', ...backlogIds(backlogFixture)])
 })
 
@@ -93,7 +93,7 @@ test('backlog ordering moves raw blocks up and down while preserving source slot
   for (const newline of ['\n', '\r\n']) {
     const source = backlogFixture.replaceAll('\n', newline)
     const before = parseTasks(source)
-    const backlog = before.tasks.filter(task => task.issue.sourceSection === 'Ordered backlog')
+    const backlog = before.tasks.filter(task => task.issue.sourceState === 'Ordered backlog')
     const ids = backlog.map(task => task.issue.id)
     const reorder = (text: string, order: string[]) => mutateTasks(text, 'reorder', undefined, { issueIds: order }).source
     const movedDown = reorder(source, [ids[1], ids[2], ids[0]])
@@ -101,7 +101,7 @@ test('backlog ordering moves raw blocks up and down while preserving source slot
     assert.equal(movedUp, source)
     assert.equal(reorder(source, ids), source)
     const after = parseTasks(movedDown)
-    assert.deepEqual(after.tasks.filter(task => task.issue.sourceSection === 'Ordered backlog').map(task => task.issue.id), [ids[1], ids[2], ids[0]])
+    assert.deepEqual(after.tasks.filter(task => task.issue.sourceState === 'Ordered backlog').map(task => task.issue.id), [ids[1], ids[2], ids[0]])
     for (const task of before.tasks) {
       const next = after.tasks.find(candidate => candidate.issue.id === task.issue.id)!
       assert.equal(next.raw, task.raw)
@@ -113,7 +113,7 @@ test('backlog ordering moves raw blocks up and down while preserving source slot
 })
 
 test('backlog ordering requires an exact permutation and a valid request', () => {
-  const backlog = parseTasks(backlogFixture).tasks.filter(task => task.issue.sourceSection === 'Ordered backlog')
+  const backlog = parseTasks(backlogFixture).tasks.filter(task => task.issue.sourceState === 'Ordered backlog')
   const ids = backlog.map(task => task.issue.id)
   for (const input of [null, [], {}, { issueIds: null }, { issueIds: 'task-7' }, { issueIds: [7] }, { issueIds: ids, title: 'Unrelated edit' }, { issueIds: ids.slice(1) }, { issueIds: [...ids, ids[0]] }, { issueIds: [ids[0], ids[0], ids[2]] }, { issueIds: ['task-4', ...ids.slice(1)] }, { issueIds: ['missing', ...ids.slice(1)] }]) {
     assert.throws(() => mutateTasks(backlogFixture, 'reorder', undefined, input), /issueIds|every Ordered backlog/)
@@ -125,10 +125,10 @@ test('backlog ordering requires an exact permutation and a valid request', () =>
 
 test('backlog ordering keeps prerequisites first and allows dependencies in other sections', () => {
   const source = backlogFixture.replace('  <!-- hai:{"id":"independent"', '  - Depends on: [7], [4]\n  <!-- hai:{"id":"independent"')
-  const ids = parseTasks(source).tasks.filter(task => task.issue.sourceSection === 'Ordered backlog').map(task => task.issue.id)
+  const ids = parseTasks(source).tasks.filter(task => task.issue.sourceState === 'Ordered backlog').map(task => task.issue.id)
   assert.throws(() => mutateTasks(source, 'reorder', undefined, { issueIds: [ids[1], ids[0], ids[2]] }), /depends on \[7\]/)
   const valid = mutateTasks(source, 'reorder', undefined, { issueIds: [ids[2], ids[0], ids[1]] }).source
-  assert.deepEqual(parseTasks(valid).tasks.filter(task => task.issue.sourceSection === 'Ordered backlog').map(task => task.issue.id), [ids[2], ids[0], ids[1]])
+  assert.deepEqual(parseTasks(valid).tasks.filter(task => task.issue.sourceState === 'Ordered backlog').map(task => task.issue.id), [ids[2], ids[0], ids[1]])
 })
 
 test('every write repairs excessive task and section separators with LF or CRLF', () => {
@@ -143,7 +143,7 @@ test('every write repairs excessive task and section separators with LF or CRLF'
     const results = [
       mutateTasks(source, 'create', undefined, { title: 'New task' }),
       mutateTasks(source, 'update', 'task-7', { priority: 'high' }),
-      mutateTasks(source, 'update', 'task-7', { sourceSection: 'Scheduled' }),
+      mutateTasks(source, 'update', 'task-7', { sourceState: 'Scheduled' }),
       mutateTasks(source, 'delete', 'task-7'),
       mutateTasks(source, 'reorder', undefined, { issueIds: ['task-7'] }),
     ]
@@ -163,10 +163,10 @@ test('repeated create, move, edit and delete do not accumulate blank lines', () 
     const original = fixture.replaceAll('\n', newline)
     let source = original
     for (let iteration = 0; iteration < 3; iteration++) {
-      const created = mutateTasks(source, 'create', undefined, { title: 'Temporary issue', sourceSection: 'Ordered backlog' })
+      const created = mutateTasks(source, 'create', undefined, { title: 'Temporary issue', sourceState: 'Ordered backlog' })
       source = created.source
-      for (const sourceSection of ['Scheduled', 'In Progress', 'Completed / Accepted', 'Ordered backlog']) {
-        source = mutateTasks(source, 'update', created.id, { sourceSection }).source
+      for (const sourceState of ['Scheduled', 'In Progress', 'Completed / Accepted', 'Ordered backlog']) {
+        source = mutateTasks(source, 'update', created.id, { sourceState }).source
         for (let edit = 0; edit < 3; edit++) source = mutateTasks(source, 'update', created.id, { priority: 'urgent', labels: ['Spacing'] }).source
         assert.doesNotMatch(source, /\r?\n(?:[ \t]*\r?\n){2,}/)
         assert.equal(source.replaceAll(newline, '\n').includes('\r'), false)
@@ -190,7 +190,7 @@ test('spacing repair preserves inline descriptions, fences, metadata, references
       .replace('## Scheduled\n\n', '## Scheduled\n\n\n\n')
       .replaceAll('\n', newline)
     const before = parseTasks(source)
-    const ids = before.tasks.filter(task => task.issue.sourceSection === 'Ordered backlog').map(task => task.issue.id).reverse()
+    const ids = before.tasks.filter(task => task.issue.sourceState === 'Ordered backlog').map(task => task.issue.id).reverse()
     const output = mutateTasks(source, 'reorder', undefined, { issueIds: ids }).source
     const after = parseTasks(output)
     for (const task of before.tasks) {
@@ -210,7 +210,7 @@ test('removing tasks next to unrelated prose preserves the original separation',
       const source = fixture.replace('## Scheduled', `Keep this paragraph.${'\n'.repeat(leading)}- [*] Remove this task${'\n'.repeat(trailing)}Keep this next paragraph.\n\n## Scheduled`).replaceAll('\n', newline)
       const task = parseTasks(source).tasks.find(task => task.issue.title === 'Remove this task')!
       for (const operation of ['delete', 'update'] as const) {
-        const output = mutateTasks(source, operation, task.issue.id, operation === 'update' ? { sourceSection: 'Scheduled' } : {}).source
+        const output = mutateTasks(source, operation, task.issue.id, operation === 'update' ? { sourceState: 'Scheduled' } : {}).source
         assert.ok(output.includes(`Keep this paragraph.${newline.repeat(Math.max(leading, trailing))}Keep this next paragraph.`))
         assert.doesNotMatch(output, /\r?\n(?:[ \t]*\r?\n){2,}/)
       }

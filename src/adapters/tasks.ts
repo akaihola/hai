@@ -65,7 +65,7 @@ export function createTasksBackend(baseUrl = '/api', sourcePath?: string): Works
         if (!nextLocal.sourceStates?.some(state => state.id === issue.sourceState && statusForStage(state.stage) === issue.status) || typeof issue.sourcePath !== 'string') throw new Error('The server returned invalid local issue workflow information.')
         continue
       }
-      if (issue.sourceState !== issue.sourceSection || !nextCatalog.some(section => section.id === issue.sourceSection && statusForStage(section.stage) === issue.status) || typeof issue.accepted !== 'boolean'
+      if (!nextCatalog.some(section => section.id === issue.sourceState && statusForStage(section.stage) === issue.status) || typeof issue.accepted !== 'boolean'
         || (issue.accepted && issue.status !== 'done') || (issue.sourcePath !== undefined && typeof issue.sourcePath !== 'string')
         || (issue.sourceReference !== undefined && (typeof issue.sourceReference !== 'string' || !/^\[(?:\d+|\*)\]$/.test(issue.sourceReference)))
         || (issue.dependencies !== undefined && (!Array.isArray(issue.dependencies) || issue.dependencies.some(item => typeof item !== 'string')))) throw new Error('The TASKS.md server returned invalid workflow information.')

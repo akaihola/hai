@@ -64,18 +64,18 @@ python3 -m hai_tasks export . --format json
 standard input. `read` returns the workspace, revision and capabilities. Queries
 return rows containing `source`, `revision` and `issue`. Both `query` and
 `report` accept `--state` for an exact native state name and `--stage` for a
-shared stage. `--section` is a deprecated alias of `--state`, including on
-scratch and directory sources. Combining filters intersects them. Other filters
+shared stage. Combining filters intersects them. Other filters
 include text, derived status, priority, label and acceptance. Reports return
 `byState` native-state counts, `bySource`, total, accepted and awaitingAcceptance.
 The latter counts unaccepted done issues only where acceptance is supported.
+The removed `--section` option is rejected; use `--state` instead.
 
 Every `read` response includes an ordered `capabilities.sourceStates` catalog of
 `{id, stage}`. Issues carry the native `sourceState`; `status` is derived display
 data. Stages are `triage`, `waiting`, `ready`, `scheduled`, `active`, `review`,
 `done`, `dropped`. Providers may have several states per stage or omit stages.
 Select a native state by stage from this catalog before writing `sourceState`.
-TASKS.md still accepts `sourceSection` as an alias. See the
+See the
 [workflow catalog mapping](backends.md#workflow-state-catalogs).
 
 Commands emit JSON except `export`, which emits the requested file contents.

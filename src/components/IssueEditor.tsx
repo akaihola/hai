@@ -18,7 +18,7 @@ export function IssueEditor({ issue, initial, workspace, backend, onClose, onSav
   const [deleting, setDeleting] = useState(false)
   useEffect(() => { titleRef.current?.focus() }, [deleting])
   const canSave = issue ? backend.capabilities.canUpdate : backend.capabilities.canCreate
-  const hasChanges = issue && (['title', 'description', 'status', 'priority', 'sourceSection', 'sourceState'] as const).some(key => draft[key] !== issue[key]) || JSON.stringify(labels) !== JSON.stringify(issue?.labels ?? []) || Boolean(labelDraft.trim())
+  const hasChanges = issue && (['title', 'description', 'status', 'priority', 'sourceState'] as const).some(key => draft[key] !== issue[key]) || JSON.stringify(labels) !== JSON.stringify(issue?.labels ?? []) || Boolean(labelDraft.trim())
   function change<K extends keyof IssueInput>(key: K, value: IssueInput[K]) { setDraft(previous => ({ ...previous, [key]: value })) }
   function addLabel() {
     const value = labelDraft.trim()

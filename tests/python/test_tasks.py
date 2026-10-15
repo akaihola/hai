@@ -90,7 +90,7 @@ class TrackerTests(unittest.TestCase):
 
     def test_cli_create_reorder_delete_and_description(self):
         before = self.store.read()
-        result = self.cli('create', self.project, '--revision', before['revision'], '--json', json.dumps(dict(title='New', description='Body', sourceSection='Ordered backlog')))
+        result = self.cli('create', self.project, '--revision', before['revision'], '--json', json.dumps(dict(title='New', description='Body', sourceState='Ordered backlog')))
         self.assertEqual(result.returncode, 0, result.stderr)
         created = json.loads(result.stdout)
         issue = created['issue']
@@ -122,18 +122,18 @@ class TrackerTests(unittest.TestCase):
                     with self.assertRaisesRegex(TasksError, message):
                         self.store.mutate('update', self.store.read()['revision'], issue_id, patch)
         # Dependencies on issues in other sections are allowed, but Ordered backlog order must hold.
-        moved = self.store.mutate('update', self.store.read()['revision'], 'first', {'sourceSection': 'Scheduled'})
+        moved = self.store.mutate('update', self.store.read()['revision'], 'first', {'sourceState': 'Scheduled'})
         scheduled = self.store.mutate('update', moved['revision'], 'second', {'dependencies': []})
         self.assertNotIn('- [2] Second task\n    - Depends on', self.store.export())
         self.assertEqual((self.project / 'docs/tasks/2-second.md').read_text(), '---\ntitle: Second\n---\n\n# Second\n')
-        again = self.store.mutate('update', scheduled['revision'], 'first', {'sourceSection': 'Ordered backlog'})
+        again = self.store.mutate('update', scheduled['revision'], 'first', {'sourceState': 'Ordered backlog'})
         with self.assertRaisesRegex(TasksError, r'HAI-1 depends on \[2\], which must appear earlier in Ordered backlog'):
             self.store.mutate('update', again['revision'], 'first', {'dependencies': [2]})
         unchanged = self.store.read()
-        created = self.store.mutate('create', unchanged['revision'], input={'title': 'Third', 'description': 'Body', 'dependencies': [2, 1], 'sourceSection': 'Ordered backlog'})
+        created = self.store.mutate('create', unchanged['revision'], input={'title': 'Third', 'description': 'Body', 'dependencies': [2, 1], 'sourceState': 'Ordered backlog'})
         self.assertEqual(created['issue']['dependencies'], ['2', '1'])
         self.assertEqual((self.project / created['issue']['sourcePath']).read_text(), '---\ndepends-on: [2, 1]\n---\n\nBody')
-        self.assertEqual([i['sourceReference'] for i in created['workspace']['issues'] if i['sourceSection'] == 'Ordered backlog'], ['[1]', '[2]', '[*]', '[3]'])
+        self.assertEqual([i['sourceReference'] for i in created['workspace']['issues'] if i['sourceState'] == 'Ordered backlog'], ['[1]', '[2]', '[*]', '[3]'])
         # The HTTP API accepts the same field.
         server = create_server(self.project / 'TASKS.md', self.root, port=0)
         threading.Thread(target=server.serve_forever, daemon=True).start()

@@ -33,8 +33,7 @@ class WorkflowTests(unittest.TestCase):
                             self.assertEqual(result['issue']['sourceState'], state)
                             self.assertEqual(result['issue']['status'], status_for_stage(stage))
                             self.assertEqual(result['capabilities']['sourceStates'], expected)
-                            if type(store) is TasksStore:
-                                self.assertEqual(result['issue']['sourceSection'], state)
+                            self.assertNotIn('sourceSection', result['issue'])
                 for status in dict.fromkeys(status_for_stage(stage) for stage in states.values()):
                     result = store.mutate('update', store.read()['revision'], result['issue']['id'], {'status': status})
                     self.assertEqual(result['issue']['sourceState'], next(key for key, stage in states.items() if status_for_stage(stage) == status))
@@ -43,12 +42,11 @@ class WorkflowTests(unittest.TestCase):
                     with self.assertRaises(TasksError):
                         store.mutate('update', before['revision'], result['issue']['id'], patch)
                     self.assertEqual(store.read()['revision'], before['revision'])
-                if type(store) is TasksStore:
-                    result = store.mutate('update', store.read()['revision'], result['issue']['id'], {'sourceSection': 'Ordered backlog'})
-                    self.assertEqual(result['issue']['sourceState'], 'Ordered backlog')
-                    self.assertEqual(result['issue']['status'], 'todo')
+                for patch in [{'sourceSection': 'Ordered backlog'}, {'sourceState': 'Scheduled', 'sourceSection': 'Scheduled'}]:
+                    before = store.read()
                     with self.assertRaises(TasksError):
-                        store.mutate('update', result['revision'], result['issue']['id'], {'sourceState': 'Scheduled', 'sourceSection': 'In Progress'})
+                        store.mutate('update', before['revision'], result['issue']['id'], patch)
+                    self.assertEqual(store.read()['revision'], before['revision'])
 
     def test_cli_state_and_stage_filters_across_workflows(self):
         import contextlib
@@ -82,13 +80,11 @@ class WorkflowTests(unittest.TestCase):
                     with self.subTest(source=str(source), state=state['id']):
                         rows = cli('query', source, '--state', state['id'])
                         self.assertEqual([row['issue']['sourceState'] for row in rows], [state['id']])
-                        self.assertEqual(cli('query', source, '--section', state['id']), rows)
                         expected = [s['id'] for s in catalog if s['stage'] == state['stage']]
                         rows = cli('query', source, '--stage', state['stage'])
                         self.assertCountEqual([r['issue']['sourceState'] for r in rows], expected)
                         summary = cli('report', source, '--stage', state['stage'])
                         self.assertEqual(summary['byState'], dict.fromkeys(expected, 1))
-                        self.assertEqual(cli('report', source, '--section', state['id'])['byState'], {state['id']: 1})
                         self.assertEqual(cli('report', source, '--state', state['id'])['total'], 1)
                 self.assertEqual(cli('query', source, '--state', 'missing'), [])
                 self.assertEqual(cli('query', source, '--state', catalog[0]['id'], '--stage', 'done'), [])
@@ -97,10 +93,13 @@ class WorkflowTests(unittest.TestCase):
             self.assertEqual(len(query(sources, stage='ready')), 4)
             with self.assertRaises(TasksError):
                 report(sources, stage='unknown')
-            with self.assertRaises(TasksError):
+            with self.assertRaises(TypeError):
                 query(sources, section='one', state='two')
             for command in ['query', 'report']:
                 output = io.StringIO()
                 with contextlib.redirect_stdout(output), self.assertRaises(SystemExit):
                     main([command, '--help'])
-                self.assertIn('Deprecated alias of --state', output.getvalue())
+                self.assertNotIn('--section', output.getvalue())
+                with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+                    main([command, str(sources[0]), '--section', 'Ordered backlog'])
+                self.assertEqual(error.exception.code, 2)

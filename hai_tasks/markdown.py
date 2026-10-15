@@ -121,14 +121,14 @@ def parse_tasks(source):
             ids.add(identity)
             description = re.sub(r'^\r?\n', '', META.sub('', raw[end:]))
             description = '\n'.join(re.sub(r'^ {2}', '', line) for line in re.split(r'\r?\n', description) if not re.match(r'^\s*- Depends on:', line))
-            issue = dict(id=identity, sourceReference=f'[{marker}]', identifier=f'HAI-SIMPLE-{identity[-16:].upper()}' if marker == '*' else f'HAI-{marker}', title=title, description=description, status=status_for(section), priority=metadata.get('priority', 'none'), labels=metadata.get('labels', []), assigneeId=None, projectId=None, cycleId=None, createdAt=metadata.get('createdAt', EPOCH), updatedAt=metadata.get('updatedAt', EPOCH), sourceState=section, sourceSection=section, accepted=section == 'Completed / Accepted' and checkbox in ['x', 'X'], dependencies=[number for line in re.findall(r'^\s*- Depends on:[^\r\n]*', raw, re.M) for number in re.findall(r'\[(\d+)\]', line)])
+            issue = dict(id=identity, sourceReference=f'[{marker}]', identifier=f'HAI-SIMPLE-{identity[-16:].upper()}' if marker == '*' else f'HAI-{marker}', title=title, description=description, status=status_for(section), priority=metadata.get('priority', 'none'), labels=metadata.get('labels', []), assigneeId=None, projectId=None, cycleId=None, createdAt=metadata.get('createdAt', EPOCH), updatedAt=metadata.get('updatedAt', EPOCH), sourceState=section, accepted=section == 'Completed / Accepted' and checkbox in ['x', 'X'], dependencies=[number for line in re.findall(r'^\s*- Depends on:[^\r\n]*', raw, re.M) for number in re.findall(r'\[(\d+)\]', line)])
             if marker != '*':
                 if marker not in references:
                     raise TasksError(f'Task [{marker}] has no description reference.', 422)
                 issue['sourcePath'] = references[marker]
             tasks.append(dict(start=start + m.start(), end=start + m.start() + len(raw), raw=raw, marker=marker, checkbox=checkbox, titleStart=title_start, summaryEnd=end, metadata=metadata, issue=issue))
         remainder = content
-        for task in reversed([t for t in tasks if t['issue']['sourceSection'] == section]):
+        for task in reversed([t for t in tasks if t['issue']['sourceState'] == section]):
             remainder = remainder[:task['start'] - start] + remainder[task['end'] - start:]
         if re.search(r'^- \[', remainder, re.M):
             raise TasksError('Malformed task entry.', 422)
@@ -181,7 +181,7 @@ def remove_task(source, task):
 def validate_patch(patch):
     if not isinstance(patch, dict):
         raise TasksError('Expected an issue object.')
-    if set(patch) - {'title', 'description', 'status', 'sourceState', 'sourceSection', 'accepted', 'priority', 'labels', 'dependencies', 'assigneeId', 'projectId', 'cycleId'}:
+    if set(patch) - {'title', 'description', 'status', 'sourceState', 'accepted', 'priority', 'labels', 'dependencies', 'assigneeId', 'projectId', 'cycleId'}:
         raise TasksError('Unknown or read-only issue field.')
     if 'dependencies' in patch and (not isinstance(patch['dependencies'], list) or len(patch['dependencies']) > 50 or any(not (type(number) is int and number > 0 or isinstance(number, str) and re.fullmatch(r'[1-9]\d*', number)) for number in patch['dependencies'])):
         raise TasksError('Dependencies must be a list of issue numbers.')
@@ -189,9 +189,7 @@ def validate_patch(patch):
         raise TasksError('Title must contain 1–50,000 characters on one line.')
     if 'description' in patch and (not isinstance(patch['description'], str) or text_length(patch['description']) > 50000 or '\0' in patch['description']):
         raise TasksError('Description exceeds 50,000 characters or is invalid.')
-    if 'sourceSection' in patch and 'sourceState' in patch and patch['sourceSection'] != patch['sourceState']:
-        raise TasksError('Source section and source state must agree.')
-    select_state(TASK_STATES, {**patch, **({'sourceState': patch['sourceSection']} if 'sourceSection' in patch else {})})
+    select_state(TASK_STATES, patch)
     if 'accepted' in patch and type(patch['accepted']) is not bool:
         raise TasksError('Acceptance must be a boolean.')
     if 'priority' in patch and patch['priority'] not in PRIORITIES:
@@ -208,7 +206,7 @@ def mutate_tasks(source, operation, id=None, input=None, new_reference=None):
     if operation == 'reorder':
         if not isinstance(patch, dict) or set(patch) != {'issueIds'} or not isinstance(patch['issueIds'], list) or any(not isinstance(i, str) for i in patch['issueIds']):
             raise TasksError('Provide issueIds as an array of backlog issue IDs.')
-        backlog = [t for t in parsed['tasks'] if t['issue']['sourceSection'] == 'Ordered backlog']
+        backlog = [t for t in parsed['tasks'] if t['issue']['sourceState'] == 'Ordered backlog']
         by_id = {t['issue']['id']: t for t in backlog}
         ids = patch['issueIds']
         if len(ids) != len(backlog) or len(set(ids)) != len(ids) or set(ids) != set(by_id):
@@ -237,7 +235,7 @@ def mutate_tasks(source, operation, id=None, input=None, new_reference=None):
         raise TasksError('A title is required.')
     issue = task['issue'] if task else {}
     next_id = issue.get('id', f'simple-{uuid.uuid4()}')
-    section = select_state(TASK_STATES, {**patch, **({'sourceState': patch['sourceSection']} if 'sourceSection' in patch else {})}, issue.get('sourceState'))
+    section = select_state(TASK_STATES, patch, issue.get('sourceState'))
     accepted = patch.get('accepted', issue.get('accepted', False))
     if accepted and section != 'Completed / Accepted':
         raise TasksError('An accepted issue must remain completed. Clear acceptance explicitly before reopening it.')
@@ -251,7 +249,7 @@ def mutate_tasks(source, operation, id=None, input=None, new_reference=None):
         description_write = dict(path=path, content=patch['description'])
     checkbox = ('x' if accepted else ' ') if section == 'Completed / Accepted' else '~' if section == 'In Progress' else None
     title = patch['title'].strip() if 'title' in patch else issue['title']
-    if task and 'title' not in patch and marker == task['marker'] and section == issue['sourceSection'] and 'accepted' not in patch:
+    if task and 'title' not in patch and marker == task['marker'] and section == issue['sourceState'] and 'accepted' not in patch:
         raw = task['raw']
     else:
         summary = task['raw'][task['titleStart']:] if task and 'title' not in patch else title + (task['raw'][task['summaryEnd']:] if task else '')
@@ -278,8 +276,8 @@ def mutate_tasks(source, operation, id=None, input=None, new_reference=None):
             if number not in visited:
                 visited.add(number)
                 pending.extend(graph.get(number, []))
-        if task and section == issue['sourceSection'] == 'Ordered backlog':
-            backlog = [t for t in parsed['tasks'] if t['issue']['sourceSection'] == 'Ordered backlog']
+        if task and section == issue['sourceState'] == 'Ordered backlog':
+            backlog = [t for t in parsed['tasks'] if t['issue']['sourceState'] == 'Ordered backlog']
             check_backlog_order([(t, dependencies if t is task else t['issue']['dependencies']) for t in backlog])
         dependencies_changed = dependencies != issue.get('dependencies', [])
         if dependencies_changed:
@@ -301,10 +299,10 @@ def mutate_tasks(source, operation, id=None, input=None, new_reference=None):
     raw = META.sub('', raw) + parsed['newline'] + '  <!-- hai:' + serialized + ' -->'
     output = source
     if task:
-        output = source[:task['start']] + raw + source[task['end']:] if section == issue['sourceSection'] else remove_task(source, task)
-    if not task or section != issue['sourceSection']:
+        output = source[:task['start']] + raw + source[task['end']:] if section == issue['sourceState'] else remove_task(source, task)
+    if not task or section != issue['sourceState']:
         remaining = parse_tasks(output)
-        ordered = [t for t in remaining['tasks'] if t['issue']['sourceSection'] == section] if section == 'Ordered backlog' else []
+        ordered = [t for t in remaining['tasks'] if t['issue']['sourceState'] == section] if section == 'Ordered backlog' else []
         prerequisites = [t for t in ordered if t['marker'] in dependencies]
         anchor = ordered[-1] if ordered and not task else prerequisites[-1] if prerequisites else None
         destination = anchor['end'] if anchor else remaining['sections'][section]['start']

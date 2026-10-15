@@ -59,7 +59,7 @@ is disabled; the cycle view can still browse past or upcoming cycles.
 share the same parser and mutation rules. See [Python API and CLI](python-api-cli.md)
 for installation, transport behavior and configured remote source aliases.
 
-The service reads `TASKS.md` and numbered description references under `docs/tasks/`. It uses Filemill's five work sections and preserves the separate acceptance checkbox in `Completed / Accepted`. `Issue.sourceSection` retains the original section, including the distinction between unverified proposals and ordered backlog. `Issue.accepted` reflects explicit user acceptance. Completing work never checks that box.
+The service reads `TASKS.md` and numbered description references under `docs/tasks/`. It uses Filemill's five work sections and preserves the separate acceptance checkbox in `Completed / Accepted`. `Issue.sourceState` retains the original section, including the distinction between unverified proposals and ordered backlog. `Issue.accepted` reflects explicit user acceptance. Completing work never checks that box.
 
 Existing wrapped summaries load in full. Titles have a shared 50,000-character
 limit in the parser, adapters, editor, and JSON backups. Edits to other fields
@@ -268,8 +268,8 @@ support backlog directories.
 ## Workflow state catalogs
 
 Every backend declares an ordered `capabilities.sourceStates` catalog of
-`{ id, stage }`. Every issue carries its native `sourceState`; TASKS.md also
-returns the identical `sourceSection` alias until issue 33 removes it.
+`{ id, stage }`. Every issue carries its native `sourceState`. TASKS.md no longer emits or accepts
+`sourceSection`; mutations using that field are rejected.
 
 | Backend | Native state | Stage | Derived status |
 | --- | --- | --- | --- |
@@ -302,8 +302,7 @@ person. Scratch triage-label overrides change catalog IDs while retaining stages
 Status is read-only derived display data, using one shared stage mapping in each
 runtime; providers declare stages rather than statuses.
 
-A `sourceState` patch alone moves an issue. TASKS.md also accepts `sourceSection`;
-if both names are supplied they must agree. A supplied `status` must match the
+A `sourceState` patch alone moves an issue. A supplied `status` must match the
 selected state's derived status. A status-only patch selects the first matching
 catalog entry, even if the issue already has that display status. Unknown states
 and unsupported statuses reject the write. Omitted workflow fields preserve the
@@ -323,6 +322,5 @@ cannot collide. Opening an issue restores its provider's native state editor.
 
 CLI `query` and `report` accept `--state` for the native name and `--stage` for
 any shared stage. Filters intersect; an absent native name matches nothing.
-`--section` is a deprecated alias of `--state` for all sources. Reports expose
-native-state counts as `byState`. The [hai-tasks skill](../skills/hai-tasks/SKILL.md)
+Reports expose native-state counts as `byState`. The [hai-tasks skill](../skills/hai-tasks/SKILL.md)
 selects state-only mutation patches by stage from a fresh `read` catalog.

@@ -65,7 +65,7 @@ test('description/create/delete persist, unsafe requests leave files intact', as
     assert.equal(created.status, 201)
     const next = await created.json()
     revision = next.revision
-    assert.equal(next.issue.sourceSection, 'Unverified proposals')
+    assert.equal(next.issue.sourceState, 'Unverified proposals')
     assert.ok(next.issue.sourcePath.startsWith('docs/tasks/'))
     assert.equal((await request(`/api/issues/${next.issue.id}`, 'DELETE')).status, 200)
     assert.ok(!(await readFile(join(app.root, 'TASKS.md'), 'utf8')).includes('New task'))
@@ -111,7 +111,7 @@ test('HTTP backlog ordering persists, shares revision protection, and preserves 
   const app = await setup(backlogFixture)
   try {
     const initial = await (await fetch(`${app.url}/api/workspace`)).json()
-    const ids = (initial.workspace as Workspace).issues.filter(issue => issue.sourceSection === 'Ordered backlog').map(issue => issue.id)
+    const ids = (initial.workspace as Workspace).issues.filter(issue => issue.sourceState === 'Ordered backlog').map(issue => issue.id)
     const order = [ids[2], ids[0], ids[1]]
     const reorder = (revision: string, issueIds: string[]) => fetch(`${app.url}/api/backlog/order`, { method: 'POST', headers: { 'content-type': 'application/json', 'if-match': revision }, body: JSON.stringify({ issueIds }) })
     const competing = await Promise.all([reorder(initial.revision, order), reorder(initial.revision, [ids[1], ids[2], ids[0]])])
@@ -120,7 +120,7 @@ test('HTTP backlog ordering persists, shares revision protection, and preserves 
     const saved = await savedResponse.json()
     assert.equal(savedResponse.headers.get('etag'), `"${saved.revision}"`)
     assert.equal(saved.issue, undefined)
-    const savedIds = (saved.workspace as Workspace).issues.filter(issue => issue.sourceSection === 'Ordered backlog').map(issue => issue.id)
+    const savedIds = (saved.workspace as Workspace).issues.filter(issue => issue.sourceState === 'Ordered backlog').map(issue => issue.id)
     assert.deepEqual(savedIds, savedResponse === competing[0] ? order : [ids[1], ids[2], ids[0]])
     assert.deepEqual((await (await fetch(`${app.url}/api/workspace`)).json()).workspace, saved.workspace)
     const noOp = await reorder(saved.revision, savedIds)
@@ -145,7 +145,7 @@ test('HTTP backlog ordering rejects malformed, incomplete, dependent, and cross-
   try {
     const loaded = await fetch(`${app.url}/api/workspace`)
     const initial = await loaded.json()
-    const ids = (initial.workspace as Workspace).issues.filter(issue => issue.sourceSection === 'Ordered backlog').map(issue => issue.id)
+    const ids = (initial.workspace as Workspace).issues.filter(issue => issue.sourceState === 'Ordered backlog').map(issue => issue.id)
     const endpoint = `${app.url}/api/backlog/order`
     const headers = { 'content-type': 'application/json', 'if-match': loaded.headers.get('etag')! }
     assert.equal((await fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ issueIds: ids }) })).status, 428)
@@ -159,18 +159,25 @@ test('HTTP backlog ordering rejects malformed, incomplete, dependent, and cross-
   } finally { await app.close() }
 })
 
-test('HTTP workflow catalogs and alias reads survive both patch forms', async () => {
+test('HTTP workflow catalogs survive state and status patches', async () => {
   const app = await setup()
   try {
     const { TASK_SECTIONS, statusForStage } = await import('../src/domain.ts')
     let snapshot = await (await fetch(`${app.url}/api/workspace`)).json()
     assert.deepEqual(snapshot.capabilities.sourceStates, TASK_SECTIONS)
-    for (const patch of [{ sourceState: 'Scheduled' }, { status: 'todo' }, { sourceSection: 'In Progress' }]) {
+    assert.ok(snapshot.workspace.issues.every((issue: object) => !('sourceSection' in issue)))
+    for (const patch of [{ sourceSection: 'Scheduled' }, { sourceState: 'Scheduled', sourceSection: 'Scheduled' }]) {
+      const response = await fetch(`${app.url}/api/issues/task-7`, { method: 'PATCH', headers: { 'content-type': 'application/json', 'if-match': `"${snapshot.revision}"` }, body: JSON.stringify(patch) })
+      assert.equal(response.status, 400)
+      assert.match((await response.json()).error, /Unknown or read-only/)
+      assert.equal((await (await fetch(`${app.url}/api/workspace`)).json()).revision, snapshot.revision)
+    }
+    for (const patch of [{ sourceState: 'Scheduled' }, { status: 'todo' }, { sourceState: 'In Progress' }]) {
       const response = await fetch(`${app.url}/api/issues/task-7`, { method: 'PATCH', headers: { 'content-type': 'application/json', 'if-match': `"${snapshot.revision}"` }, body: JSON.stringify(patch) })
       assert.equal(response.status, 200)
       snapshot = await response.json()
       assert.deepEqual(snapshot.capabilities.sourceStates, TASK_SECTIONS)
-      assert.equal(snapshot.issue.sourceState, snapshot.issue.sourceSection)
+      assert.equal('sourceSection' in snapshot.issue, false)
       const state = TASK_SECTIONS.find(state => state.id === snapshot.issue.sourceState)!
       assert.equal(snapshot.issue.status, statusForStage(state.stage))
       if ('status' in patch) assert.equal(snapshot.issue.sourceState, 'Ordered backlog')

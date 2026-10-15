@@ -36,7 +36,7 @@ test('client sends the complete backlog order with the current revision and retu
   await assert.rejects(backend.reorderBacklog!([]), /Refresh the source/)
   assert.equal(fetch.mock.callCount(), 0)
   await backend.load()
-  const ids = original.issues.filter(issue => issue.sourceSection === 'Ordered backlog').map(issue => issue.id)
+  const ids = original.issues.filter(issue => issue.sourceState === 'Ordered backlog').map(issue => issue.id)
   assert.deepEqual(await backend.reorderBacklog!([...ids].reverse()), reordered)
   const first = fetch.mock.calls[1].arguments as unknown as [string, RequestInit]
   assert.equal(first[0], '/test-api/backlog/order')
@@ -98,7 +98,7 @@ test('opening a source requires a valid identified snapshot', async context => {
 
 const retryWorkspace = workspaceOf(parseTasks(backlogFixture))
 const retrySource = { name: 'Project', path: '/projects/project/TASKS.md' }
-const draft = { title: 'Original draft', description: 'Original description\nwith details.', priority: 'high' as const, status: 'todo' as const, sourceSection: 'Ordered backlog' as const, labels: ['keep'], assigneeId: null, projectId: null, cycleId: null }
+const draft = { title: 'Original draft', description: 'Original description\nwith details.', priority: 'high' as const, status: 'todo' as const, sourceState: 'Ordered backlog' as const, labels: ['keep'], assigneeId: null, projectId: null, cycleId: null }
 const loadedResponse = (revision: string, extra = {}) => new Response(JSON.stringify({ workspace: retryWorkspace, revision, source: retrySource, ...extra }))
 const staleResponse = () => new Response(JSON.stringify({ error: 'TASKS.md or a description changed. Reload before saving.' }), { status: 412 })
 

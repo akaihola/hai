@@ -161,12 +161,8 @@ def open_source(source):
     return TasksStore(path)
 
 
-def _query(sources, *, text='', section=None, state=None, stage=None, status=None, accepted=None, priority=None, label=None):
+def _query(sources, *, text='', state=None, stage=None, status=None, accepted=None, priority=None, label=None):
     """Return project-tagged issues and revisions; a failed project fails the query."""
-    if section is not None:
-        if state is not None and state != section:
-            raise TasksError('--section and --state must agree.')
-        state = section
     if stage is not None and stage not in STAGES:
         raise TasksError('Unsupported stage.')
     for source in sources:

@@ -29,8 +29,7 @@ hai-tasks report "$SOURCE" --stage done
 
 `read` returns a `revision`, issues with stable `id` values, and an ordered
 `capabilities.sourceStates` catalog of `{id, stage}`. Use the stable issue ID,
-not its display number. `--state` filters by native state name; `--section` is
-its deprecated alias. `--stage` filters by the shared vocabulary: `triage`,
+not its display number. `--state` filters by native state name. `--stage` filters by the shared vocabulary: `triage`,
 `waiting`, `ready`, `scheduled`, `active`, `review`, `done`, `dropped`.
 Reports count native states under `byState`. Stages can contain several states,
 and not every source has every stage. Select the intended native state from
