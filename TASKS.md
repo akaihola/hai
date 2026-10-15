@@ -34,11 +34,11 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [32] Switch kandev-pacer to workflow stages
-    - Depends on: [30]
-  <!-- hai:{"id":"simple-f35db4fa-9229-46e2-8842-0bbd314dbc38","createdAt":"2026-10-15T08:15:09.724Z","updatedAt":"2026-10-15T08:46:31.115Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [32] Switch kandev-pacer to workflow stages
+    - Depends on: [30]
+  <!-- hai:{"id":"simple-f35db4fa-9229-46e2-8842-0bbd314dbc38","createdAt":"2026-10-15T08:15:09.724Z","updatedAt":"2026-10-15T08:51:34.484Z"} -->
 
 - [ ] [31] Move Hai's CLI, UI, skill and docs to the state catalog
     - Depends on: [30]
