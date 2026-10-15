@@ -36,11 +36,11 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Scheduled
 
-- [31] Move Hai's CLI, UI, skill and docs to the state catalog
-    - Depends on: [30]
-  <!-- hai:{"id":"simple-e51575e7-59fb-4fc8-8c23-78e0ab478200","createdAt":"2026-10-15T08:15:09.316Z","updatedAt":"2026-10-15T08:36:09.971Z"} -->
-
 ## In Progress
+
+- [~] [31] Move Hai's CLI, UI, skill and docs to the state catalog
+    - Depends on: [30]
+  <!-- hai:{"id":"simple-e51575e7-59fb-4fc8-8c23-78e0ab478200","createdAt":"2026-10-15T08:15:09.316Z","updatedAt":"2026-10-15T08:36:34.295Z"} -->
 
 ## Completed / Accepted
 
