@@ -16,7 +16,7 @@ Open http://localhost:4173. Hai reads and edits this repository's `TASKS.md` and
 
 For frontend development, run `npm run dev:server` and `npm run dev` in separate terminals. Vite serves http://127.0.0.1:5173 and forwards `/api` to the backend on port 4173. On gogo, the backend already runs as `hai.service`.
 
-The deployed app is available at http://gogo.tailnet.example:5173/ and https://gogo.tailnet.example:8443/ through Tailscale. Both addresses use the persistent production service. Vite binds only to loopback so development and tests can share port 5173 with the separate Tailscale address.
+On gogo, the persistent production service is also available privately through Tailscale on HTTP port 5173 and HTTPS port 8443. Vite binds only to loopback so development and tests can share port 5173 with the separate Tailscale address.
 
 The standalone [Python API and CLI](docs/python-api-cli.md) parses, queries, edits and reports on local, SSH and GitHub TASKS.md projects, `.scratch/` feature tickets and `docs/backlog/`-style directories. Run `python3 -m hai_tasks --help`. Configured remote projects can also be opened in the browser by alias.
 

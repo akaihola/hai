@@ -17,6 +17,10 @@ if [[ ! -x /etc/profiles/per-user/agent/bin/python3 ]]; then
   printf '%s\n' 'The configured Python executable is unavailable.' >&2
   exit 1
 fi
+if [[ ! -f "$HOME/.config/hai/hai.env" ]]; then
+  printf '%s\n' 'Missing ~/.config/hai/hai.env with the private host allowlist. See docs/deployment.md.' >&2
+  exit 1
+fi
 systemd-analyze --user verify "$repo_root/deploy/hai.service"
 unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
 mkdir -p -- "$unit_dir"
