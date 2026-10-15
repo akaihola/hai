@@ -32,6 +32,9 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Completed / Accepted
 
+- [ ] [*] Hand the gogo `hai.service` unit to nixos-config and keep only a restart script here
+  <!-- hai:{"id":"simple-d0ecae8e-67ef-4043-ad58-caaddb6d540f","createdAt":"2026-10-15T16:26:34.874Z","updatedAt":"2026-10-15T16:26:34.874Z"} -->
+
 - [ ] [*] Move the tailnet address and deployment record out of the repository
   <!-- hai:{"id":"simple-acf7869b-ef34-4b55-b1ff-9aefe8ff6821","createdAt":"2026-10-15T15:36:54.442Z","updatedAt":"2026-10-15T15:37:59.083Z"} -->
 

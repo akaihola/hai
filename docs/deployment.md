@@ -19,10 +19,14 @@ Existing Tailscale routes, including HTTPS port 443, must remain unchanged.
 
 ## Install after validation
 
-Run on gogo as `agent`. The checked-in service targets this repository's absolute
-path. Python is available through `/etc/profiles/per-user/agent/bin/python3`; the path
-survives Nix profile updates. User lingering is already enabled, so enabled user
-services continue after logout and start at boot.
+The `hai.service` user unit is declared in nixos-config at
+`home-manager/features/hai-gogo.nix` and applied with that repository's
+`scripts/pull-rebase-rebuild.sh`. It runs `python3 -m hai_server` from
+`/home/agent/prg/hai` as `agent`, sets `HAI_PROJECT_ROOTS=%h/prg:%h/repos`, and
+loads the host allowlist from `~/.config/hai/hai.env`. This repository ships no
+unit file; `deploy/restart-service.sh` only restarts the managed service and
+checks its health. User lingering is already enabled, so enabled user services
+continue after logout and start at boot.
 
 Before the first install, write the private address to `~/.config/hai/hai.env`.
 The service loads it as its host allowlist:
@@ -37,14 +41,14 @@ export SHELL=/bin/bash
 cd /home/agent/prg/hai
 npm ci
 npm run check
-bash deploy/install-user-service.sh
+bash deploy/restart-service.sh
 tailscale serve --bg --https=8443 http://127.0.0.1:4173
 tailscale serve --bg --http=5173 http://127.0.0.1:4173
 ```
 
-The install script verifies required files, the allowlist and the service unit, installs it under
-`~/.config/systemd/user/`, enables it, restarts it, and checks `/healthz`. It does
-not alter Tailscale configuration. The last two commands add HTTPS port 8443 and
+The restart script verifies the build, the allowlist and the installed unit,
+restarts the service, and checks `/healthz`. It does not alter Tailscale
+configuration. The last two commands add HTTPS port 8443 and
 HTTP port 5173. `--bg` persists the routes across session and daemon restarts.
 Do not run `tailscale serve reset` or `tailscale funnel` for this deployment.
 
@@ -93,7 +97,7 @@ export SHELL=/bin/bash
 cd /home/agent/prg/hai
 npm ci
 npm run check
-bash deploy/install-user-service.sh
+bash deploy/restart-service.sh
 . ~/.config/hai/hai.env
 curl --fail "http://$HAI_ALLOWED_HOSTS:5173/healthz"
 curl --fail "$HAI_ALLOWED_ORIGINS/healthz"
@@ -103,8 +107,8 @@ The private Serve routes persist; ordinary redeployment does not recreate them.
 
 The service unit sets `HAI_PROJECT_ROOTS=%h/prg:%h/repos`, so the project picker
 opens trackers and backlog directories under `/home/agent/prg/` and
-`/home/agent/repos/`. Edit the unit in `deploy/hai.service` and redeploy to allow
-other server directories; the install script overwrites the installed unit. The configured Hai project remains allowed.
+`/home/agent/repos/`. Change the unit in nixos-config and rebuild to allow other
+server directories. The configured Hai project remains allowed.
 Paths entered in the browser refer to this server, and `~/` expands to the
 service user's home directory. Each browser remembers its own selected project;
 there is no shared current-project setting on the server.
