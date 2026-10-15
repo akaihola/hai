@@ -40,10 +40,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Scheduled
 
-- [30] Declare workflow state catalogs with stages and derive status
-  <!-- hai:{"id":"simple-dd2ef7be-a12b-411c-91ad-2d147ac158ff","createdAt":"2026-10-15T08:15:08.980Z","updatedAt":"2026-10-15T08:23:36.000Z"} -->
-
 ## In Progress
+
+- [~] [30] Declare workflow state catalogs with stages and derive status
+  <!-- hai:{"id":"simple-dd2ef7be-a12b-411c-91ad-2d147ac158ff","createdAt":"2026-10-15T08:15:08.980Z","updatedAt":"2026-10-15T08:24:02.781Z"} -->
 
 ## Completed / Accepted
 
