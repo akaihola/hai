@@ -30,10 +30,10 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## In Progress
 
-- [~] [*] Move the tailnet address and deployment record out of the repository
-  <!-- hai:{"id":"simple-acf7869b-ef34-4b55-b1ff-9aefe8ff6821","createdAt":"2026-10-15T15:36:54.442Z","updatedAt":"2026-10-15T15:36:59.144Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [*] Move the tailnet address and deployment record out of the repository
+  <!-- hai:{"id":"simple-acf7869b-ef34-4b55-b1ff-9aefe8ff6821","createdAt":"2026-10-15T15:36:54.442Z","updatedAt":"2026-10-15T15:37:59.083Z"} -->
 
 - [ ] [33] Remove the sourceSection alias
     - Depends on: [31], [32]
