@@ -26,15 +26,15 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
-- [32] Switch kandev-pacer to workflow stages
-    - Depends on: [30]
-  <!-- hai:{"id":"simple-f35db4fa-9229-46e2-8842-0bbd314dbc38","createdAt":"2026-10-15T08:15:09.724Z","updatedAt":"2026-10-15T08:15:09.724Z"} -->
-
 - [33] Remove the sourceSection alias
     - Depends on: [31], [32]
   <!-- hai:{"id":"simple-428c74bf-7398-433b-b232-f4d477a2d4ba","createdAt":"2026-10-15T08:15:10.172Z","updatedAt":"2026-10-15T08:15:10.172Z"} -->
 
 ## Scheduled
+
+- [32] Switch kandev-pacer to workflow stages
+    - Depends on: [30]
+  <!-- hai:{"id":"simple-f35db4fa-9229-46e2-8842-0bbd314dbc38","createdAt":"2026-10-15T08:15:09.724Z","updatedAt":"2026-10-15T08:46:11.064Z"} -->
 
 ## In Progress
 
