@@ -28,11 +28,11 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Scheduled
 
-- [33] Remove the sourceSection alias
-    - Depends on: [31], [32]
-  <!-- hai:{"id":"simple-428c74bf-7398-433b-b232-f4d477a2d4ba","createdAt":"2026-10-15T08:15:10.172Z","updatedAt":"2026-10-15T08:51:59.895Z"} -->
-
 ## In Progress
+
+- [~] [33] Remove the sourceSection alias
+    - Depends on: [31], [32]
+  <!-- hai:{"id":"simple-428c74bf-7398-433b-b232-f4d477a2d4ba","createdAt":"2026-10-15T08:15:10.172Z","updatedAt":"2026-10-15T08:52:38.754Z"} -->
 
 ## Completed / Accepted
 
