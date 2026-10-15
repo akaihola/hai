@@ -26,9 +26,6 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
-- [30] Declare workflow state catalogs with stages and derive status
-  <!-- hai:{"id":"simple-dd2ef7be-a12b-411c-91ad-2d147ac158ff","createdAt":"2026-10-15T08:15:08.980Z","updatedAt":"2026-10-15T08:15:08.980Z"} -->
-
 - [31] Move Hai's CLI, UI, skill and docs to the state catalog
     - Depends on: [30]
   <!-- hai:{"id":"simple-e51575e7-59fb-4fc8-8c23-78e0ab478200","createdAt":"2026-10-15T08:15:09.316Z","updatedAt":"2026-10-15T08:15:09.316Z"} -->
@@ -42,6 +39,9 @@ Rules for TASKS.md usage are at the bottom of the file.
   <!-- hai:{"id":"simple-428c74bf-7398-433b-b232-f4d477a2d4ba","createdAt":"2026-10-15T08:15:10.172Z","updatedAt":"2026-10-15T08:15:10.172Z"} -->
 
 ## Scheduled
+
+- [30] Declare workflow state catalogs with stages and derive status
+  <!-- hai:{"id":"simple-dd2ef7be-a12b-411c-91ad-2d147ac158ff","createdAt":"2026-10-15T08:15:08.980Z","updatedAt":"2026-10-15T08:23:36.000Z"} -->
 
 ## In Progress
 
