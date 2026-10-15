@@ -24,3 +24,25 @@ trackers. With stages it needs one code path for every backend.
 - Pacing `.scratch/` features and `docs/backlog/` repositories works without
   provider-specific branches, including `ready-for-human` staying untouched.
 - Tests cover eligibility and scheduling on all three workflows.
+
+## Implementation and validation, 2026-10-15
+
+Implemented in kandev-pacer commit `990d23d`, merged to its main branch.
+Eligibility uses catalog stages, with scheduled work first and dependencies
+completed within the same project. Scheduling leaves ready issues unchanged
+when no scheduled stage exists. Both T3 and heartbeat prompts name catalog
+active/done states and condition the acceptance rule on `fields.acceptance`.
+T3 opens sources through Hai and resolves the Git root independently of the
+source directory. Heartbeat discovers TASKS.md, scratch and backlog sources.
+
+Validation: the full offline suite passed 856 tests, with 20 live tests skipped.
+The final focused suite passed 158 tests, including real files, scheduling,
+T3 launches and heartbeat prompts for all three workflows. Formatting and
+Ruff/type checks passed with `darker --check` and `graylint`. Tests also cover
+missing, unfinished and other-project dependencies. Scratch waiting states
+remain untouched. Unrelated kandev-pacer TASKS.md edits were preserved exactly.
+
+The manually started pacer process still needs an operator restart to load the
+merged Python code. New CLI invocations use it immediately. No Hai application
+code changed, so no Hai application deployment is needed. Completion does not
+record user acceptance.
