@@ -90,9 +90,10 @@ curl --fail https://gogo.tailnet.example:8443/healthz
 
 The private Serve routes persist; ordinary redeployment does not recreate them.
 
-The project picker opens existing trackers under `/home/agent/prg/` by default.
-Set `HAI_PROJECT_ROOTS` in the service environment to a colon-separated list to
-allow other server directories. The configured Hai project remains allowed.
+The service unit sets `HAI_PROJECT_ROOTS=%h/prg:%h/repos`, so the project picker
+opens trackers and backlog directories under `/home/agent/prg/` and
+`/home/agent/repos/`. Edit the unit in `deploy/hai.service` and redeploy to allow
+other server directories; the install script overwrites the installed unit. The configured Hai project remains allowed.
 Paths entered in the browser refer to this server, and `~/` expands to the
 service user's home directory. Each browser remembers its own selected project;
 there is no shared current-project setting on the server.

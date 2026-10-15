@@ -11,6 +11,7 @@ Environment=HOST=127.0.0.1
 Environment=PORT=4173
 Environment=HAI_TASKS_FILE=/home/agent/prg/hai/TASKS.md
 Environment=HAI_DIST_DIR=/home/agent/prg/hai/dist
+Environment=HAI_PROJECT_ROOTS=%h/prg:%h/repos
 Environment=HAI_ALLOWED_HOSTS=gogo.tailnet.example
 Environment=HAI_ALLOWED_ORIGINS=https://gogo.tailnet.example:8443
 Restart=on-failure
