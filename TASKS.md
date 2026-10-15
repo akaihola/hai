@@ -26,6 +26,21 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Ordered backlog
 
+- [30] Declare workflow state catalogs with stages and derive status
+  <!-- hai:{"id":"simple-dd2ef7be-a12b-411c-91ad-2d147ac158ff","createdAt":"2026-10-15T08:15:08.980Z","updatedAt":"2026-10-15T08:15:08.980Z"} -->
+
+- [31] Move Hai's CLI, UI, skill and docs to the state catalog
+    - Depends on: [30]
+  <!-- hai:{"id":"simple-e51575e7-59fb-4fc8-8c23-78e0ab478200","createdAt":"2026-10-15T08:15:09.316Z","updatedAt":"2026-10-15T08:15:09.316Z"} -->
+
+- [32] Switch kandev-pacer to workflow stages
+    - Depends on: [30]
+  <!-- hai:{"id":"simple-f35db4fa-9229-46e2-8842-0bbd314dbc38","createdAt":"2026-10-15T08:15:09.724Z","updatedAt":"2026-10-15T08:15:09.724Z"} -->
+
+- [33] Remove the sourceSection alias
+    - Depends on: [31], [32]
+  <!-- hai:{"id":"simple-428c74bf-7398-433b-b232-f4d477a2d4ba","createdAt":"2026-10-15T08:15:10.172Z","updatedAt":"2026-10-15T08:15:10.172Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -152,7 +167,7 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 [11]: docs/tasks/11-allow-dragging-issues-from-a-group-to-another.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33 -->
 
 [12]: docs/tasks/12-eliminate-runs-of-blank-lines-in-tasks-md.md
 [13]: docs/tasks/13-separate-groups-completed-and-accepted.md
@@ -183,6 +198,14 @@ Rules for TASKS.md usage are at the bottom of the file.
 [28]: docs/tasks/28-open-a-repository-s-scratch-features-as-one-workspace.md
 
 [29]: docs/tasks/29-write-depends-on-dependencies-through-the-api-and-cli.md
+
+[30]: docs/tasks/30-declare-workflow-state-catalogs-with-stages-and-derive-status.md
+
+[31]: docs/tasks/31-move-hai-s-cli-ui-skill-and-docs-to-the-state-catalog.md
+
+[32]: docs/tasks/32-switch-kandev-pacer-to-workflow-stages.md
+
+[33]: docs/tasks/33-remove-the-sourcesection-alias.md
 
 ## Rules
 
