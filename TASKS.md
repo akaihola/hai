@@ -4,6 +4,9 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 ## Unverified proposals
 
+- [34] JSON export fails above 2 MB for large backlog repositories
+  <!-- hai:{"id":"simple-eb9ba418-a18d-4713-aa4b-c33bc1e6df25","createdAt":"2026-10-16T16:02:44.170Z","updatedAt":"2026-10-16T16:02:44.170Z"} -->
+
 - [9] Connect Markdown Ticket through its configured bridge.
     - Depends on: [2]
 
@@ -38,16 +41,16 @@ Rules for TASKS.md usage are at the bottom of the file.
 - [ ] [*] Move the tailnet address and deployment record out of the repository
   <!-- hai:{"id":"simple-acf7869b-ef34-4b55-b1ff-9aefe8ff6821","createdAt":"2026-10-15T15:36:54.442Z","updatedAt":"2026-10-15T15:37:59.083Z"} -->
 
-- [ ] [33] Remove the sourceSection alias
+- [x] [33] Remove the sourceSection alias
     - Depends on: [31]
-  <!-- hai:{"id":"simple-428c74bf-7398-433b-b232-f4d477a2d4ba","createdAt":"2026-10-15T08:15:10.172Z","updatedAt":"2026-10-15T16:27:19.242Z"} -->
+  <!-- hai:{"id":"simple-428c74bf-7398-433b-b232-f4d477a2d4ba","createdAt":"2026-10-15T08:15:10.172Z","updatedAt":"2026-10-15T20:30:12.472Z"} -->
 
-- [ ] [31] Move Hai's CLI, UI, skill and docs to the state catalog
+- [x] [31] Move Hai's CLI, UI, skill and docs to the state catalog
     - Depends on: [30]
-  <!-- hai:{"id":"simple-e51575e7-59fb-4fc8-8c23-78e0ab478200","createdAt":"2026-10-15T08:15:09.316Z","updatedAt":"2026-10-15T08:45:35.074Z"} -->
+  <!-- hai:{"id":"simple-e51575e7-59fb-4fc8-8c23-78e0ab478200","createdAt":"2026-10-15T08:15:09.316Z","updatedAt":"2026-10-15T20:28:33.032Z"} -->
 
-- [ ] [30] Declare workflow state catalogs with stages and derive status
-  <!-- hai:{"id":"simple-dd2ef7be-a12b-411c-91ad-2d147ac158ff","createdAt":"2026-10-15T08:15:08.980Z","updatedAt":"2026-10-15T08:35:37.221Z"} -->
+- [x] [30] Declare workflow state catalogs with stages and derive status
+  <!-- hai:{"id":"simple-dd2ef7be-a12b-411c-91ad-2d147ac158ff","createdAt":"2026-10-15T08:15:08.980Z","updatedAt":"2026-10-15T20:25:41.788Z"} -->
 
 - [x] [29] Write `Depends on:` dependencies through the API and CLI
   <!-- hai:{"id":"simple-478f2d40-e219-4f8e-8ff9-b29f0698e32f","createdAt":"2026-10-14T12:32:36.205Z","updatedAt":"2026-10-14T20:21:12.782Z"} -->
@@ -55,8 +58,8 @@ Rules for TASKS.md usage are at the bottom of the file.
 - [x] [28] Open a repository's `.scratch/` features as one workspace
   <!-- hai:{"id":"simple-f026711e-c707-42cf-a19e-f309584f14eb","createdAt":"2026-10-11T18:49:30.186Z","updatedAt":"2026-10-14T20:20:38.601Z"} -->
 
-- [ ] [27] Support `docs/backlog/`
-  <!-- hai:{"id":"simple-302a01b2-71b6-4e82-9887-1ffc7b92629e","priority":"none","labels":[],"createdAt":"2026-10-11T14:24:07.802Z","updatedAt":"2026-10-14T13:41:27.894Z"} -->
+- [x] [27] Support `docs/backlog/`
+  <!-- hai:{"id":"simple-302a01b2-71b6-4e82-9887-1ffc7b92629e","priority":"none","labels":[],"createdAt":"2026-10-11T14:24:07.802Z","updatedAt":"2026-10-16T15:59:50.035Z"} -->
 
 - [x] [26] Deleting an issue leaves its description file and link behind
   <!-- hai:{"id":"simple-723c1791-f392-475b-9518-2fd8673c4887","createdAt":"2026-10-11T10:29:45.032Z","updatedAt":"2026-10-14T12:34:37.659Z"} -->
@@ -169,7 +172,7 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 [11]: docs/tasks/11-allow-dragging-issues-from-a-group-to-another.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34 -->
 
 [12]: docs/tasks/12-eliminate-runs-of-blank-lines-in-tasks-md.md
 [13]: docs/tasks/13-separate-groups-completed-and-accepted.md
@@ -207,6 +210,8 @@ Rules for TASKS.md usage are at the bottom of the file.
 
 
 [33]: docs/tasks/33-remove-the-sourcesection-alias.md
+
+[34]: docs/tasks/34-json-export-fails-above-2-mb-for-large-backlog-repositories.md
 
 ## Rules
 
